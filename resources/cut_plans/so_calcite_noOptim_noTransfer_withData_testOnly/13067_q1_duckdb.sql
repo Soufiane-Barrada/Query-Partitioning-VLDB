@@ -1,0 +1,5 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId" AS "POSTTYPEID", "Posts"."CreationDate" AS "CREATIONDATE", CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE NULL END AS "FD_COL_3", "Votes"."Id" AS "Id1", "Users"."Reputation"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"

@@ -1,0 +1,5 @@
+SELECT COALESCE(ANY_VALUE("nation"."n_name"), ANY_VALUE("nation"."n_name")) AS "NATION_NAME", ANY_VALUE("region"."r_name") AS "REGION_NAME", COUNT(DISTINCT "supplier"."s_suppkey") AS "SUPPLIER_COUNT", SUM("supplier"."s_acctbal") AS "TOTAL_ACCTBAL"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "region"."r_name", "nation"."n_name"

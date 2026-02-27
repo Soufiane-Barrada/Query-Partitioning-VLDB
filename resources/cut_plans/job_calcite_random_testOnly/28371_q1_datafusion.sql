@@ -1,0 +1,18 @@
+SELECT COALESCE("TITLE", "TITLE") AS "TITLE", "PRODUCTION_YEAR", "KEYWORD_COUNT", "CAST_COUNT", LISTAGG(DISTINCT "ACTOR_NAME", ', ') AS "ACTORS"
+FROM (SELECT "t4"."TITLE_ID", "t4"."TITLE", "t4"."PRODUCTION_YEAR", "t4"."KEYWORD_COUNT", "aka_name"."name", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", COUNT("t4"."id0") AS "CAST_COUNT"
+FROM "IMDB"."aka_name"
+RIGHT JOIN (SELECT "t3"."TITLE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."KEYWORD_COUNT", "t3"."id", "t3"."movie_id", "t3"."subject_id", "t3"."status_id", "cast_info"."id" AS "id0", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN (SELECT "t2"."TITLE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."KEYWORD_COUNT", "complete_cast"."id", "complete_cast"."movie_id", "complete_cast"."subject_id", "complete_cast"."status_id"
+FROM "IMDB"."complete_cast"
+RIGHT JOIN (SELECT ANY_VALUE("t0"."id") AS "TITLE_ID", "t0"."title" AS "TITLE", "t0"."production_year" AS "PRODUCTION_YEAR", COUNT("keyword"."id") AS "KEYWORD_COUNT"
+FROM (SELECT "t"."id", "t"."movie_id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."note", "t"."md5sum", "movie_keyword"."id" AS "id0", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t" ON "movie_keyword"."movie_id" = "t"."id") AS "t0"
+LEFT JOIN "IMDB"."keyword" ON "t0"."keyword_id" = "keyword"."id"
+GROUP BY "t0"."id", "t0"."title", "t0"."production_year") AS "t2" ON "complete_cast"."movie_id" = "t2"."TITLE_ID") AS "t3" ON "cast_info"."person_id" = "t3"."subject_id") AS "t4" ON "aka_name"."person_id" = "t4"."person_id"
+GROUP BY "aka_name"."name", "t4"."TITLE_ID", "t4"."TITLE", "t4"."PRODUCTION_YEAR", "t4"."KEYWORD_COUNT") AS "t6"
+WHERE "t6"."KEYWORD_COUNT" > 0
+GROUP BY "TITLE", "PRODUCTION_YEAR", "KEYWORD_COUNT", "CAST_COUNT"

@@ -1,0 +1,7 @@
+SELECT COALESCE("t2"."POSTTYPE", "t2"."POSTTYPE") AS "POSTTYPE", "t2"."POSTCOUNT", "t2"."AVERAGESCORE", "t2"."TOTALCOMMENTS"
+FROM (SELECT "PostTypes"."Name", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "POSTCOUNT", AVG("Posts"."Score") AS "AVERAGESCORE", SUM("s1"."COMMENTCOUNT") AS "TOTALCOMMENTS"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "s1" ON "Posts"."Id" = "s1"."PostId"
+GROUP BY "PostTypes"."Name"
+ORDER BY 3 DESC NULLS FIRST) AS "t2"

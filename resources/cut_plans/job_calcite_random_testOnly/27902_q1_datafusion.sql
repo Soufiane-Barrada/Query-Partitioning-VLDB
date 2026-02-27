@@ -1,0 +1,8 @@
+SELECT COALESCE("cast_info"."id", "cast_info"."id") AS "id", "cast_info"."person_id", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "t1"."PERSON_ID" AS "PERSON_ID_", "t1"."AK_NAMES", "t1"."CHAR_NAMES"
+FROM "IMDB"."cast_info"
+INNER JOIN (SELECT "t"."person_id" AS "PERSON_ID", LISTAGG(DISTINCT "t"."name", ', ') AS "AK_NAMES", LISTAGG(DISTINCT "char_name"."name", ', ') AS "CHAR_NAMES"
+FROM (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info0"."id" AS "id0", "cast_info0"."person_id" AS "person_id0", "cast_info0"."movie_id", "cast_info0"."person_role_id", "cast_info0"."note", "cast_info0"."nr_order", "cast_info0"."role_id"
+FROM "IMDB"."cast_info" AS "cast_info0"
+RIGHT JOIN "IMDB"."aka_name" ON "cast_info0"."person_id" = "aka_name"."person_id") AS "t"
+LEFT JOIN "IMDB"."char_name" ON "t"."person_id0" = "char_name"."imdb_id"
+GROUP BY "t"."person_id") AS "t1" ON "cast_info"."person_id" = "t1"."PERSON_ID"

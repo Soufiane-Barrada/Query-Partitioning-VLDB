@@ -1,0 +1,10 @@
+SELECT COALESCE("part"."p_name", "part"."p_name") AS "P_NAME", "t1"."NATION", "t1"."R_NAME", SUM("t"."l_extendedprice" * (1 - "t"."l_discount")) AS "TOTAL_REVENUE", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT"
+FROM "TPCH"."orders"
+INNER JOIN ((SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1997-01-01' AND "l_shipdate" < DATE '1997-12-31') AS "t" INNER JOIN "TPCH"."part" ON "t"."l_partkey" = "part"."p_partkey") ON "orders"."o_orderkey" = "t"."l_orderkey"
+LEFT JOIN (SELECT "region"."r_regionkey" AS "R_REGIONKEY", "region"."r_name" AS "R_NAME", "nation"."n_name" AS "NATION", "t0"."S_SUPPKEY", "t0"."S_NAME"
+FROM (SELECT "s_suppkey" AS "S_SUPPKEY", "s_name" AS "S_NAME", "s_nationkey" AS "S_NATIONKEY", "s_acctbal" AS "S_ACCTBAL", ROW_NUMBER() OVER (PARTITION BY "s_nationkey" ORDER BY "s_acctbal" DESC NULLS FIRST) AS "RAN"
+FROM "TPCH"."supplier") AS "t0"
+RIGHT JOIN ("TPCH"."nation" INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") ON "t0"."S_NATIONKEY" = "nation"."n_nationkey") AS "t1" ON "t"."l_suppkey" = "t1"."S_SUPPKEY"
+GROUP BY "part"."p_name", "t1"."NATION", "t1"."R_NAME"

@@ -1,0 +1,12 @@
+SELECT COALESCE("t0"."POSTID", "t0"."POSTID") AS "POSTID", "t0"."OWNERUSERID", "t0"."POSTCREATIONDATE", "t0"."LASTACTIVITYDATE", "t0"."SCORE", "t0"."VIEWCOUNT", "t0"."ANSWERCOUNT", "t0"."COMMENTCOUNT", "t0"."FAVORITECOUNT", "t0"."TITLE", "t0"."USERREPUTATION", "t4"."POSTID" AS "POSTID0", "t4"."COMMENTCOUNT" AS "COMMENTCOUNT0", "t4"."UPVOTES", "t4"."DOWNVOTES"
+FROM (SELECT "t"."Id" AS "POSTID", "t"."OwnerUserId" AS "OWNERUSERID", "t"."CreationDate" AS "POSTCREATIONDATE", "t"."LastActivityDate" AS "LASTACTIVITYDATE", "t"."Score" AS "SCORE", "t"."ViewCount" AS "VIEWCOUNT", "t"."AnswerCount" AS "ANSWERCOUNT", "t"."CommentCount" AS "COMMENTCOUNT", "t"."FavoriteCount" AS "FAVORITECOUNT", "t"."Title" AS "TITLE", "Users"."Reputation" AS "USERREPUTATION"
+FROM "STACK"."Users"
+INNER JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)) AS "t" ON "Users"."Id" = "t"."OwnerUserId") AS "t0"
+INNER JOIN (SELECT ANY_VALUE("t1"."Id") AS "POSTID", COUNT("t1"."Id0") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "Posts0"."Id", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN "STACK"."Posts" AS "Posts0" ON "Comments"."PostId" = "Posts0"."Id") AS "t1" ON "Votes"."PostId" = "t1"."Id"
+GROUP BY "t1"."Id") AS "t4" ON "t0"."POSTID" = "t4"."POSTID"

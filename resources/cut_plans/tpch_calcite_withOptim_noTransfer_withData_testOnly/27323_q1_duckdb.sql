@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."NATION_NAME", "t1"."NATION_NAME") AS "NATION_NAME", "t1"."SUPPLIER_COUNT", "t1"."TOTAL_ACCTBAL", "t4"."PART_NAME", "t4"."PART_SUPPLIER_COUNT"
+FROM (SELECT ANY_VALUE("nation"."n_name") AS "NATION_NAME", COUNT(*) AS "SUPPLIER_COUNT", SUM("supplier"."s_acctbal") AS "TOTAL_ACCTBAL"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "nation"."n_name"
+HAVING COUNT(*) > 5) AS "t1"
+INNER JOIN (SELECT ANY_VALUE("part"."p_name") AS "PART_NAME", COUNT(*) AS "PART_SUPPLIER_COUNT"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+GROUP BY "part"."p_name"
+HAVING COUNT(*) > 3) AS "t4" ON "t1"."NATION_NAME" LIKE '%land%' OR "t4"."PART_NAME" LIKE '%brass%'

@@ -1,0 +1,15 @@
+SELECT COALESCE("t4"."DISPLAYNAME", "t4"."DISPLAYNAME") AS "DISPLAYNAME", "t4"."POSTCOUNT", "t4"."TOTALVOTES", "t4"."QUESTIONSANSWERED", "t4"."ANSWERSGIVEN", "t4"."POSTEDITS", "t8"."POSTTYPE", "t8"."POSTCOUNT" AS "TOTALPOSTSOFTYPE", "t8"."AVERAGESCORE", "t8"."TOTALVIEWS"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "Posts"."Id") AS "POSTCOUNT", SUM("t0"."VOTE_COUNT") AS "TOTALVOTES", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN "Posts"."AnswerCount" ELSE 0 END) AS "QUESTIONSANSWERED", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERSGIVEN", COUNT(DISTINCT "PostHistory"."Id") AS "POSTEDITS"
+FROM "STACK"."Users"
+INNER JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "VOTE_COUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."POSTID"
+LEFT JOIN "STACK"."PostHistory" ON "Posts"."Id" = "PostHistory"."PostId"
+WHERE "Users"."Reputation" > 1000
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t4",
+(SELECT ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "POSTCOUNT", AVG("Posts0"."Score") AS "AVERAGESCORE", SUM("Posts0"."ViewCount") AS "TOTALVIEWS"
+FROM "STACK"."Posts" AS "Posts0"
+INNER JOIN "STACK"."PostTypes" ON "Posts0"."PostTypeId" = "PostTypes"."Id"
+WHERE "Posts0"."CreationDate" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP(0)) - INTERVAL '1' YEAR)
+GROUP BY "PostTypes"."Name") AS "t8"

@@ -1,0 +1,7 @@
+SELECT COALESCE("t0"."UserId", "t0"."UserId") AS "UserId", "t0"."BADGECOUNT", "t2"."$f1" AS "FD_COL_2"
+FROM (SELECT "UserId", COUNT(*) AS "BADGECOUNT"
+FROM "STACK"."Badges"
+GROUP BY "UserId") AS "t0"
+LEFT JOIN (SELECT "Id", SINGLE_VALUE("DisplayName") AS "$f1"
+FROM "STACK"."Users"
+GROUP BY "Id") AS "t2" ON "t0"."UserId" = "t2"."Id"

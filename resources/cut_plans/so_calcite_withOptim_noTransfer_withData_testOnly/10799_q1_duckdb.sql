@@ -1,0 +1,21 @@
+SELECT COALESCE("t5"."Id", "t5"."Id") AS "Id", "t5"."PostTypeId", "t5"."AcceptedAnswerId", "t5"."ParentId", "t5"."CreationDate", "t5"."Score", "t5"."ViewCount", "t5"."Body", "t5"."OwnerUserId", "t5"."OwnerDisplayName", "t5"."LastEditorUserId", "t5"."LastEditorDisplayName", "t5"."LastEditDate", "t5"."LastActivityDate", "t5"."Title", "t5"."Tags", "t5"."AnswerCount", "t5"."CommentCount", "t5"."FavoriteCount", "t5"."ClosedDate", "t5"."CommunityOwnedDate", "t5"."ContentLicense", "t5"."POSTID", "t5"."UPVOTECOUNT", "t5"."POSTID0", "t5"."DOWNVOTECOUNT", "t6"."PostId" AS "POSTID1", "t6"."COMMENTCOUNT" AS "COMMENTCOUNT_", "t7"."UserId" AS "USERID", "t7"."BADGECOUNT", "Users"."Id" AS "Id0", "Users"."Reputation", "Users"."CreationDate" AS "CreationDate0", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId"
+FROM (SELECT "t4"."Id", "t4"."PostTypeId", "t4"."AcceptedAnswerId", "t4"."ParentId", "t4"."CreationDate", "t4"."Score", "t4"."ViewCount", "t4"."Body", "t4"."OwnerUserId", "t4"."OwnerDisplayName", "t4"."LastEditorUserId", "t4"."LastEditorDisplayName", "t4"."LastEditDate", "t4"."LastActivityDate", "t4"."Title", "t4"."Tags", "t4"."AnswerCount", "t4"."CommentCount", "t4"."FavoriteCount", "t4"."ClosedDate", "t4"."CommunityOwnedDate", "t4"."ContentLicense", "t4"."POSTID", "t4"."UPVOTECOUNT", "t0"."PostId" AS "POSTID0", "t0"."DOWNVOTECOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "DOWNVOTECOUNT"
+FROM "STACK"."Votes"
+WHERE CAST("VoteTypeId" AS INTEGER) = 3
+GROUP BY "PostId") AS "t0"
+RIGHT JOIN (SELECT "t3"."Id", "t3"."PostTypeId", "t3"."AcceptedAnswerId", "t3"."ParentId", "t3"."CreationDate", "t3"."Score", "t3"."ViewCount", "t3"."Body", "t3"."OwnerUserId", "t3"."OwnerDisplayName", "t3"."LastEditorUserId", "t3"."LastEditorDisplayName", "t3"."LastEditDate", "t3"."LastActivityDate", "t3"."Title", "t3"."Tags", "t3"."AnswerCount", "t3"."CommentCount", "t3"."FavoriteCount", "t3"."ClosedDate", "t3"."CommunityOwnedDate", "t3"."ContentLicense", "t2"."PostId" AS "POSTID", "t2"."UPVOTECOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "UPVOTECOUNT"
+FROM "STACK"."Votes"
+WHERE CAST("VoteTypeId" AS INTEGER) = 2
+GROUP BY "PostId") AS "t2"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)) AS "t3" ON "t2"."PostId" = "t3"."Id") AS "t4" ON "t0"."PostId" = "t4"."Id") AS "t5"
+LEFT JOIN (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t6" ON "t5"."Id" = "t6"."PostId"
+LEFT JOIN (SELECT "UserId", COUNT(*) AS "BADGECOUNT"
+FROM "STACK"."Badges"
+GROUP BY "UserId") AS "t7" ON "t5"."OwnerUserId" = "t7"."UserId"
+LEFT JOIN "STACK"."Users" ON "t5"."OwnerUserId" = "Users"."Id"

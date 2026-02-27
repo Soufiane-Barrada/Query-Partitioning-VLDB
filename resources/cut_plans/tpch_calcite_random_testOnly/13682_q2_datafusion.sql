@@ -1,0 +1,9 @@
+SELECT COALESCE("t3"."N_NAME", "t3"."N_NAME") AS "N_NAME", "t3"."REVENUE"
+FROM (SELECT "nation"."n_name" AS "N_NAME", SUM("t0"."l_extendedprice" * (1 - "t0"."l_discount")) AS "REVENUE"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ((SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1995-01-01' AND "l_shipdate" < DATE '1995-12-31') AS "t0" INNER JOIN "s1" ON "t0"."l_partkey" = "s1"."p_partkey") ON "supplier"."s_suppkey" = "s1"."ps_suppkey"
+GROUP BY "nation"."n_name"
+ORDER BY 2 DESC NULLS FIRST) AS "t3"

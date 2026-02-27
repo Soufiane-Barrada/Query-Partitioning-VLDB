@@ -1,0 +1,13 @@
+SELECT COALESCE("t8"."POSTID", "t8"."POSTID") AS "POSTID", "t8"."POSTTYPEID", "t8"."COMMENTCOUNT", "t8"."VOTECOUNT", "t8"."USERPOSTCOUNT", "t8"."TOTALUPVOTES", "t8"."TOTALDOWNVOTES"
+FROM (SELECT "t6"."POSTID", "t6"."POSTTYPEID", "t6"."COMMENTCOUNT", "t6"."VOTECOUNT", "t3"."POSTCOUNT" AS "USERPOSTCOUNT", "t3"."TOTALUPVOTES", "t3"."TOTALDOWNVOTES"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", COUNT(DISTINCT "Posts0"."Id") AS "POSTCOUNT", SUM("Users"."UpVotes") AS "TOTALUPVOTES", SUM("Users"."DownVotes") AS "TOTALDOWNVOTES"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN "STACK"."Users" ON "Posts0"."OwnerUserId" = "Users"."Id"
+GROUP BY "Users"."Id") AS "t3"
+INNER JOIN (SELECT "t5"."POSTID", "t5"."POSTTYPEID", "t5"."COMMENTCOUNT", "t5"."VOTECOUNT", "t5"."BADGECOUNT", "Users0"."Id", "Users0"."Reputation", "Users0"."CreationDate", "Users0"."DisplayName", "Users0"."LastAccessDate", "Users0"."WebsiteUrl", "Users0"."Location", "Users0"."AboutMe", "Users0"."Views", "Users0"."UpVotes", "Users0"."DownVotes", "Users0"."ProfileImageUrl", "Users0"."AccountId"
+FROM "STACK"."Users" AS "Users0"
+INNER JOIN (SELECT ANY_VALUE("Id") AS "POSTID", "PostTypeId" AS "POSTTYPEID", COUNT(DISTINCT "Id0") AS "COMMENTCOUNT", COUNT(DISTINCT "Id1") AS "VOTECOUNT", COUNT(DISTINCT "Id2") AS "BADGECOUNT", CAST("PostTypeId" AS INTEGER) AS "POSTTYPEID0"
+FROM "s1"
+GROUP BY "Id", "PostTypeId") AS "t5" ON "Users0"."Id" = "t5"."POSTTYPEID0") AS "t6" ON "t3"."USERID" = "t6"."Id"
+ORDER BY "t6"."VOTECOUNT" DESC NULLS FIRST, "t6"."COMMENTCOUNT" DESC NULLS FIRST, "t3"."POSTCOUNT" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t8"

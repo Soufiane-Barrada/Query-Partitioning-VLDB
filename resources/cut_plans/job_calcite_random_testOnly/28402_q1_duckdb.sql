@@ -1,0 +1,6 @@
+SELECT COALESCE("t"."ACTOR_NAME", "t"."ACTOR_NAME") AS "ACTOR_NAME", "t"."MOVIE_TITLE", "t"."MOVIE_YEAR", AVG("t"."CO_STARS_COUNT") AS "AVG_CO_STARS", COUNT(*) AS "MOVIE_COUNT"
+FROM (SELECT "aka_name"."person_id", "aka_name"."name", "title"."title", "title"."production_year", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("aka_name"."person_id") AS "ACTOR_ID", ANY_VALUE("title"."title") AS "MOVIE_TITLE", ANY_VALUE("title"."production_year") AS "MOVIE_YEAR", COUNT(DISTINCT "cast_info"."id") AS "CO_STARS_COUNT"
+FROM "IMDB"."aka_name"
+INNER JOIN ("IMDB"."title" INNER JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id") ON "aka_name"."person_id" = "cast_info"."person_id"
+GROUP BY "aka_name"."person_id", "aka_name"."name", "title"."title", "title"."production_year") AS "t"
+GROUP BY "t"."ACTOR_NAME", "t"."MOVIE_TITLE", "t"."MOVIE_YEAR"

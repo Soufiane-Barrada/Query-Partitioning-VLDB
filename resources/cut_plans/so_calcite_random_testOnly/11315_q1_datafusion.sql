@@ -1,0 +1,3 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "PostTypes"."Id" AS "Id0", "PostTypes"."Name"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"

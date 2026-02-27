@@ -1,0 +1,15 @@
+SELECT COALESCE("t1"."Id", "t1"."Id") AS "Id", "t1"."DisplayName" AS "DISPLAYNAME", "t1"."Reputation" AS "REPUTATION", "t1"."Id0", "t1"."Id1", CASE WHEN "t1"."AcceptedAnswerId0" IS NOT NULL THEN 1 ELSE 0 END AS "FD_COL_5", CASE WHEN "t2"."COMMENT_COUNT" IS NOT NULL THEN CAST("t2"."COMMENT_COUNT" AS BIGINT) ELSE 0 END AS "FD_COL_6", CASE WHEN "t4"."UPVOTE_COUNT" IS NOT NULL THEN CAST("t4"."UPVOTE_COUNT" AS INTEGER) ELSE 0 END AS "FD_COL_7", CASE WHEN "t4"."DOWNVOTE_COUNT" IS NOT NULL THEN CAST("t4"."DOWNVOTE_COUNT" AS INTEGER) ELSE 0 END AS "FD_COL_8"
+FROM (SELECT "t"."Id", "t"."Reputation", "t"."CreationDate", "t"."DisplayName", "t"."LastAccessDate", "t"."WebsiteUrl", "t"."Location", "t"."AboutMe", "t"."Views", "t"."UpVotes", "t"."DownVotes", "t"."ProfileImageUrl", "t"."AccountId", "t0"."Id" AS "Id0", "t0"."PostTypeId", "t0"."AcceptedAnswerId", "t0"."ParentId", "t0"."CreationDate" AS "CreationDate0", "t0"."Score", "t0"."ViewCount", "t0"."Body", "t0"."OwnerUserId", "t0"."OwnerDisplayName", "t0"."LastEditorUserId", "t0"."LastEditorDisplayName", "t0"."LastEditDate", "t0"."LastActivityDate", "t0"."Title", "t0"."Tags", "t0"."AnswerCount", "t0"."CommentCount", "t0"."FavoriteCount", "t0"."ClosedDate", "t0"."CommunityOwnedDate", "t0"."ContentLicense", "Posts"."Id" AS "Id1", "Posts"."PostTypeId" AS "PostTypeId0", "Posts"."AcceptedAnswerId" AS "AcceptedAnswerId0", "Posts"."ParentId" AS "ParentId0", "Posts"."CreationDate" AS "CreationDate1", "Posts"."Score" AS "Score0", "Posts"."ViewCount" AS "ViewCount0", "Posts"."Body" AS "Body0", "Posts"."OwnerUserId" AS "OwnerUserId0", "Posts"."OwnerDisplayName" AS "OwnerDisplayName0", "Posts"."LastEditorUserId" AS "LastEditorUserId0", "Posts"."LastEditorDisplayName" AS "LastEditorDisplayName0", "Posts"."LastEditDate" AS "LastEditDate0", "Posts"."LastActivityDate" AS "LastActivityDate0", "Posts"."Title" AS "Title0", "Posts"."Tags" AS "Tags0", "Posts"."AnswerCount" AS "AnswerCount0", "Posts"."CommentCount" AS "CommentCount0", "Posts"."FavoriteCount" AS "FavoriteCount0", "Posts"."ClosedDate" AS "ClosedDate0", "Posts"."CommunityOwnedDate" AS "CommunityOwnedDate0", "Posts"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Posts"
+RIGHT JOIN ((SELECT *
+FROM "STACK"."Users"
+WHERE "Reputation" > 1000) AS "t" LEFT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 1) AS "t0" ON "t"."Id" = "t0"."OwnerUserId") ON "Posts"."ParentId" = "t0"."Id") AS "t1"
+LEFT JOIN (SELECT "PostId", COUNT(*) AS "COMMENT_COUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t2" ON "t1"."Id0" = "t2"."PostId"
+LEFT JOIN (SELECT "Votes"."PostId" AS "POSTID", SUM(CASE WHEN "VoteTypes"."Name" = 'UpMod' THEN 1 ELSE 0 END) AS "UPVOTE_COUNT", SUM(CASE WHEN "VoteTypes"."Name" = 'DownMod' THEN 1 ELSE 0 END) AS "DOWNVOTE_COUNT"
+FROM "STACK"."VoteTypes"
+INNER JOIN "STACK"."Votes" ON "VoteTypes"."Id" = "Votes"."VoteTypeId"
+GROUP BY "Votes"."PostId") AS "t4" ON "t1"."Id0" = "t4"."POSTID"

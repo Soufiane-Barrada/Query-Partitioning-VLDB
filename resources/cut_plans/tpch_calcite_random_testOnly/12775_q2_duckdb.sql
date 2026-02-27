@@ -1,0 +1,6 @@
+SELECT COALESCE("t2"."p_brand", "t2"."p_brand") AS "p_brand", "t2"."p_type", "t2"."TOTAL_QUANTITY", "t2"."AVG_PRICE"
+FROM (SELECT "part"."p_brand", "part"."p_type", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", AVG("lineitem"."l_extendedprice") AS "AVG_PRICE"
+FROM "s1"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey") ON "s1"."s_suppkey" = "lineitem"."l_suppkey"
+GROUP BY "part"."p_brand", "part"."p_type"
+ORDER BY 3 DESC NULLS FIRST, 4) AS "t2"

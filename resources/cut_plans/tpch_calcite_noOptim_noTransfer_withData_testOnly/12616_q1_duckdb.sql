@@ -1,0 +1,5 @@
+SELECT COALESCE("part"."p_partkey", "part"."p_partkey") AS "P_PARTKEY", "part"."p_name" AS "P_NAME", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILQTY", AVG("partsupp"."ps_supplycost") AS "AVG_SUPPLYCOST", COUNT(DISTINCT "supplier"."s_suppkey") AS "SUPPLIER_COUNT"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+GROUP BY "part"."p_partkey", "part"."p_name"

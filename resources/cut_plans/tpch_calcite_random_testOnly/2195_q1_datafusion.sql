@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."r_regionkey", "t"."r_regionkey") AS "r_regionkey", "t"."r_name", "t"."r_comment", "t"."n_nationkey", "t"."n_name", "t"."n_regionkey", "t"."n_comment", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment"
+FROM "TPCH"."supplier"
+RIGHT JOIN (SELECT "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment"
+FROM "TPCH"."nation"
+RIGHT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") AS "t" ON "supplier"."s_nationkey" = "t"."n_nationkey"

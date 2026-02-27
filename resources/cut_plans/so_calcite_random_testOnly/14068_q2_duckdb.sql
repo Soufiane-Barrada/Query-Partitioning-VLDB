@@ -1,0 +1,12 @@
+SELECT COALESCE("t9"."POSTID", "t9"."POSTID") AS "POSTID", "t9"."TITLE", "t9"."COMMENTCOUNT", "t9"."UPVOTECOUNT", "t9"."DOWNVOTECOUNT", "t9"."CREATIONDATE", "t9"."LASTACTIVITYDATE", "t9"."VIEWCOUNT", "t9"."SCORE", "t9"."ANSWERCOUNT", "t9"."USERID", "t9"."DISPLAYNAME", "t9"."BADGECOUNT", "t9"."AVERAGEREPUTATION", "t9"."TOTALVIEWS", "t9"."TOTALSCORE"
+FROM (SELECT "t7"."POSTID", "t7"."TITLE", "t7"."COMMENTCOUNT", "t7"."UPVOTECOUNT", "t7"."DOWNVOTECOUNT", "t7"."CREATIONDATE", "t7"."LASTACTIVITYDATE", "t7"."VIEWCOUNT", "t7"."SCORE", "t7"."ANSWERCOUNT", "s1"."USERID", "s1"."DISPLAYNAME", "s1"."BADGECOUNT", "s1"."AVERAGEREPUTATION", "s1"."TOTALVIEWS", "s1"."TOTALSCORE"
+FROM "s1"
+INNER JOIN (SELECT ANY_VALUE("t4"."Id") AS "POSTID", "t4"."Title" AS "TITLE", COUNT("t4"."Id0") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", "t4"."CreationDate" AS "CREATIONDATE", "t4"."LastActivityDate" AS "LASTACTIVITYDATE", "t4"."ViewCount" AS "VIEWCOUNT", "t4"."Score" AS "SCORE", "t4"."AnswerCount" AS "ANSWERCOUNT"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t3"."Id", "t3"."PostTypeId", "t3"."AcceptedAnswerId", "t3"."ParentId", "t3"."CreationDate", "t3"."Score", "t3"."ViewCount", "t3"."Body", "t3"."OwnerUserId", "t3"."OwnerDisplayName", "t3"."LastEditorUserId", "t3"."LastEditorDisplayName", "t3"."LastEditDate", "t3"."LastActivityDate", "t3"."Title", "t3"."Tags", "t3"."AnswerCount", "t3"."CommentCount", "t3"."FavoriteCount", "t3"."ClosedDate", "t3"."CommunityOwnedDate", "t3"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)) AS "t3" ON "Comments"."PostId" = "t3"."Id") AS "t4" ON "Votes"."PostId" = "t4"."Id"
+GROUP BY "t4"."Id", "t4"."Title", "t4"."CreationDate", "t4"."LastActivityDate", "t4"."ViewCount", "t4"."Score", "t4"."AnswerCount") AS "t7" ON "s1"."USERID" = "t7"."POSTID"
+ORDER BY "t7"."SCORE" DESC NULLS FIRST) AS "t9"

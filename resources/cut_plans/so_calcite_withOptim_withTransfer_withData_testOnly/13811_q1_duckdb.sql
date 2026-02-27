@@ -1,0 +1,7 @@
+SELECT COALESCE("t1"."Id", "t1"."Id") AS "Id", "t1"."PostTypeId", "t1"."AcceptedAnswerId", "t1"."ParentId", "t1"."CreationDate", "t1"."Score", "t1"."ViewCount", "t1"."Body", "t1"."OwnerUserId", "t1"."OwnerDisplayName", "t1"."LastEditorUserId", "t1"."LastEditorDisplayName", "t1"."LastEditDate", "t1"."LastActivityDate", "t1"."Title", "t1"."Tags", "t1"."AnswerCount", "t1"."CommentCount", "t1"."FavoriteCount", "t1"."ClosedDate", "t1"."CommunityOwnedDate", "t1"."ContentLicense", "Users"."Id" AS "Id0", "Users"."Reputation", "Users"."CreationDate" AS "CreationDate0", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t0"."POSTID", "t0"."UPVOTES" AS "UPVOTES_", "t0"."DOWNVOTES" AS "DOWNVOTES_"
+FROM (SELECT "PostId" AS "POSTID", SUM(CASE WHEN CAST("VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t0"
+RIGHT JOIN ("STACK"."Users" INNER JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 1) AS "t1" ON "Users"."Id" = "t1"."OwnerUserId") ON "t0"."POSTID" = "t1"."Id"

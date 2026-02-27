@@ -1,0 +1,16 @@
+SELECT COALESCE("t6"."title", "t6"."title") AS "title", "t6"."name", "t6"."role", "t6"."note0", "t6"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("t6"."title") AS "MOVIE_TITLE", ANY_VALUE("t6"."name") AS "ACTOR_NAME", ANY_VALUE("t6"."role") AS "ACTOR_ROLE", ANY_VALUE("t6"."note0") AS "CASTING_NOTE", LISTAGG(DISTINCT "keyword"."keyword", ',') AS "KEYWORDS", COUNT(DISTINCT "movie_companies"."company_id") AS "PRODUCTION_COMPANIES"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN ((SELECT "t5"."id", "t5"."title", "t5"."imdb_index", "t5"."kind_id", "t5"."production_year", "t5"."imdb_id", "t5"."phonetic_code", "t5"."episode_of_id", "t5"."season_nr", "t5"."episode_nr", "t5"."series_years", "t5"."md5sum", "t5"."id0", "t5"."movie_id", "t5"."info_type_id", "t5"."info", "t5"."note", "complete_cast"."id" AS "id1", "complete_cast"."movie_id" AS "movie_id0", "complete_cast"."subject_id", "complete_cast"."status_id", "cast_info"."id" AS "id2", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id1", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id", "t"."id" AS "id3", "t"."person_id" AS "person_id0", "t"."name", "t"."imdb_index" AS "imdb_index0", "t"."name_pcode_cf", "t"."name_pcode_nf", "t"."surname_pcode", "t"."md5sum" AS "md5sum0", "role_type"."id" AS "id4", "role_type"."role", "movie_keyword"."id" AS "id5", "movie_keyword"."movie_id" AS "movie_id2", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN ((SELECT *
+FROM "IMDB"."aka_name"
+WHERE "name" LIKE '%Smith%') AS "t" INNER JOIN ("IMDB"."cast_info" INNER JOIN ("IMDB"."complete_cast" INNER JOIN (SELECT "title"."id", "title"."title", "title"."imdb_index", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum", "t3"."id" AS "id0", "t3"."movie_id", "t3"."info_type_id", "t3"."info", "t3"."note"
+FROM (SELECT "movie_info"."id", "movie_info"."movie_id", "movie_info"."info_type_id", "movie_info"."info", "movie_info"."note", "t1"."$f0"
+FROM (SELECT SINGLE_VALUE("id") AS "$f0"
+FROM "IMDB"."info_type"
+WHERE "info" = 'summary') AS "t1",
+"IMDB"."movie_info"
+WHERE "movie_info"."info_type_id" = "t1"."$f0") AS "t3"
+INNER JOIN "IMDB"."title" ON "t3"."movie_id" = "title"."id"
+WHERE "title"."production_year" >= 2000 AND "title"."production_year" <= 2023) AS "t5" ON "complete_cast"."movie_id" = "t5"."id") ON "cast_info"."id" = "complete_cast"."subject_id") ON "t"."person_id" = "cast_info"."person_id" INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id") ON "movie_keyword"."movie_id" = "t5"."id") AS "t6" LEFT JOIN "IMDB"."keyword" ON "t6"."keyword_id" = "keyword"."id") ON "movie_companies"."movie_id" = "t6"."id"
+GROUP BY "t6"."title", "t6"."name", "t6"."role", "t6"."note0", "t6"."production_year"

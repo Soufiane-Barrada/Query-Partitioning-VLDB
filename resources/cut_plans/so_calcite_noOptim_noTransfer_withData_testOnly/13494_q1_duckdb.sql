@@ -1,0 +1,5 @@
+SELECT COALESCE(ANY_VALUE("Users"."Id"), ANY_VALUE("Users"."Id")) AS "USERID", "Users"."Reputation" AS "REPUTATION", COUNT("Posts"."Id") AS "TOTALPOSTS", COUNT(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS "QUESTIONS", COUNT(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS "ANSWERS", SUM("Posts"."Score") AS "TOTALSCORE", SUM(CASE WHEN "Posts"."ViewCount" IS NOT NULL THEN CAST("Posts"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", AVG("Posts"."ViewCount") AS "AVGVIEWSPERPOST", COUNT(CASE WHEN "Comments"."Id" IS NOT NULL THEN CAST("Comments"."Id" AS INTEGER) ELSE NULL END) AS "TOTALCOMMENTS"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+GROUP BY "Users"."Id", "Users"."Reputation"

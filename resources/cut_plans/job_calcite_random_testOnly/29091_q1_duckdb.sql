@@ -1,0 +1,10 @@
+SELECT COALESCE("t2"."person_id", "t2"."person_id") AS "PERSON_ID", COUNT(DISTINCT "t2"."id") AS "AKA_COUNT", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", MAX("t2"."production_year") AS "LAST_MOVIE_YEAR"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."kind_type"
+WHERE "kind" LIKE 'feature%') AS "t0"
+INNER JOIN ((SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "t1"."id" AS "id1", "t1"."movie_id" AS "movie_id0", "t1"."title", "t1"."imdb_index" AS "imdb_index0", "t1"."kind_id", "t1"."production_year", "t1"."phonetic_code", "t1"."episode_of_id", "t1"."season_nr", "t1"."episode_nr", "t1"."note" AS "note0", "t1"."md5sum" AS "md5sum0", "role_type"."id" AS "id2", "role_type"."role", "person_info"."id" AS "id3", "person_info"."person_id" AS "person_id1", "person_info"."info_type_id", "person_info"."info", "person_info"."note" AS "note1"
+FROM "IMDB"."person_info"
+RIGHT JOIN ("IMDB"."aka_name" INNER JOIN ("IMDB"."cast_info" INNER JOIN (SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t1" ON "cast_info"."movie_id" = "t1"."movie_id") ON "aka_name"."person_id" = "cast_info"."person_id" INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id") ON "person_info"."person_id" = "aka_name"."person_id") AS "t2" LEFT JOIN "IMDB"."movie_keyword" ON "t2"."movie_id0" = "movie_keyword"."movie_id" LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id") ON "t0"."ID" = "t2"."kind_id"
+GROUP BY "t2"."person_id"

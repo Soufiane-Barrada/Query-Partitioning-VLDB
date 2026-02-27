@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."POSTCOUNT", "t1"."TOTALUPVOTES", "t1"."TOTALDOWNVOTES", "t5"."POSTID", "t5"."POSTTYPEID", "t5"."COMMENTCOUNT", "t5"."VOTECOUNT", "t5"."UPVOTECOUNT", "t5"."DOWNVOTECOUNT"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", COUNT(DISTINCT "Posts"."Id") AS "POSTCOUNT", SUM("Users"."UpVotes") AS "TOTALUPVOTES", SUM("Users"."DownVotes") AS "TOTALDOWNVOTES"
+FROM "STACK"."Users"
+INNER JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+GROUP BY "Users"."Id") AS "t1"
+INNER JOIN (SELECT ANY_VALUE("Posts0"."Id") AS "POSTID", "Posts0"."PostTypeId" AS "POSTTYPEID", COUNT("Comments"."Id") AS "COMMENTCOUNT", COUNT("Votes"."Id") AS "VOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT"
+FROM "STACK"."Posts" AS "Posts0"
+LEFT JOIN "STACK"."Comments" ON "Posts0"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts0"."Id" = "Votes"."PostId"
+WHERE "Posts0"."CreationDate" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP(0)) - INTERVAL '1' MONTH)
+GROUP BY "Posts0"."Id", "Posts0"."PostTypeId") AS "t5" ON "t1"."USERID" = "t5"."POSTID"

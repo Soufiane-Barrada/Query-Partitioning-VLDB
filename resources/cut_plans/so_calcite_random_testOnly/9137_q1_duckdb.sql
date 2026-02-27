@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("Users"."Id"), ANY_VALUE("Users"."Id")) AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "TOTALBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id"
+GROUP BY "Users"."Id", "Users"."DisplayName"

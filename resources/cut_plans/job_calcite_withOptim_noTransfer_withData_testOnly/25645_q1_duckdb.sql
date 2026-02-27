@@ -1,0 +1,13 @@
+SELECT COALESCE("t3"."MOVIE_ID", "t3"."MOVIE_ID") AS "MOVIE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."ACTOR_NAME" || ' (' || "t3"."ROLE_NAME" || ')' AS "FD_COL_3", ', ' AS "FD_COL_4", "t"."COMPANY_NAME" || ' (' || "t"."COMPANY_TYPE" || ')' AS "FD_COL_5", "t3"."KEYWORD"
+FROM (SELECT "movie_companies"."movie_id" AS "MOVIE_ID", "company_name"."name" AS "COMPANY_NAME", "company_type"."kind" AS "COMPANY_TYPE"
+FROM "IMDB"."company_type"
+INNER JOIN ("IMDB"."company_name" INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id") ON "company_type"."id" = "movie_companies"."company_type_id") AS "t"
+RIGHT JOIN (SELECT "t2"."MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."KEYWORD", "t2"."KEYWORD_RANK", "t0"."MOVIE_ID" AS "MOVIE_ID0", "t0"."ACTOR_NAME", "t0"."ROLE_NAME"
+FROM (SELECT "cast_info"."movie_id" AS "MOVIE_ID", "aka_name"."name" AS "ACTOR_NAME", "role_type"."role" AS "ROLE_NAME"
+FROM "IMDB"."role_type"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "role_type"."id" = "cast_info"."role_id") AS "t0"
+RIGHT JOIN (SELECT "t1"."id" AS "MOVIE_ID", "t1"."title" AS "TITLE", "t1"."production_year" AS "PRODUCTION_YEAR", "keyword"."keyword" AS "KEYWORD", ROW_NUMBER() OVER (PARTITION BY "t1"."id" ORDER BY "keyword"."keyword") AS "KEYWORD_RANK"
+FROM (SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000 AND "production_year" <= 2023) AS "t1"
+INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") ON "t1"."id" = "movie_keyword"."movie_id") AS "t2" ON "t0"."MOVIE_ID" = "t2"."MOVIE_ID") AS "t3" ON "t"."MOVIE_ID" = "t3"."MOVIE_ID"

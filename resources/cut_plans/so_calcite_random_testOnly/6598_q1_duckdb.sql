@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("Users"."Id"), ANY_VALUE("Users"."Id")) AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", "Users"."Reputation" AS "REPUTATION", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 10 THEN 1 ELSE 0 END) AS "TOTALDELETIONS", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 11 THEN 1 ELSE 0 END) AS "TOTALUNDELETIONS"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" ON "Votes"."UserId" = "Users"."Id"
+GROUP BY "Users"."Id", "Users"."DisplayName", "Users"."Reputation"

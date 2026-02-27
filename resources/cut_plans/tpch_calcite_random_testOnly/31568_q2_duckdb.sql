@@ -1,0 +1,16 @@
+SELECT COALESCE("t5"."r_name", "t5"."r_name") AS "R_NAME", COUNT(DISTINCT "t5"."s_suppkey") AS "SUPPLIER_COUNT", AVG("t6"."TOTAL_SPENT") AS "AVG_CUSTOMER_SPENT", MAX("t5"."ps_supplycost") AS "MAX_SUPPLY_COST", SUM(CASE WHEN "t5"."l_discount" > 0.05 THEN "t5"."l_extendedprice" * (1 - "t5"."l_discount") ELSE NULL END) AS "TOTAL_DISCOUNTED_SALES", SUM(CASE WHEN "t5"."l_returnflag" = 'R' THEN "t5"."l_quantity" ELSE 0.00 END) AS "TOTAL_RETURNED_QUANTITY"
+FROM (SELECT "t4"."r_regionkey", "t4"."r_name", "t4"."r_comment", "t4"."n_nationkey", "t4"."n_name", "t4"."n_regionkey", "t4"."n_comment", "t4"."s_suppkey", "t4"."s_name", "t4"."s_address", "t4"."s_nationkey", "t4"."s_phone", "t4"."s_acctbal", "t4"."s_comment", "t4"."PS_SUPPKEY", "t4"."MAX_SUPPLYCOST", "t4"."ps_partkey", "t4"."ps_suppkey", "t4"."ps_availqty", "t4"."ps_supplycost", "t4"."ps_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN (SELECT "s1"."r_regionkey", "s1"."r_name", "s1"."r_comment", "s1"."n_nationkey", "s1"."n_name", "s1"."n_regionkey", "s1"."n_comment", "s1"."s_suppkey", "s1"."s_name", "s1"."s_address", "s1"."s_nationkey", "s1"."s_phone", "s1"."s_acctbal", "s1"."s_comment", "t3"."ps_suppkey" AS "PS_SUPPKEY", "t3"."MAX_SUPPLYCOST", CAST("t2"."ps_partkey" AS BIGINT) AS "ps_partkey", CAST("t2"."ps_suppkey" AS BIGINT) AS "ps_suppkey", CAST("t2"."ps_availqty" AS BIGINT) AS "ps_availqty", CAST("t2"."ps_supplycost" AS DECIMAL(15, 2)) AS "ps_supplycost", CAST("t2"."ps_comment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "ps_comment"
+FROM (SELECT *
+FROM "TPCH"."partsupp"
+WHERE "ps_availqty" > 10) AS "t2"
+INNER JOIN ("s1" LEFT JOIN (SELECT "ps_suppkey", MAX("ps_supplycost") AS "MAX_SUPPLYCOST"
+FROM "TPCH"."partsupp"
+GROUP BY "ps_suppkey") AS "t3" ON "s1"."s_suppkey" = "t3"."ps_suppkey") ON "t2"."ps_suppkey" = "s1"."s_suppkey") AS "t4" ON "lineitem"."l_partkey" = "t4"."ps_partkey") AS "t5"
+LEFT JOIN (SELECT "customer"."c_custkey", "customer"."c_name", COUNT("orders"."o_orderkey") AS "ORDER_COUNT", SUM("orders"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."orders"
+RIGHT JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t6" ON "t5"."s_suppkey" = "t6"."c_custkey"
+GROUP BY "t5"."r_name"
+ORDER BY "t5"."r_name" DESC NULLS FIRST

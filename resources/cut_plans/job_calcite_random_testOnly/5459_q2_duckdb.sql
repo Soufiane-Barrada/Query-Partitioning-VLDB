@@ -1,0 +1,7 @@
+SELECT COALESCE("t4"."ACTOR_NAME", "t4"."ACTOR_NAME") AS "ACTOR_NAME", "t4"."MOVIE_TITLE", "t4"."CAST_ORDER", "t4"."COMPANY_NAME", "t4"."MOVIE_KEYWORD", "t4"."MOVIE_INFO", "t4"."production_year"
+FROM (SELECT "aka_name"."name" AS "ACTOR_NAME", "t2"."title" AS "MOVIE_TITLE", "cast_info"."nr_order" AS "CAST_ORDER", "company_name"."name" AS "COMPANY_NAME", "keyword"."keyword" AS "MOVIE_KEYWORD", "movie_info"."info" AS "MOVIE_INFO", "t2"."production_year"
+FROM "IMDB"."company_name"
+INNER JOIN ("s1" INNER JOIN "IMDB"."movie_info" ON "s1"."FD_COL_0" = "movie_info"."info_type_id" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id" INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ((SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000 AND "production_year" <= 2023) AS "t2" INNER JOIN "IMDB"."movie_companies" ON "t2"."id" = "movie_companies"."movie_id") ON "movie_keyword"."movie_id" = "t2"."id") ON "cast_info"."movie_id" = "t2"."id") ON "movie_info"."movie_id" = "t2"."id") ON "company_name"."id" = "movie_companies"."company_id"
+ORDER BY "aka_name"."name", "t2"."production_year" DESC NULLS FIRST, "cast_info"."nr_order") AS "t4"

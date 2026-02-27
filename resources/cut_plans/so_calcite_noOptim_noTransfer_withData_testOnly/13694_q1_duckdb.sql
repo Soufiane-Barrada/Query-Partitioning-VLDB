@@ -1,0 +1,3 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."DisplayName" AS "DISPLAYNAME", "Posts"."Id" AS "Id0", "Posts"."Score", "Posts"."ViewCount", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END AS "FD_COL_5", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END AS "FD_COL_6", "Posts"."CommentCount"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"

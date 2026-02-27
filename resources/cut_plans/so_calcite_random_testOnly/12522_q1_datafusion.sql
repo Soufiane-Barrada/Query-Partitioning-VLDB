@@ -1,0 +1,5 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "t"."Id" AS "Id0", "t"."Reputation", "t"."CreationDate" AS "CreationDate0", "t"."DisplayName", "t"."LastAccessDate", "t"."WebsiteUrl", "t"."Location", "t"."AboutMe", "t"."Views", "t"."UpVotes", "t"."DownVotes", "t"."ProfileImageUrl", "t"."AccountId"
+FROM "STACK"."Posts"
+INNER JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "Reputation" > 1000) AS "t" ON "Posts"."OwnerUserId" = "t"."Id"

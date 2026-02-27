@@ -1,0 +1,15 @@
+SELECT COALESCE("t8"."R_NAME", "t8"."R_NAME") AS "R_NAME", "t8"."TOTAL_CUSTOMERS", "t8"."TOTAL_PARTS_AVAILABLE", "t8"."TOTAL_REVENUE"
+FROM (SELECT "t4"."r_name" AS "R_NAME", COUNT(DISTINCT "t4"."c_custkey") AS "TOTAL_CUSTOMERS", SUM(CASE WHEN "t5"."TOTAL_AVAILABLE" IS NOT NULL THEN CAST("t5"."TOTAL_AVAILABLE" AS BIGINT) ELSE 0 END) AS "TOTAL_PARTS_AVAILABLE", SUM(CASE WHEN "t3"."REVENUE" IS NOT NULL THEN CAST("t3"."REVENUE" AS DECIMAL(19, 4)) ELSE 0.0000 END) AS "TOTAL_REVENUE"
+FROM (SELECT "l_orderkey" AS "L_ORDERKEY", SUM("l_extendedprice" * (1 - "l_discount")) AS "REVENUE"
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1995-01-01' AND "l_shipdate" < DATE '1996-01-01'
+GROUP BY "l_orderkey") AS "t3"
+RIGHT JOIN ((SELECT "s1"."r_regionkey", "s1"."r_name", "s1"."r_comment", "s1"."n_nationkey", "s1"."n_name", "s1"."n_regionkey", "s1"."n_comment", "customer"."c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment"
+FROM "TPCH"."customer"
+RIGHT JOIN "s1" ON "customer"."c_nationkey" = "s1"."n_nationkey") AS "t4" LEFT JOIN (SELECT "supplier"."s_suppkey", "supplier"."s_name", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE", AVG("partsupp"."ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name") AS "t5" ON "t4"."c_custkey" = "t5"."s_suppkey") ON "t3"."L_ORDERKEY" = "t4"."c_custkey"
+GROUP BY "t4"."r_name"
+ORDER BY 4 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t8"

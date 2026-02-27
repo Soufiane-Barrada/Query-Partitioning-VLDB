@@ -1,0 +1,6 @@
+SELECT COALESCE("supplier"."s_name", "supplier"."s_name") AS "s_name", "part"."p_name", "part"."p_comment", "region"."r_name", "nation"."n_name", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("part"."p_name") AS "PART_NAME", ANY_VALUE(SUBSTRING("part"."p_comment", 1, 20)) AS "SHORT_COMMENT", ANY_VALUE(CONCAT('Region: ', "region"."r_name", ', Nation: ', "nation"."n_name")) AS "LOCATION_INFO", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE_QTY"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_name", "part"."p_name", "part"."p_comment", "region"."r_name", "nation"."n_name"

@@ -1,0 +1,12 @@
+SELECT COALESCE("t9"."MOVIE_ID", "t9"."MOVIE_ID") AS "MOVIE_ID", "t9"."TITLE", "t9"."PRODUCTION_YEAR", "t9"."AVG_STARRING_ROLES", "t9"."FULL_CAST_COUNT", "t9"."ACTORS_LIST", "t9"."KEYWORDS", "t9"."EXPR$7" AS "FD_COL_7"
+FROM (SELECT "t6"."MOVIE_ID", "t6"."TITLE", "t6"."PRODUCTION_YEAR", "t6"."AVG_STARRING_ROLES", "t6"."FULL_CAST_COUNT", "t6"."ACTORS_LIST", CASE WHEN "s1"."KEYWORDS" IS NOT NULL THEN CAST("s1"."KEYWORDS" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'None' END AS "KEYWORDS", CASE WHEN "t6"."AVG_STARRING_ROLES" > 3 THEN 1 ELSE 2 END AS "EXPR$7"
+FROM "s1"
+RIGHT JOIN (SELECT ANY_VALUE("t2"."id") AS "MOVIE_ID", "t2"."title" AS "TITLE", "t2"."production_year" AS "PRODUCTION_YEAR", CASE WHEN AVG(CASE WHEN "t2"."role_id" IS NOT NULL THEN 1 ELSE NULL END) IS NOT NULL THEN CAST(AVG(CASE WHEN "t2"."role_id" IS NOT NULL THEN 1 ELSE NULL END) AS INTEGER) ELSE 0 END AS "AVG_STARRING_ROLES", COUNT(DISTINCT "t2"."person_id") AS "FULL_CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTORS_LIST"
+FROM (SELECT "aka_title"."id", "aka_title"."movie_id", "aka_title"."title", "aka_title"."imdb_index", "aka_title"."kind_id", "aka_title"."production_year", "aka_title"."phonetic_code", "aka_title"."episode_of_id", "aka_title"."season_nr", "aka_title"."episode_nr", "aka_title"."note", "aka_title"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN "IMDB"."aka_title" ON "cast_info"."movie_id" = "aka_title"."movie_id") AS "t2"
+LEFT JOIN "IMDB"."aka_name" ON "t2"."person_id" = "aka_name"."person_id"
+GROUP BY "t2"."id", "t2"."title", "t2"."production_year"
+HAVING COUNT(DISTINCT "t2"."person_id") > 5 AND ("t2"."production_year" < 2000 OR CASE WHEN AVG(CASE WHEN "t2"."role_id" IS NOT NULL THEN 1 ELSE NULL END) IS NOT NULL THEN CAST(AVG(CASE WHEN "t2"."role_id" IS NOT NULL THEN 1 ELSE NULL END) AS INTEGER) ELSE 0 END > 2)) AS "t6" ON "s1"."MOVIE_ID" = "t6"."MOVIE_ID"
+WHERE CASE WHEN "s1"."KEYWORDS" IS NOT NULL THEN CAST("s1"."KEYWORDS" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'None' END LIKE '%action%' OR "t6"."TITLE" LIKE '% thriller%'
+ORDER BY 8, "t6"."PRODUCTION_YEAR" DESC NULLS FIRST) AS "t9"

@@ -1,0 +1,6 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "USERID", "Users"."DisplayName" AS "USERDISPLAYNAME", "Posts"."Id" AS "POSTID", "Posts"."Score" AS "POSTSCORE", "Posts"."ViewCount" AS "POSTVIEWCOUNT", CASE WHEN "t0"."VOTECOUNT" IS NOT NULL THEN CAST("t0"."VOTECOUNT" AS BIGINT) ELSE 0 END AS "VOTECOUNT", "Posts"."CreationDate" AS "POSTCREATIONDATE"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."POSTID"

@@ -1,0 +1,8 @@
+SELECT COALESCE("movie_companies"."id", "movie_companies"."id") AS "id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note", "keyword"."id" AS "id0", "keyword"."keyword", "keyword"."phonetic_code", "movie_keyword"."id" AS "id00", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id", "t"."id" AS "id000", "t"."movie_id" AS "movie_id00", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."phonetic_code" AS "phonetic_code0", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."note" AS "note0", "t"."md5sum", "aka_name"."id" AS "id0000", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index" AS "imdb_index0", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum" AS "md5sum0", "t0"."id" AS "id00000", "t0"."person_id" AS "person_id0", "t0"."movie_id" AS "movie_id000", "t0"."person_role_id", "t0"."note" AS "note00", "t0"."nr_order", "t0"."role_id", "company_type"."id" AS "id1", "company_type"."kind"
+FROM "IMDB"."movie_companies"
+INNER JOIN ("IMDB"."keyword" INNER JOIN ("IMDB"."movie_keyword" INNER JOIN ((SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t" INNER JOIN ("IMDB"."aka_name" INNER JOIN (SELECT *
+FROM "IMDB"."cast_info"
+WHERE "nr_order" < 5) AS "t0" ON "aka_name"."person_id" = "t0"."person_id") ON "t"."movie_id" = "t0"."movie_id") ON "movie_keyword"."movie_id" = "t"."id") ON "keyword"."id" = "movie_keyword"."keyword_id") ON "movie_companies"."movie_id" = "t"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"

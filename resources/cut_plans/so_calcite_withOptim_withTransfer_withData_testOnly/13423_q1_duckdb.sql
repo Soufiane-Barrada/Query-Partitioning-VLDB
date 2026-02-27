@@ -1,0 +1,6 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t1"."USERID", "t1"."POSTCOUNT", "t1"."QUESTIONCOUNT", "t1"."ANSWERCOUNT"
+FROM "STACK"."Users"
+LEFT JOIN (SELECT ANY_VALUE("Users0"."Id") AS "USERID", COUNT("Posts"."Id") AS "POSTCOUNT", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONCOUNT", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERCOUNT"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Posts"."OwnerUserId" = "Users0"."Id"
+GROUP BY "Users0"."Id") AS "t1" ON "Users"."Id" = "t1"."USERID"

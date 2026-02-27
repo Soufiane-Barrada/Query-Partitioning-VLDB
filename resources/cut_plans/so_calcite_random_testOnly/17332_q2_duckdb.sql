@@ -1,0 +1,12 @@
+SELECT COALESCE("t5"."POSTID", "t5"."POSTID") AS "POSTID", "t5"."TITLE", "t5"."OWNERDISPLAYNAME", "t5"."CREATIONDATE", "t5"."SCORE", "t5"."VIEWCOUNT", "t5"."COMMENTCOUNT", "t5"."VOTECOUNT"
+FROM (SELECT "t3"."Id" AS "POSTID", "t3"."Title" AS "TITLE", "t3"."DisplayName" AS "OWNERDISPLAYNAME", "t3"."CreationDate" AS "CREATIONDATE", "t3"."Score" AS "SCORE", "t3"."ViewCount" AS "VIEWCOUNT", "t3"."COMMENTCOUNT", "t1"."VOTECOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t1"
+RIGHT JOIN (SELECT "s1"."Id0" AS "Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate0" AS "CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "s1"."Id" AS "Id0", "s1"."Reputation", "s1"."CreationDate" AS "CreationDate0", "s1"."DisplayName", "s1"."LastAccessDate", "s1"."WebsiteUrl", "s1"."Location", "s1"."AboutMe", "s1"."Views", "s1"."UpVotes", "s1"."DownVotes", "s1"."ProfileImageUrl", "s1"."AccountId", "t2"."PostId" AS "POSTID", "t2"."COMMENTCOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t2"
+RIGHT JOIN "s1" ON "t2"."PostId" = "s1"."Id0") AS "t3" ON "t1"."PostId" = "t3"."Id"
+ORDER BY "t3"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t5"

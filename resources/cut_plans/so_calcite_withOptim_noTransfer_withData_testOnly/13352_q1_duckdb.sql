@@ -1,0 +1,7 @@
+SELECT COALESCE("PostTypes"."Name", "PostTypes"."Name") AS "Name", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "POSTCOUNT", COUNT(DISTINCT "Users"."Id") AS "USERCOUNT", COUNT("Votes"."Id") AS "VOTECOUNT", COUNT("Comments"."Id") AS "COMMENTCOUNT", AVG("Posts"."Score") AS "AVGSCORE", AVG("Posts"."ViewCount") AS "AVGVIEWCOUNT"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+GROUP BY "PostTypes"."Name"

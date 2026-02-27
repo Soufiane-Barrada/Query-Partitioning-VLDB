@@ -1,0 +1,5 @@
+SELECT COALESCE(ANY_VALUE("PostTypes"."Name"), ANY_VALUE("PostTypes"."Name")) AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", AVG("Posts"."ViewCount") AS "AVGVIEWCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+GROUP BY "PostTypes"."Name"

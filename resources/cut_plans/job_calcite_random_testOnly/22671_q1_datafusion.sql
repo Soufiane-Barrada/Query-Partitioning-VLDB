@@ -1,0 +1,7 @@
+SELECT COALESCE("t0"."title", "t0"."title") AS "TITLE", COUNT(DISTINCT "t0"."person_id") AS "CAST_COUNT", AVG(CASE WHEN "t0"."nr_order" IS NOT NULL THEN CAST("t0"."nr_order" AS INTEGER) ELSE 0 END) AS "AVG_ORDER"
+FROM (SELECT MAX("production_year") AS "EXPR$0"
+FROM "IMDB"."aka_title") AS "t"
+INNER JOIN (SELECT "aka_title0"."id", "aka_title0"."movie_id", "aka_title0"."title", "aka_title0"."imdb_index", "aka_title0"."kind_id", "aka_title0"."production_year", "aka_title0"."phonetic_code", "aka_title0"."episode_of_id", "aka_title0"."season_nr", "aka_title0"."episode_nr", "aka_title0"."note", "aka_title0"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN "IMDB"."aka_title" AS "aka_title0" ON "cast_info"."movie_id" = "aka_title0"."id") AS "t0" ON "t"."EXPR$0" = "t0"."production_year"
+GROUP BY "t0"."title"

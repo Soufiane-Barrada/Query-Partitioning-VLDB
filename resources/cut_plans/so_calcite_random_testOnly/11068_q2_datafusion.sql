@@ -1,0 +1,16 @@
+SELECT COALESCE("t10"."POSTID", "t10"."POSTID") AS "POSTID", "t10"."TITLE", "t10"."CREATIONDATE", "t10"."VIEWCOUNT", "t10"."SCORE", "t10"."COMMENTCOUNT", "t10"."VOTECOUNT", "t10"."USERID", "t10"."DISPLAYNAME", "t10"."POSTSCOUNT", "t10"."TOTALUPVOTES", "t10"."TOTALDOWNVOTES", "t10"."TOTALVIEWS"
+FROM (SELECT "t8"."POSTID", "t8"."TITLE", "t8"."CREATIONDATE", "t8"."VIEWCOUNT", "t8"."SCORE", "t8"."COMMENTCOUNT", "t8"."VOTECOUNT", "t4"."USERID", "t4"."DISPLAYNAME", "t4"."POSTSCOUNT", "t4"."TOTALUPVOTES", "t4"."TOTALDOWNVOTES", "t4"."TOTALVIEWS"
+FROM (SELECT ANY_VALUE("t2"."Id") AS "USERID", "t2"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "Posts0"."Id") AS "POSTSCOUNT", SUM("t2"."UpVotes") AS "TOTALUPVOTES", SUM("t2"."DownVotes") AS "TOTALDOWNVOTES", SUM("t2"."Views") AS "TOTALVIEWS"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)) AS "t2" ON "Posts0"."OwnerUserId" = "t2"."Id"
+GROUP BY "t2"."Id", "t2"."DisplayName") AS "t4"
+INNER JOIN (SELECT ANY_VALUE("t5"."Id") AS "POSTID", "t5"."Title" AS "TITLE", "t5"."CreationDate" AS "CREATIONDATE", "t5"."ViewCount" AS "VIEWCOUNT", "t5"."Score" AS "SCORE", COUNT("t5"."Id0") AS "COMMENTCOUNT", COUNT(DISTINCT "t5"."Id1") AS "VOTECOUNT", COUNT(DISTINCT "Badges"."Id") AS "BADGECOUNT"
+FROM (SELECT "s1"."Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "s1"."Id0", "s1"."PostId", "s1"."Score0", "s1"."Text", "s1"."CreationDate0", "s1"."UserDisplayName", "s1"."UserId", "s1"."ContentLicense0", "Votes"."Id" AS "Id1", "Votes"."PostId" AS "PostId0", "Votes"."VoteTypeId", "Votes"."UserId" AS "UserId0", "Votes"."CreationDate" AS "CreationDate1", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "s1" ON "Votes"."PostId" = "s1"."Id") AS "t5"
+LEFT JOIN "STACK"."Badges" ON "t5"."OwnerUserId" = "Badges"."UserId"
+GROUP BY "t5"."Id", "t5"."CreationDate", "t5"."Score", "t5"."ViewCount", "t5"."Title") AS "t8" ON "t4"."USERID" = "t8"."POSTID"
+ORDER BY "t8"."VIEWCOUNT" DESC NULLS FIRST, "t8"."SCORE" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t10"

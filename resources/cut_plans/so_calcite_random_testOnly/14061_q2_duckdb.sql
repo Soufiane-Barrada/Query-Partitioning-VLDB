@@ -1,0 +1,7 @@
+SELECT COALESCE("t4"."POSTID", "t4"."POSTID") AS "POSTID", "t4"."TITLE", "t4"."POSTCREATIONDATE", "t4"."SCORE", "t4"."VIEWCOUNT", "t4"."OWNERDISPLAYNAME", "t4"."OWNERREPUTATION", "t4"."COMMENTCOUNT", "t4"."UPVOTECOUNT", "t4"."DOWNVOTECOUNT", "t4"."POSTTAG", "t4"."POSTTYPENAME", "t4"."CreationDate"
+FROM (SELECT ANY_VALUE("s1"."Id") AS "POSTID", "s1"."Title" AS "TITLE", ANY_VALUE("s1"."CreationDate") AS "POSTCREATIONDATE", "s1"."Score" AS "SCORE", "s1"."ViewCount" AS "VIEWCOUNT", ANY_VALUE("s1"."DisplayName") AS "OWNERDISPLAYNAME", ANY_VALUE("s1"."Reputation") AS "OWNERREPUTATION", COUNT("s1"."Id1") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("s1"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("s1"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", ANY_VALUE("s1"."TagName") AS "POSTTAG", ANY_VALUE("PostTypes"."Name") AS "POSTTYPENAME", "s1"."CreationDate"
+FROM "STACK"."PostTypes"
+INNER JOIN "s1" ON "PostTypes"."Id" = "s1"."PostTypeId"
+GROUP BY "s1"."Id", "s1"."Title", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."DisplayName", "s1"."Reputation", "s1"."TagName", "PostTypes"."Name"
+ORDER BY "s1"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t4"

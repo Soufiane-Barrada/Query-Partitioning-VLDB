@@ -1,0 +1,15 @@
+SELECT COALESCE("t12"."TOP_CUSTOMER", "t12"."TOP_CUSTOMER") AS "TOP_CUSTOMER", "t12"."TOP_SUPPLIER", "t12"."PRODUCT_COUNT", "t12"."TOTAL_SPENT"
+FROM (SELECT "s1"."C_NAME" AS "TOP_CUSTOMER", "t10"."SC_NAME" AS "TOP_SUPPLIER", "t10"."PRODUCT_COUNT", "s1"."TOTAL_SPENT"
+FROM (SELECT "t7"."S_NAME" AS "SC_NAME", "t8"."PRODUCT_COUNT", "t8"."PRODUCT_COUNT" > 10 AS "$f2"
+FROM (SELECT "S_SUPPKEY", "S_NAME"
+FROM (SELECT "s_suppkey" AS "S_SUPPKEY", "s_name" AS "S_NAME", "s_acctbal"
+FROM "TPCH"."supplier"
+ORDER BY "s_acctbal" DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t6") AS "t7"
+INNER JOIN (SELECT "supplier0"."s_suppkey", "supplier0"."s_name", COUNT(*) AS "PRODUCT_COUNT"
+FROM "TPCH"."supplier" AS "supplier0"
+INNER JOIN "TPCH"."partsupp" ON "supplier0"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier0"."s_suppkey", "supplier0"."s_name") AS "t8" ON "t7"."S_SUPPKEY" = "t8"."s_suppkey"
+WHERE "t8"."PRODUCT_COUNT" > 10) AS "t10",
+"s1"
+ORDER BY "s1"."TOTAL_SPENT" DESC NULLS FIRST, "t10"."PRODUCT_COUNT" DESC NULLS FIRST) AS "t12"

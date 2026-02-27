@@ -1,0 +1,4 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."OwnerUserId" AS "OWNERUSERID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE 0 END AS "FD_COL_6", CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 10 THEN 1 ELSE 0 END AS "FD_COL_7", CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 11 THEN 1 ELSE 0 END AS "FD_COL_8"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."PostHistory" ON "Posts"."Id" = "PostHistory"."PostId"

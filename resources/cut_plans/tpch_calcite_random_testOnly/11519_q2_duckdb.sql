@@ -1,0 +1,10 @@
+SELECT COALESCE("t4"."P_BRAND", "t4"."P_BRAND") AS "P_BRAND", "t4"."P_TYPE", "t4"."REVENUE"
+FROM (SELECT "part"."p_brand" AS "P_BRAND", "part"."p_type" AS "P_TYPE", SUM("s1"."l_extendedprice" * (1 - "s1"."l_discount")) AS "REVENUE"
+FROM (SELECT *
+FROM "TPCH"."region"
+WHERE "r_name" = 'ASIA') AS "t1"
+INNER JOIN "TPCH"."nation" ON "t1"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("s1" INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "s1"."l_partkey" = "part"."p_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "part"."p_brand", "part"."p_type"
+ORDER BY 3 DESC NULLS FIRST) AS "t4"

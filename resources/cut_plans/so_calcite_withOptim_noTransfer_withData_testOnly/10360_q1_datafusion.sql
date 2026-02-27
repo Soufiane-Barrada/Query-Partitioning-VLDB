@@ -1,0 +1,3 @@
+SELECT COALESCE("Id", "Id") AS "Id", "PostTypeId", "AcceptedAnswerId", "ParentId", "CreationDate", "Score", "ViewCount", "Body", "OwnerUserId", "OwnerDisplayName", "LastEditorUserId", "LastEditorDisplayName", "LastEditDate", "LastActivityDate", "Title", "Tags", "AnswerCount", "CommentCount", "FavoriteCount", "ClosedDate", "CommunityOwnedDate", "ContentLicense"
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= CAST((CURRENT_DATE - INTERVAL '1' YEAR) AS TIMESTAMP(0))

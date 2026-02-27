@@ -1,0 +1,3 @@
+SELECT COALESCE("part"."p_partkey", "part"."p_partkey") AS "p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"

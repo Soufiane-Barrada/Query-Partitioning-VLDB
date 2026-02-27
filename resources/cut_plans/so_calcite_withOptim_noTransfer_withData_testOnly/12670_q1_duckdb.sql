@@ -1,0 +1,6 @@
+SELECT COALESCE("t"."OWNERDISPLAYNAME", "t"."OWNERDISPLAYNAME") AS "OWNERDISPLAYNAME", "t"."TITLE", "t"."CREATIONDATE", "t"."LASTACTIVITYDATE", "t"."SCORE", "t"."ANSWERCOUNT", "t"."VIEWCOUNT", "t"."COMMENTCOUNT", "t"."TAGNAME", COUNT("PostHistory"."PostHistoryTypeId") AS "HISTORYCOUNT"
+FROM "STACK"."PostHistory"
+RIGHT JOIN (SELECT "Posts"."Id" AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."LastActivityDate" AS "LASTACTIVITYDATE", "Posts"."Score" AS "SCORE", "Posts"."AnswerCount" AS "ANSWERCOUNT", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."CommentCount" AS "COMMENTCOUNT", "Users"."DisplayName" AS "OWNERDISPLAYNAME", "Tags"."TagName" AS "TAGNAME", "PostHistory0"."CreationDate" AS "HISTORYCREATIONDATE", "PostHistory0"."PostHistoryTypeId" AS "POSTHISTORYTYPEID"
+FROM "STACK"."PostHistory" AS "PostHistory0"
+RIGHT JOIN ("STACK"."Users" INNER JOIN ("STACK"."Posts" INNER JOIN "STACK"."Tags" ON "Posts"."Id" = "Tags"."Id") ON "Users"."Id" = "Posts"."OwnerUserId") ON "PostHistory0"."PostId" = "Posts"."Id") AS "t" ON "PostHistory"."PostId" = "t"."POSTID"
+GROUP BY "t"."TITLE", "t"."CREATIONDATE", "t"."LASTACTIVITYDATE", "t"."SCORE", "t"."ANSWERCOUNT", "t"."VIEWCOUNT", "t"."COMMENTCOUNT", "t"."OWNERDISPLAYNAME", "t"."TAGNAME"

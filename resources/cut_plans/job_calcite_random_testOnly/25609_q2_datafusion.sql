@@ -1,0 +1,12 @@
+SELECT COALESCE("t8"."MOVIE_ID", "t8"."MOVIE_ID") AS "MOVIE_ID", "t8"."TITLE", "t8"."PRODUCTION_YEAR", "t8"."CAST_COUNT", "t8"."KEYWORD_COUNT", "t8"."KEYWORDS", "t8"."ACTOR_NAMES", "t8"."CAST_SIZE_CATEGORY"
+FROM (SELECT "t6"."MOVIE_ID", "t6"."TITLE", "t6"."PRODUCTION_YEAR", "t6"."CAST_COUNT", "s1"."KEYWORD_COUNT", "s1"."KEYWORDS", "t6"."ACTOR_NAMES", CASE WHEN "t6"."CAST_COUNT" < 5 THEN 'Low   ' WHEN "t6"."CAST_COUNT" >= 5 AND "t6"."CAST_COUNT" <= 10 THEN 'Medium' ELSE 'High  ' END AS "CAST_SIZE_CATEGORY"
+FROM "s1"
+RIGHT JOIN (SELECT ANY_VALUE("t3"."id") AS "MOVIE_ID", "t3"."title" AS "TITLE", "t3"."production_year" AS "PRODUCTION_YEAR", COUNT("t3"."id0") AS "CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTOR_NAMES"
+FROM (SELECT "t2"."id", "t2"."title", "t2"."imdb_index", "t2"."kind_id", "t2"."production_year", "t2"."imdb_id", "t2"."phonetic_code", "t2"."episode_of_id", "t2"."season_nr", "t2"."episode_nr", "t2"."series_years", "t2"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 1990 AND "production_year" <= 2023) AS "t2" ON "cast_info"."movie_id" = "t2"."id") AS "t3"
+LEFT JOIN "IMDB"."aka_name" ON "t3"."person_id" = "aka_name"."person_id"
+GROUP BY "t3"."id", "t3"."title", "t3"."production_year") AS "t6" ON "s1"."MOVIE_ID" = "t6"."MOVIE_ID"
+ORDER BY "t6"."PRODUCTION_YEAR" DESC NULLS FIRST, "t6"."CAST_COUNT" DESC NULLS FIRST) AS "t8"

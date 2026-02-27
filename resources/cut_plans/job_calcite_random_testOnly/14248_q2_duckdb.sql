@@ -1,0 +1,5 @@
+SELECT COALESCE("t1"."AKA_NAME", "t1"."AKA_NAME") AS "AKA_NAME", "t1"."MOVIE_TITLE", "t1"."CAST_NOTE", "t1"."MOVIE_KEYWORD", "t1"."MOVIE_INFO", "t1"."PERSON_NAME", "t1"."ROLE_TYPE", "t1"."production_year"
+FROM (SELECT "aka_name"."name" AS "AKA_NAME", "s1"."title" AS "MOVIE_TITLE", "cast_info"."note" AS "CAST_NOTE", "keyword"."keyword" AS "MOVIE_KEYWORD", "movie_info"."info" AS "MOVIE_INFO", "name"."name" AS "PERSON_NAME", "role_type"."role" AS "ROLE_TYPE", "s1"."production_year"
+FROM "IMDB"."keyword"
+INNER JOIN ("IMDB"."role_type" INNER JOIN ("IMDB"."aka_name" INNER JOIN ("IMDB"."name" INNER JOIN "IMDB"."cast_info" ON "name"."imdb_id" = "cast_info"."person_id") ON "aka_name"."person_id" = "cast_info"."person_id" INNER JOIN ("IMDB"."movie_info" INNER JOIN "s1" ON "movie_info"."movie_id" = "s1"."id") ON "cast_info"."movie_id" = "s1"."id") ON "role_type"."id" = "cast_info"."role_id") ON "keyword"."id" = "s1"."keyword_id"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, "aka_name"."name") AS "t1"

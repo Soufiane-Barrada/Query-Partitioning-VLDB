@@ -1,0 +1,12 @@
+SELECT COALESCE("t5"."ACTOR_NAME", "t5"."ACTOR_NAME") AS "ACTOR_NAME", "t5"."MOVIE_TITLE", "t5"."CAST_TYPE", "t5"."PERSON_INFO", "t5"."MOVIE_KEYWORD", "t5"."production_year"
+FROM (SELECT "t3"."name" AS "ACTOR_NAME", "t3"."title" AS "MOVIE_TITLE", "t3"."kind" AS "CAST_TYPE", "t3"."info" AS "PERSON_INFO", "keyword"."keyword" AS "MOVIE_KEYWORD", "t3"."production_year"
+FROM "IMDB"."keyword"
+RIGHT JOIN (SELECT "t2"."id", "t2"."person_id", "t2"."name", "t2"."imdb_index", "t2"."name_pcode_cf", "t2"."name_pcode_nf", "t2"."surname_pcode", "t2"."md5sum", "t2"."id0", "t2"."person_id0", "t2"."movie_id", "t2"."person_role_id", "t2"."note", "t2"."nr_order", "t2"."role_id", "t2"."id1", "t2"."title", "t2"."imdb_index0", "t2"."kind_id", "t2"."production_year", "t2"."imdb_id", "t2"."phonetic_code", "t2"."episode_of_id", "t2"."season_nr", "t2"."episode_nr", "t2"."series_years", "t2"."md5sum0", "t2"."id2", "t2"."kind", "t2"."id3", "t2"."person_id1", "t2"."info_type_id", "t2"."info", "t2"."note0", "movie_keyword"."id" AS "id4", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "s1"."id" AS "id1", "s1"."title", "s1"."imdb_index" AS "imdb_index0", "s1"."kind_id", "s1"."production_year", "s1"."imdb_id", "s1"."phonetic_code", "s1"."episode_of_id", "s1"."season_nr", "s1"."episode_nr", "s1"."series_years", "s1"."md5sum" AS "md5sum0", "t1"."id" AS "id2", "t1"."kind", "person_info"."id" AS "id3", "person_info"."person_id" AS "person_id1", "person_info"."info_type_id", "person_info"."info", "person_info"."note" AS "note0"
+FROM "IMDB"."person_info"
+RIGHT JOIN ("IMDB"."aka_name" INNER JOIN ("s1" INNER JOIN ("IMDB"."cast_info" INNER JOIN (SELECT *
+FROM "IMDB"."comp_cast_type"
+WHERE "kind" IN ('actor', 'actress')) AS "t1" ON "cast_info"."person_role_id" = "t1"."id") ON "s1"."id" = "cast_info"."movie_id") ON "aka_name"."person_id" = "cast_info"."person_id") ON "person_info"."person_id" = "aka_name"."person_id") AS "t2" ON "movie_keyword"."movie_id" = "t2"."id1") AS "t3" ON "keyword"."id" = "t3"."keyword_id"
+ORDER BY "t3"."production_year" DESC NULLS FIRST, "t3"."name"
+FETCH NEXT 50 ROWS ONLY) AS "t5"

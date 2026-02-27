@@ -1,0 +1,13 @@
+SELECT COALESCE("t4"."MOVIE_ID", "t4"."MOVIE_ID") AS "MOVIE_ID", "t4"."TITLE", "t4"."PRODUCTION_YEAR", "t4"."AVG_STARRING_ROLES", "t4"."FULL_CAST_COUNT", "t4"."ACTORS_LIST", CASE WHEN "t6"."KEYWORDS" IS NOT NULL THEN CAST("t6"."KEYWORDS" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'None' END AS "KEYWORDS"
+FROM (SELECT *
+FROM (SELECT ANY_VALUE("aka_title"."id") AS "MOVIE_ID", "aka_title"."title" AS "TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", CASE WHEN AVG(CASE WHEN "cast_info"."role_id" IS NOT NULL THEN 1 ELSE NULL END) IS NOT NULL THEN CAST(AVG(CASE WHEN "cast_info"."role_id" IS NOT NULL THEN 1 ELSE NULL END) AS INTEGER) ELSE 0 END AS "AVG_STARRING_ROLES", COUNT(DISTINCT "cast_info"."person_id") AS "FULL_CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTORS_LIST"
+FROM "IMDB"."aka_title"
+LEFT JOIN "IMDB"."cast_info" ON "aka_title"."movie_id" = "cast_info"."movie_id"
+LEFT JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+GROUP BY "aka_title"."id", "aka_title"."title", "aka_title"."production_year"
+HAVING COUNT(DISTINCT "cast_info"."person_id") > 5) AS "t2"
+WHERE "t2"."PRODUCTION_YEAR" < 2000 OR "t2"."AVG_STARRING_ROLES" > 2) AS "t4"
+LEFT JOIN (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."movie_keyword"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "movie_keyword"."movie_id") AS "t6" ON "t4"."MOVIE_ID" = "t6"."MOVIE_ID"

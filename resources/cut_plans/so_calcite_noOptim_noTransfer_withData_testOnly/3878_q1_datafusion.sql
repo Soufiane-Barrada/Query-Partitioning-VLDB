@@ -1,0 +1,3 @@
+SELECT COALESCE("Id", "Id") AS "ID", "Title" AS "TITLE", "CreationDate" AS "CREATIONDATE", 'Closed' AS "POSTSTATUS"
+FROM "STACK"."Posts"
+WHERE "CreationDate" > (CAST('2024-10-01 12:34:56' AS TIMESTAMP(0)) - INTERVAL '30' DAY)

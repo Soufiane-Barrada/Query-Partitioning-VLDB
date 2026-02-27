@@ -1,0 +1,9 @@
+SELECT COALESCE("t5"."ACTOR_NAME", "t5"."ACTOR_NAME") AS "ACTOR_NAME", "t5"."MOVIE_TITLE", "t5"."CAST_ORDER", "t5"."ACTOR_INFO", "t5"."MOVIE_KEYWORD", "t5"."COMPANY_NAME", "t5"."COMPANY_TYPE", "t5"."production_year"
+FROM (SELECT "t3"."name" AS "ACTOR_NAME", "t3"."title" AS "MOVIE_TITLE", "t3"."nr_order" AS "CAST_ORDER", "person_info"."info" AS "ACTOR_INFO", "keyword"."keyword" AS "MOVIE_KEYWORD", "s1"."name" AS "COMPANY_NAME", "s1"."kind" AS "COMPANY_TYPE", "t3"."production_year"
+FROM "IMDB"."person_info"
+RIGHT JOIN ((SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "t2"."id" AS "id1", "t2"."title", "t2"."imdb_index" AS "imdb_index0", "t2"."kind_id", "t2"."production_year", "t2"."imdb_id", "t2"."phonetic_code", "t2"."episode_of_id", "t2"."season_nr", "t2"."episode_nr", "t2"."series_years", "t2"."md5sum" AS "md5sum0", "movie_keyword"."id" AS "id2", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN ("IMDB"."cast_info" INNER JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000) AS "t2" ON "cast_info"."movie_id" = "t2"."id" INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id") ON "movie_keyword"."movie_id" = "t2"."id") AS "t3" LEFT JOIN "IMDB"."keyword" ON "t3"."keyword_id" = "keyword"."id" INNER JOIN "s1" ON "t3"."id1" = "s1"."movie_id") ON "person_info"."person_id" = "t3"."person_id"
+ORDER BY "t3"."production_year" DESC NULLS FIRST, "t3"."name") AS "t5"

@@ -1,0 +1,10 @@
+SELECT COALESCE("t6"."POSTID", "t6"."POSTID") AS "POSTID", "t6"."TITLE", "t6"."CREATIONDATE", "t6"."VIEWCOUNT", "t6"."SCORE", "t6"."OWNERDISPLAYNAME", "t6"."COMMENTCOUNT", "t6"."VOTECOUNT", "t6"."AVERAGEBOUNTYAMOUNT", "t6"."BADGECOUNT", "t6"."POSTHISTORYCOUNT"
+FROM (SELECT ANY_VALUE("t2"."Id") AS "POSTID", "t2"."Title" AS "TITLE", "t2"."CreationDate" AS "CREATIONDATE", "t2"."ViewCount" AS "VIEWCOUNT", "t2"."Score" AS "SCORE", ANY_VALUE("t2"."DisplayName") AS "OWNERDISPLAYNAME", COUNT("t2"."Id1") AS "COMMENTCOUNT", COUNT("t2"."Id2") AS "VOTECOUNT", AVG("t2"."BountyAmount") AS "AVERAGEBOUNTYAMOUNT", COUNT("Badges"."Id") AS "BADGECOUNT", COUNT("PostHistory"."Id") AS "POSTHISTORYCOUNT"
+FROM (SELECT "s1"."Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "s1"."Id0", "s1"."Reputation", "s1"."CreationDate0", "s1"."DisplayName", "s1"."LastAccessDate", "s1"."WebsiteUrl", "s1"."Location", "s1"."AboutMe", "s1"."Views", "s1"."UpVotes", "s1"."DownVotes", "s1"."ProfileImageUrl", "s1"."AccountId", "s1"."Id1", "s1"."PostId", "s1"."Score0", "s1"."Text", "s1"."CreationDate1", "s1"."UserDisplayName", "s1"."UserId", "s1"."ContentLicense0", "Votes"."Id" AS "Id2", "Votes"."PostId" AS "PostId0", "Votes"."VoteTypeId", "Votes"."UserId" AS "UserId0", "Votes"."CreationDate" AS "CreationDate2", "Votes"."BountyAmount"
+FROM "Votes"
+RIGHT JOIN "s1" ON "Votes"."PostId" = "s1"."Id") AS "t2"
+LEFT JOIN "Badges" ON "t2"."Id0" = "Badges"."UserId"
+LEFT JOIN "PostHistory" ON "t2"."Id" = "PostHistory"."PostId"
+GROUP BY "t2"."Id", "t2"."CreationDate", "t2"."Score", "t2"."ViewCount", "t2"."Title", "t2"."DisplayName"
+ORDER BY "t2"."CreationDate" DESC NULLS FIRST
+LIMIT 100) AS "t6"

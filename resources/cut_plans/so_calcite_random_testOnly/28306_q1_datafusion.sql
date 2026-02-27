@@ -1,0 +1,7 @@
+SELECT COALESCE("t"."DisplayName", "t"."DisplayName") AS "DISPLAYNAME", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES", SUM(CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE 0 END) AS "TOTALCOMMENTS", SUM(CASE WHEN "Badges"."Id" IS NOT NULL THEN 1 ELSE 0 END) AS "TOTALBADGES"
+FROM (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Votes"."Id" AS "Id0", "Votes"."PostId", "Votes"."VoteTypeId", "Votes"."UserId", "Votes"."CreationDate" AS "CreationDate0", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" ON "Votes"."UserId" = "Users"."Id") AS "t"
+LEFT JOIN "STACK"."Comments" ON "t"."Id" = "Comments"."UserId"
+LEFT JOIN "STACK"."Badges" ON "t"."Id" = "Badges"."UserId"
+GROUP BY "t"."DisplayName"

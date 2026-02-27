@@ -1,0 +1,1742 @@
+{
+  "queryId" : "84",
+  "originalSql" : "WITH RankedPosts AS (\n    SELECT \n        p.Id AS PostId,\n        p.Title,\n        p.Score,\n        u.DisplayName AS OwnerDisplayName,\n        p.CreationDate,\n        ROW_NUMBER() OVER (PARTITION BY p.PostTypeId ORDER BY p.CreationDate DESC) AS rn\n    FROM \n        Posts p\n    LEFT JOIN \n        Users u ON p.OwnerUserId = u.Id\n    WHERE \n        p.CreationDate >= cast('2024-10-01 12:34:56' as timestamp) - INTERVAL '1' YEAR \n        AND p.Score > 0\n),\nPostWithComments AS (\n    SELECT \n        rp.PostId,\n        rp.Title,\n        rp.Score,\n        rp.OwnerDisplayName,\n        rp.CreationDate,\n        COUNT(c.Id) AS CommentCount\n    FROM \n        RankedPosts rp\n    LEFT JOIN \n        Comments c ON rp.PostId = c.PostId\n    GROUP BY \n        rp.PostId, rp.Title, rp.Score, rp.OwnerDisplayName, rp.CreationDate\n),\nPostsWithScores AS (\n    SELECT \n        pwc.PostId,\n        pwc.Title,\n        pwc.Score,\n        pwc.OwnerDisplayName,\n        pwc.CreationDate,\n        pwc.CommentCount,\n        CASE \n            WHEN pwc.CommentCount > 10 THEN 'High Engagement'\n            WHEN pwc.CommentCount BETWEEN 1 AND 10 THEN 'Moderate Engagement'\n            ELSE 'No Engagement'\n        END AS EngagementLevel\n    FROM \n        PostWithComments pwc\n)\n\nSELECT \n    ps.PostId,\n    ps.Title,\n    ps.Score,\n    ps.OwnerDisplayName,\n    ps.CreationDate,\n    ps.CommentCount,\n    ps.EngagementLevel,\n    COALESCE(v.UpVotes, 0) AS UpVotes,\n    COALESCE(v.DownVotes, 0) AS DownVotes\nFROM \n    PostsWithScores ps\nLEFT JOIN \n    (SELECT \n        PostId, \n        SUM(CASE WHEN VoteTypeId = 2 THEN 1 ELSE 0 END) AS UpVotes,\n        SUM(CASE WHEN VoteTypeId = 3 THEN 1 ELSE 0 END) AS DownVotes\n     FROM \n        Votes \n     GROUP BY \n        PostId) v ON ps.PostId = v.PostId\nWHERE \n    ps.EngagementLevel <> 'No Engagement'\nORDER BY \n    ps.Score DESC, ps.CommentCount DESC\nLIMIT 50",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 11604,
+    "q1Engine" : "duckdb",
+    "q2Engine" : "datafusion",
+    "costAllDuckdb" : 10840.860323461284,
+    "costAllDatafusion" : 37142.5853182291,
+    "chosenCost" : 9993.185953864142
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "noOptim_noTransfer",
+      "doOptimize" : false,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+      "cutPolicy" : "DP",
+      "randomSeed" : 1770072822850,
+      "schemaName" : "STACK"
+    },
+    "planStats" : {
+      "totalNodes" : 17,
+      "maxDepth" : 11,
+      "operatorKindCounts" : {
+        "OTHER" : 9,
+        "JOIN" : 3,
+        "FILTER" : 2,
+        "AGGREGATE" : 2,
+        "SORT" : 1
+      },
+      "rootOutputRows" : 50.0,
+      "rootRowSizeOutBytes" : 72.0
+    },
+    "cut" : {
+      "cutDepth" : 1,
+      "cutNodeOperatorKind" : "FILTER",
+      "cutOutputRows" : 8412883.6787866,
+      "cutRowSizeOutBytes" : 72.0,
+      "cutOutputBytes" : 6.057276248726352E8,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 16,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2
+        }
+      },
+      "q2Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 1,
+        "maxDepth" : 2,
+        "operatorKindCounts" : {
+          "SORT" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"t3\".\"POSTID\", \"t3\".\"POSTID\") AS \"POSTID\", \"t3\".\"TITLE\", \"t3\".\"SCORE\", \"t3\".\"OWNERDISPLAYNAME\", \"t3\".\"CREATIONDATE\", \"t3\".\"COMMENTCOUNT\", \"t3\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t5\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t5\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t5\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t5\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t0\".\"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t0\"\nLEFT JOIN \"Comments\" ON \"t0\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t0\".\"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\") AS \"t3\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t5\" ON \"t3\".\"POSTID\" = \"t5\".\"POSTID\"\nWHERE \"t3\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "POSTID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TITLE",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "SCORE",
+        "type" : "INTEGER"
+      }, {
+        "name" : "OWNERDISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "CREATIONDATE",
+        "type" : "TIMESTAMP"
+      }, {
+        "name" : "COMMENTCOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "ENGAGEMENTLEVEL",
+        "type" : "CHAR"
+      }, {
+        "name" : "UPVOTES",
+        "type" : "INTEGER"
+      }, {
+        "name" : "DOWNVOTES",
+        "type" : "INTEGER"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"POSTID\", \"POSTID\") AS \"POSTID\", \"TITLE\", \"SCORE\", \"OWNERDISPLAYNAME\", \"CREATIONDATE\", \"COMMENTCOUNT\", \"ENGAGEMENTLEVEL\", \"UPVOTES\", \"DOWNVOTES\"\nFROM \"s1\"\nORDER BY \"SCORE\" DESC NULLS FIRST, \"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "POSTID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TITLE",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "SCORE",
+        "type" : "INTEGER"
+      }, {
+        "name" : "OWNERDISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "CREATIONDATE",
+        "type" : "TIMESTAMP"
+      }, {
+        "name" : "COMMENTCOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "ENGAGEMENTLEVEL",
+        "type" : "CHAR"
+      }, {
+        "name" : "UPVOTES",
+        "type" : "INTEGER"
+      }, {
+        "name" : "DOWNVOTES",
+        "type" : "INTEGER"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_11602",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11602,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8412903.680599805,
+        "cutRowSizeOutBytes" : 72.0,
+        "cutOutputBytes" : 6.05729065003186E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 14,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "JOIN" : 3,
+            "FILTER" : 1,
+            "AGGREGATE" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "FILTER" : 1,
+            "OTHER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t3\".\"POSTID\", \"t3\".\"POSTID\") AS \"POSTID\", \"t3\".\"TITLE\", \"t3\".\"SCORE\", \"t3\".\"OWNERDISPLAYNAME\", \"t3\".\"CREATIONDATE\", \"t3\".\"COMMENTCOUNT\", \"t3\".\"ENGAGEMENTLEVEL\", \"t5\".\"POSTID\" AS \"POSTID0\", \"t5\".\"UPVOTES\", \"t5\".\"DOWNVOTES\"\nFROM (SELECT \"t0\".\"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t0\"\nLEFT JOIN \"Comments\" ON \"t0\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t0\".\"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\") AS \"t3\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t5\" ON \"t3\".\"POSTID\" = \"t5\".\"POSTID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTID0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"POSTID\", \"POSTID\") AS \"POSTID\", \"TITLE\", \"SCORE\", \"OWNERDISPLAYNAME\", \"CREATIONDATE\", \"COMMENTCOUNT\", \"ENGAGEMENTLEVEL\", CASE WHEN \"UPVOTES\" IS NOT NULL THEN CAST(\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"DOWNVOTES\" IS NOT NULL THEN CAST(\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM \"s1\"\nWHERE \"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"SCORE\" DESC NULLS FIRST, \"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11598",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11598,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 4206452.370717502,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 2.019097137944401E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 10,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "OTHER" : 6,
+            "JOIN" : 2,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 7,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "AGGREGATE" : 1,
+            "JOIN" : 1,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t0\".\"POSTID\", \"t0\".\"POSTID\") AS \"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t0\"\nLEFT JOIN \"Comments\" ON \"t0\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t0\".\"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s1\".\"POSTID\", \"s1\".\"POSTID\") AS \"POSTID\", \"s1\".\"TITLE\", \"s1\".\"SCORE\", \"s1\".\"OWNERDISPLAYNAME\", \"s1\".\"CREATIONDATE\", \"s1\".\"COMMENTCOUNT\", \"s1\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"s1\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"s1\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"s1\".\"SCORE\" DESC NULLS FIRST, \"s1\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11596",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11596,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 6112702.801415898,
+        "cutRowSizeOutBytes" : 1582.5546387860113,
+        "cutOutputBytes" : 9.673686173900976E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 8,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "OTHER" : 5,
+            "JOIN" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 9,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 2,
+            "OTHER" : 4,
+            "JOIN" : 1,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t0\".\"POSTID\", \"t0\".\"POSTID\") AS \"POSTID\", \"t0\".\"TITLE\", \"t0\".\"SCORE\", \"t0\".\"OWNERDISPLAYNAME\", \"t0\".\"CREATIONDATE\", \"Comments\".\"Id\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t0\"\nLEFT JOIN \"Comments\" ON \"t0\".\"POSTID\" = \"Comments\".\"PostId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Id",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"POSTID\", \"TITLE\", \"SCORE\", \"OWNERDISPLAYNAME\", \"CREATIONDATE\", COUNT(\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Id\") >= 1 AND COUNT(\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM \"s1\"\nGROUP BY \"POSTID\", \"TITLE\", \"SCORE\", \"OWNERDISPLAYNAME\", \"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11593",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11593,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 1925057.236518311,
+        "cutRowSizeOutBytes" : 1358.8196475779976,
+        "cutOutputBytes" : 2.6158055956932855E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 5,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 12,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "OTHER" : 6,
+            "JOIN" : 2,
+            "AGGREGATE" : 2,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Posts\".\"Id\", \"Posts\".\"Id\") AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "RN",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"s1\".\"POSTID\", \"s1\".\"TITLE\", \"s1\".\"SCORE\", \"s1\".\"OWNERDISPLAYNAME\", \"s1\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM \"s1\"\nLEFT JOIN \"Comments\" ON \"s1\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"s1\".\"POSTID\", \"s1\".\"TITLE\", \"s1\".\"SCORE\", \"s1\".\"OWNERDISPLAYNAME\", \"s1\".\"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11591",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11591,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 7700228.946073244,
+        "cutRowSizeOutBytes" : 1358.8196475779976,
+        "cutOutputBytes" : 1.0463222382773142E10,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 14,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "FILTER" : 2,
+            "OTHER" : 7,
+            "JOIN" : 2,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Posts\".\"Id\", \"Posts\".\"Id\") AS \"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Users\".\"Id\" AS \"Id0\", \"Users\".\"Reputation\", \"Users\".\"CreationDate\" AS \"CreationDate0\", \"Users\".\"DisplayName\", \"Users\".\"LastAccessDate\", \"Users\".\"WebsiteUrl\", \"Users\".\"Location\", \"Users\".\"AboutMe\", \"Users\".\"Views\", \"Users\".\"UpVotes\", \"Users\".\"DownVotes\", \"Users\".\"ProfileImageUrl\", \"Users\".\"AccountId\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate0",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Id\" AS \"POSTID\", \"Title\" AS \"TITLE\", \"Score\" AS \"SCORE\", \"DisplayName\" AS \"OWNERDISPLAYNAME\", \"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"PostTypeId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"s1\"\nWHERE \"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Score\" > 0) AS \"t1\"\nLEFT JOIN \"Comments\" ON \"t1\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11589",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11589,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "JOIN" : 3,
+            "FILTER" : 2,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostTypeId\", \"AcceptedAnswerId\", \"ParentId\", \"CreationDate\", \"Score\", \"ViewCount\", \"Body\", \"OwnerUserId\", \"OwnerDisplayName\", \"LastEditorUserId\", \"LastEditorDisplayName\", \"LastEditDate\", \"LastActivityDate\", \"Title\", \"Tags\", \"AnswerCount\", \"CommentCount\", \"FavoriteCount\", \"ClosedDate\", \"CommunityOwnedDate\", \"ContentLicense\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"s1\".\"Id\" AS \"POSTID\", \"s1\".\"Title\" AS \"TITLE\", \"s1\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"s1\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"s1\".\"PostTypeId\" ORDER BY \"s1\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"s1\"\nLEFT JOIN \"Users\" ON \"s1\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"s1\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"s1\".\"Score\" > 0) AS \"t1\"\nLEFT JOIN \"Comments\" ON \"t1\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11590",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11590,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1260710.0,
+        "cutRowSizeOutBytes" : 148.1378556527671,
+        "cutOutputBytes" : 1.86758876E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "JOIN" : 3,
+            "FILTER" : 2,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"Reputation\", \"CreationDate\", \"DisplayName\", \"LastAccessDate\", \"WebsiteUrl\", \"Location\", \"AboutMe\", \"Views\", \"UpVotes\", \"DownVotes\", \"ProfileImageUrl\", \"AccountId\"\nFROM \"Users\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"s1\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"s1\" ON \"Posts\".\"OwnerUserId\" = \"s1\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t1\"\nLEFT JOIN \"Comments\" ON \"t1\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11594",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11594,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 7241822.0,
+        "cutRowSizeOutBytes" : 223.73499120801367,
+        "cutOutputBytes" : 1.6202489815E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "JOIN" : 3,
+            "FILTER" : 2,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostId\", \"Score\", \"Text\", \"CreationDate\", \"UserDisplayName\", \"UserId\", \"ContentLicense\"\nFROM \"Comments\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Text",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "UserDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "UserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"POSTID\", \"t4\".\"POSTID\") AS \"POSTID\", \"t4\".\"TITLE\", \"t4\".\"SCORE\", \"t4\".\"OWNERDISPLAYNAME\", \"t4\".\"CREATIONDATE\", \"t4\".\"COMMENTCOUNT\", \"t4\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\", COUNT(\"s1\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"s1\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"s1\".\"Id\") >= 1 AND COUNT(\"s1\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t1\"\nLEFT JOIN \"s1\" ON \"t1\".\"POSTID\" = \"s1\".\"PostId\"\nGROUP BY \"t1\".\"POSTID\", \"t1\".\"TITLE\", \"t1\".\"SCORE\", \"t1\".\"OWNERDISPLAYNAME\", \"t1\".\"CREATIONDATE\") AS \"t4\"\nLEFT JOIN (SELECT \"PostId\" AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\") AS \"t6\" ON \"t4\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t4\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t4\".\"SCORE\" DESC NULLS FIRST, \"t4\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11601",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11601,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 3965227.0,
+        "cutRowSizeOutBytes" : 24.0,
+        "cutOutputBytes" : 9.5165448E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 14,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "JOIN" : 3,
+            "FILTER" : 2,
+            "AGGREGATE" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"PostId\", \"PostId\") AS \"POSTID\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"UPVOTES\", SUM(CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"DOWNVOTES\"\nFROM \"Votes\"\nGROUP BY \"PostId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"POSTID\", \"t6\".\"POSTID\") AS \"POSTID\", \"t6\".\"TITLE\", \"t6\".\"SCORE\", \"t6\".\"OWNERDISPLAYNAME\", \"t6\".\"CREATIONDATE\", \"t6\".\"COMMENTCOUNT\", \"t6\".\"ENGAGEMENTLEVEL\", CASE WHEN \"s1\".\"UPVOTES\" IS NOT NULL THEN CAST(\"s1\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"s1\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"s1\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t3\".\"POSTID\", \"t3\".\"TITLE\", \"t3\".\"SCORE\", \"t3\".\"OWNERDISPLAYNAME\", \"t3\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t3\"\nLEFT JOIN \"Comments\" ON \"t3\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t3\".\"POSTID\", \"t3\".\"TITLE\", \"t3\".\"SCORE\", \"t3\".\"OWNERDISPLAYNAME\", \"t3\".\"CREATIONDATE\") AS \"t6\"\nLEFT JOIN \"s1\" ON \"t6\".\"POSTID\" = \"s1\".\"POSTID\"\nWHERE \"t6\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t6\".\"SCORE\" DESC NULLS FIRST, \"t6\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_11600",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 11600,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 10840.860323461284,
+      "costAllDatafusion" : 37142.5853182291,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "ccd5860b458d5584787627a1ccaf3b967d1a9e1783bc1211ff80968dba618826",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 17,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "OTHER" : 9,
+          "JOIN" : 3,
+          "FILTER" : 2,
+          "AGGREGATE" : 2,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 50.0,
+        "rootRowSizeOutBytes" : 72.0
+      },
+      "cut" : {
+        "cutDepth" : 5,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.2744093E7,
+        "cutRowSizeOutBytes" : 26.25,
+        "cutOutputBytes" : 3.3453244125E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 15,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "JOIN" : 3,
+            "FILTER" : 2,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"PostId\", \"PostId\") AS \"POSTID\", CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END AS \"FD_COL_1\", CASE WHEN CAST(\"VoteTypeId\" AS INTEGER) = 3 THEN 1 ELSE 0 END AS \"FD_COL_2\"\nFROM \"Votes\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_1",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_2",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t5\".\"POSTID\", \"t5\".\"POSTID\") AS \"POSTID\", \"t5\".\"TITLE\", \"t5\".\"SCORE\", \"t5\".\"OWNERDISPLAYNAME\", \"t5\".\"CREATIONDATE\", \"t5\".\"COMMENTCOUNT\", \"t5\".\"ENGAGEMENTLEVEL\", CASE WHEN \"t6\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t6\".\"UPVOTES\" AS INTEGER) ELSE 0 END AS \"UPVOTES\", CASE WHEN \"t6\".\"DOWNVOTES\" IS NOT NULL THEN CAST(\"t6\".\"DOWNVOTES\" AS INTEGER) ELSE 0 END AS \"DOWNVOTES\"\nFROM (SELECT \"t2\".\"POSTID\", \"t2\".\"TITLE\", \"t2\".\"SCORE\", \"t2\".\"OWNERDISPLAYNAME\", \"t2\".\"CREATIONDATE\", COUNT(\"Comments\".\"Id\") AS \"COMMENTCOUNT\", CASE WHEN COUNT(\"Comments\".\"Id\") > 10 THEN 'High Engagement    ' WHEN COUNT(\"Comments\".\"Id\") >= 1 AND COUNT(\"Comments\".\"Id\") <= 10 THEN 'Moderate Engagement' ELSE 'No Engagement      ' END AS \"ENGAGEMENTLEVEL\"\nFROM (SELECT \"Posts\".\"Id\" AS \"POSTID\", \"Posts\".\"Title\" AS \"TITLE\", \"Posts\".\"Score\" AS \"SCORE\", \"Users\".\"DisplayName\" AS \"OWNERDISPLAYNAME\", \"Posts\".\"CreationDate\" AS \"CREATIONDATE\", ROW_NUMBER() OVER (PARTITION BY \"Posts\".\"PostTypeId\" ORDER BY \"Posts\".\"CreationDate\" DESC NULLS FIRST) AS \"RN\"\nFROM \"Posts\"\nLEFT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nWHERE \"Posts\".\"CreationDate\" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP) - INTERVAL '1' YEAR) AND \"Posts\".\"Score\" > 0) AS \"t2\"\nLEFT JOIN \"Comments\" ON \"t2\".\"POSTID\" = \"Comments\".\"PostId\"\nGROUP BY \"t2\".\"POSTID\", \"t2\".\"TITLE\", \"t2\".\"SCORE\", \"t2\".\"OWNERDISPLAYNAME\", \"t2\".\"CREATIONDATE\") AS \"t5\"\nLEFT JOIN (SELECT \"POSTID\", SUM(\"FD_COL_1\") AS \"UPVOTES\", SUM(\"FD_COL_2\") AS \"DOWNVOTES\"\nFROM \"s1\"\nGROUP BY \"POSTID\") AS \"t6\" ON \"t5\".\"POSTID\" = \"t6\".\"POSTID\"\nWHERE \"t5\".\"ENGAGEMENTLEVEL\" <> 'No Engagement'\nORDER BY \"t5\".\"SCORE\" DESC NULLS FIRST, \"t5\".\"COMMENTCOUNT\" DESC NULLS FIRST\nLIMIT 50",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERDISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "COMMENTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ENGAGEMENTLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DOWNVOTES",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  } ]
+}

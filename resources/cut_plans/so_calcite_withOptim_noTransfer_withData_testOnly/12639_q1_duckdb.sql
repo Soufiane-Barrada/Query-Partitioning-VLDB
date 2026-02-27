@@ -1,0 +1,7 @@
+SELECT COALESCE("Posts"."PostTypeId", "Posts"."PostTypeId") AS "POSTTYPEID", "PostTypes"."Name", ANY_VALUE("PostTypes"."Name") AS "POSTTYPENAME", COUNT(*) AS "TOTALPOSTS", SUM("Posts"."Score") AS "TOTALSCORE", SUM("Posts"."ViewCount") AS "TOTALVIEWCOUNT", AVG("Posts"."ViewCount") AS "AVGVIEWCOUNT", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS "FD_COL_7", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS "FD_COL_8", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 3 THEN 1 ELSE NULL END) AS "FD_COL_9", COUNT(DISTINCT "Posts"."OwnerUserId") AS "UNIQUEUSERS", SUM("Users"."Reputation") AS "TOTALREPUTATION", COUNT(DISTINCT "Comments"."Id") AS "TOTALCOMMENTS", COUNT(DISTINCT "Votes"."Id") AS "TOTALVOTES"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+GROUP BY "Posts"."PostTypeId", "PostTypes"."Name"

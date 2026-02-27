@@ -1,0 +1,6 @@
+SELECT COALESCE(ANY_VALUE("t"."Id"), ANY_VALUE("t"."Id")) AS "POSTID", "t"."OwnerUserId" AS "OWNERUSERID", COUNT("Votes"."Id") AS "VOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= TIMESTAMP '2021-01-01 00:00:00') AS "t" ON "Votes"."PostId" = "t"."Id"
+GROUP BY "t"."Id", "t"."OwnerUserId"

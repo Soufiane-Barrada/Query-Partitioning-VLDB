@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", COUNT("Votes"."Id") AS "VOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Posts" ON "Votes"."PostId" = "Posts"."Id"
+GROUP BY "Posts"."Id"

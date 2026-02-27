@@ -1,0 +1,13 @@
+SELECT COALESCE("t8"."NATION_NAME", "t8"."NATION_NAME") AS "NATION_NAME", "t8"."TOTAL_SALES", "t8"."ORDER_COUNT", "t8"."LAST_SHIP_DATE", "t8"."PRODUCT_NAMES"
+FROM (SELECT "t6"."NATION_NAME", "t6"."TOTAL_SALES", "t6"."ORDER_COUNT", "t6"."LAST_SHIP_DATE", "t6"."PRODUCT_NAMES"
+FROM (SELECT AVG("t3"."TOTAL_SALES") AS "EXPR$0"
+FROM (SELECT "orders0"."o_orderkey", SUM("lineitem0"."l_extendedprice" * (1 - "lineitem0"."l_discount")) AS "TOTAL_SALES"
+FROM "TPCH"."orders" AS "orders0"
+INNER JOIN "TPCH"."lineitem" AS "lineitem0" ON "orders0"."o_orderkey" = "lineitem0"."l_orderkey"
+GROUP BY "orders0"."o_orderkey") AS "t3") AS "t4"
+INNER JOIN (SELECT "nation"."n_name", ANY_VALUE("nation"."n_name") AS "NATION_NAME", SUM(CAST("s1"."l_extendedprice" * (1 - "s1"."l_discount") AS DECIMAL(19, 4))) AS "TOTAL_SALES", COUNT(DISTINCT "s1"."o_orderkey") AS "ORDER_COUNT", MAX("s1"."l_shipdate") AS "LAST_SHIP_DATE", LISTAGG(DISTINCT CAST("part"."p_name" AS VARCHAR CHARACTER SET "ISO-8859-1"), ', ') AS "PRODUCT_NAMES"
+FROM "TPCH"."part"
+INNER JOIN ("s1" LEFT JOIN "TPCH"."customer" ON "s1"."o_custkey" = "customer"."c_custkey" LEFT JOIN "TPCH"."nation" ON "customer"."c_nationkey" = "nation"."n_nationkey") ON "part"."p_partkey" = "s1"."l_partkey"
+GROUP BY "nation"."n_name") AS "t6" ON "t4"."EXPR$0" < "t6"."TOTAL_SALES"
+ORDER BY "t6"."TOTAL_SALES" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t8"

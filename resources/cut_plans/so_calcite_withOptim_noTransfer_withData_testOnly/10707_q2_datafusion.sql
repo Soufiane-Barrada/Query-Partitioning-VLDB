@@ -1,0 +1,13 @@
+SELECT COALESCE("t10"."POSTID", "t10"."POSTID") AS "POSTID", "t10"."TITLE", "t10"."CREATIONDATE", "t10"."SCORE", "t10"."VIEWCOUNT", "t10"."ANSWERCOUNT", "t10"."COMMENTCOUNT", "t10"."VOTECOUNT", "t10"."OWNERUSERID", "t10"."OWNERREPUTATION", "t10"."USERCREATIONDATE", "t10"."OWNERDISPLAYNAME", "t10"."USERID", "t10"."DISPLAYNAME", "t10"."BADGECOUNT", "t10"."UPVOTES", "t10"."DOWNVOTES", "t10"."TOTALBOUNTY"
+FROM (SELECT "t8"."POSTID", "t8"."TITLE", "t8"."CREATIONDATE", "t8"."SCORE", "t8"."VIEWCOUNT", "t8"."ANSWERCOUNT", "t8"."COMMENTCOUNT", "t8"."VOTECOUNT", "t8"."OWNERUSERID", "t8"."OWNERREPUTATION", "t8"."USERCREATIONDATE", "t8"."OWNERDISPLAYNAME", "t5"."USERID", "t5"."DISPLAYNAME", "t5"."BADGECOUNT", "t5"."UPVOTES", "t5"."DOWNVOTES", "t5"."TOTALBOUNTY"
+FROM (SELECT ANY_VALUE("t2"."Id") AS "USERID", "t2"."DisplayName" AS "DISPLAYNAME", COUNT("t2"."Id0") AS "BADGECOUNT", SUM(CASE WHEN CAST("Votes0"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes0"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES", SUM("Votes0"."BountyAmount") AS "TOTALBOUNTY"
+FROM "STACK"."Votes" AS "Votes0"
+RIGHT JOIN (SELECT "Users0"."Id", "Users0"."Reputation", "Users0"."CreationDate", "Users0"."DisplayName", "Users0"."LastAccessDate", "Users0"."WebsiteUrl", "Users0"."Location", "Users0"."AboutMe", "Users0"."Views", "Users0"."UpVotes", "Users0"."DownVotes", "Users0"."ProfileImageUrl", "Users0"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Badges"."UserId" = "Users0"."Id") AS "t2" ON "Votes0"."UserId" = "t2"."Id"
+GROUP BY "t2"."Id", "t2"."DisplayName") AS "t5"
+INNER JOIN (SELECT ANY_VALUE("Id") AS "POSTID", "Title" AS "TITLE", "CreationDate" AS "CREATIONDATE", "Score" AS "SCORE", "ViewCount" AS "VIEWCOUNT", "AnswerCount" AS "ANSWERCOUNT", COUNT("Id0") AS "COMMENTCOUNT", COUNT("Id1") AS "VOTECOUNT", ANY_VALUE("Id2") AS "OWNERUSERID", ANY_VALUE("Reputation") AS "OWNERREPUTATION", ANY_VALUE("CreationDate2") AS "USERCREATIONDATE", ANY_VALUE("DisplayName") AS "OWNERDISPLAYNAME"
+FROM "s1"
+GROUP BY "Id", "CreationDate", "Score", "ViewCount", "Title", "AnswerCount", "Id2", "Reputation", "CreationDate2", "DisplayName") AS "t8" ON "t5"."USERID" = "t8"."OWNERUSERID"
+ORDER BY "t8"."CREATIONDATE" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t10"

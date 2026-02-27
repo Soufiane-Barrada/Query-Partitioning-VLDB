@@ -1,0 +1,12 @@
+SELECT COALESCE("MOVIE_ID", "MOVIE_ID") AS "MOVIE_ID", "TITLE", "PRODUCTION_YEAR", "TOTAL_CAST", "CAST_NAMES", "KEYWORD_COUNT", "KEYWORDS"
+FROM (SELECT "t1"."MOVIE_ID", "t1"."TITLE", "t1"."PRODUCTION_YEAR", "t1"."TOTAL_CAST", "t1"."CAST_NAMES", CASE WHEN "t3"."KEYWORD_COUNT" IS NOT NULL THEN CAST("t3"."KEYWORD_COUNT" AS BIGINT) ELSE 0 END AS "KEYWORD_COUNT", CASE WHEN "t3"."KEYWORDS" IS NOT NULL THEN CAST("t3"."KEYWORDS" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE '' END AS "KEYWORDS"
+FROM (SELECT ANY_VALUE("aka_title"."id") AS "MOVIE_ID", "aka_title"."title" AS "TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", COUNT(*) AS "TOTAL_CAST", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "CAST_NAMES"
+FROM "IMDB"."aka_title"
+INNER JOIN "IMDB"."cast_info" ON "aka_title"."id" = "cast_info"."movie_id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+GROUP BY "aka_title"."id", "aka_title"."title", "aka_title"."production_year") AS "t1"
+LEFT JOIN (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", COUNT(DISTINCT "keyword"."keyword") AS "KEYWORD_COUNT", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."movie_keyword"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "movie_keyword"."movie_id") AS "t3" ON "t1"."MOVIE_ID" = "t3"."MOVIE_ID") AS "t4"
+WHERE "t4"."PRODUCTION_YEAR" >= 2000 AND "t4"."PRODUCTION_YEAR" <= 2020

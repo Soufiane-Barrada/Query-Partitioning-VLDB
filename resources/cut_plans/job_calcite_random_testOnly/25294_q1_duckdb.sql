@@ -1,0 +1,7 @@
+SELECT COALESCE(ANY_VALUE("aka_title"."id"), ANY_VALUE("aka_title"."id")) AS "MOVIE_ID", "aka_title"."title" AS "TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", COUNT(DISTINCT "cast_info"."person_id") AS "CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTOR_NAMES"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."kind_type"
+WHERE "kind" = 'movie') AS "t0"
+INNER JOIN "IMDB"."aka_title" ON "t0"."ID" = "aka_title"."kind_id"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "aka_title"."id" = "cast_info"."movie_id"
+GROUP BY "aka_title"."id", "aka_title"."title", "aka_title"."production_year"

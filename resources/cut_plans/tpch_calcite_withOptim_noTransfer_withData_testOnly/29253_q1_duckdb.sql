@@ -1,0 +1,9 @@
+SELECT COALESCE("t1"."s_name", "t1"."s_name") AS "s_name", "t1"."s_address", "t1"."p_name", "t1"."ps_availqty", "t1"."p_comment", CONCAT("t1"."s_name", ' (', SUBSTRING("t1"."s_address", 1, 20), '...)') AS "FD_COL_5", REPLACE("t1"."p_comment", 'old', 'new') AS "FD_COL_6", "orders"."o_orderkey", "t1"."l_extendedprice" * (1 - "t1"."l_discount") AS "FD_COL_8"
+FROM (SELECT "t"."s_suppkey", "t"."s_name", "t"."s_address", "t"."s_nationkey", "t"."s_phone", "t"."s_acctbal", "t"."s_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "t0"."p_partkey", "t0"."p_name", "t0"."p_mfgr", "t0"."p_brand", "t0"."p_type", "t0"."p_size", "t0"."p_container", "t0"."p_retailprice", "t0"."p_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN ("TPCH"."partsupp" INNER JOIN (SELECT *
+FROM "TPCH"."supplier"
+WHERE "s_comment" LIKE '%urgent%') AS "t" ON "partsupp"."ps_suppkey" = "t"."s_suppkey" INNER JOIN (SELECT *
+FROM "TPCH"."part"
+WHERE "p_size" >= 10 AND "p_size" <= 20) AS "t0" ON "partsupp"."ps_partkey" = "t0"."p_partkey") ON "lineitem"."l_partkey" = "t0"."p_partkey") AS "t1"
+LEFT JOIN "TPCH"."orders" ON "t1"."l_orderkey" = "orders"."o_orderkey"

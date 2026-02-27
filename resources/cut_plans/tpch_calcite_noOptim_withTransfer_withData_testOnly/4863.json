@@ -1,0 +1,2131 @@
+{
+  "queryId" : "4863",
+  "originalSql" : "WITH SupplierSummary AS (\n    SELECT \n        s.s_suppkey,\n        s.s_name,\n        SUM(ps.ps_availqty) AS total_available_quantity,\n        SUM(ps.ps_supplycost * ps.ps_availqty) AS total_cost,\n        AVG(CASE WHEN ps.ps_availqty > 0 THEN ps.ps_supplycost ELSE NULL END) AS avg_supply_cost\n    FROM \n        supplier s\n    JOIN \n        partsupp ps ON s.s_suppkey = ps.ps_suppkey\n    GROUP BY \n        s.s_suppkey, s.s_name\n),\nCustomerOrders AS (\n    SELECT \n        c.c_custkey,\n        c.c_name,\n        COUNT(o.o_orderkey) AS order_count,\n        SUM(o.o_totalprice) AS total_spent\n    FROM \n        customer c\n    LEFT JOIN \n        orders o ON c.c_custkey = o.o_custkey\n    GROUP BY \n        c.c_custkey, c.c_name\n),\nTopSuppliers AS (\n    SELECT \n        s.s_suppkey, \n        s.s_name,\n        DENSE_RANK() OVER (ORDER BY total_available_quantity DESC) AS supplier_rank\n    FROM \n        SupplierSummary s\n),\nTopCustomers AS (\n    SELECT \n        c.c_custkey, \n        c.c_name,\n        DENSE_RANK() OVER (ORDER BY total_spent DESC) AS customer_rank\n    FROM \n        CustomerOrders c\n)\nSELECT \n    s.s_name AS supplier_name,\n    c.c_name AS customer_name,\n    SUM(l.l_extendedprice * (1 - l.l_discount)) AS revenue,\n    COUNT(DISTINCT o.o_orderkey) AS number_of_orders\nFROM \n    lineitem l\nJOIN \n    orders o ON l.l_orderkey = o.o_orderkey\nJOIN \n    TopSuppliers s ON l.l_suppkey = s.s_suppkey\nJOIN \n    TopCustomers c ON o.o_custkey = c.c_custkey\nWHERE \n    o.o_orderstatus = 'O' \n    AND l.l_shipdate BETWEEN '1997-01-01' AND '1997-12-31'\nGROUP BY \n    s.s_name, c.c_name\nORDER BY \n    revenue DESC \nLIMIT 10",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 18504,
+    "q1Engine" : "duckdb",
+    "q2Engine" : "datafusion",
+    "costAllDuckdb" : 28654.109272002817,
+    "costAllDatafusion" : 131992.49174148083,
+    "chosenCost" : 14969.452271281141
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "tpch_noOptim_withTransfer",
+      "doOptimize" : false,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 62.297202312292534,
+          "bMsPerRow" : 1.9855075008663652E-4,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 9.37543642726493E-7
+        },
+        "datafusion" : {
+          "aMs" : 72.934497671158,
+          "bMsPerRow" : 8.296144368777564E-5,
+          "cMsPerRowSizeByte" : 0.0010951149669102135,
+          "dMsPerOutputByte" : 3.7986948397307897E-7
+        }
+      },
+      "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+      "cutPolicy" : "DP",
+      "randomSeed" : 1770194764324,
+      "schemaName" : "TPCH"
+    },
+    "planStats" : {
+      "totalNodes" : 22,
+      "maxDepth" : 11,
+      "operatorKindCounts" : {
+        "JOIN" : 5,
+        "OTHER" : 12,
+        "AGGREGATE" : 3,
+        "FILTER" : 1,
+        "SORT" : 1
+      },
+      "rootOutputRows" : 10.0,
+      "rootRowSizeOutBytes" : 48.0
+    },
+    "cut" : {
+      "cutDepth" : 1,
+      "cutNodeOperatorKind" : "AGGREGATE",
+      "cutOutputRows" : 5.9974058977204174E7,
+      "cutRowSizeOutBytes" : 48.0,
+      "cutOutputBytes" : 2.8787548309058003E9,
+      "transferEstimatedMs" : 6142.072691855425,
+      "q1Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 21,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1
+        }
+      },
+      "q2Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 1,
+        "maxDepth" : 2,
+        "operatorKindCounts" : {
+          "SORT" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(ANY_VALUE(\"t1\".\"S_NAME\"), ANY_VALUE(\"t1\".\"S_NAME\")) AS \"SUPPLIER_NAME\", ANY_VALUE(\"t4\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t1\" ON \"lineitem\".\"l_suppkey\" = \"t1\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t4\" ON \"orders\".\"o_custkey\" = \"t4\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t1\".\"S_NAME\", \"t4\".\"C_NAME\"",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "SUPPLIER_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "CUSTOMER_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "REVENUE",
+        "type" : "DECIMAL"
+      }, {
+        "name" : "NUMBER_OF_ORDERS",
+        "type" : "BIGINT"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"SUPPLIER_NAME\", \"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"CUSTOMER_NAME\", \"REVENUE\", \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nORDER BY \"REVENUE\" DESC NULLS FIRST\nLIMIT 10",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "SUPPLIER_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "CUSTOMER_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "REVENUE",
+        "type" : "DECIMAL"
+      }, {
+        "name" : "NUMBER_OF_ORDERS",
+        "type" : "BIGINT"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_18502",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18502,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 4998837.666666667,
+        "cutRowSizeOutBytes" : 394.6983895445787,
+        "cutOutputBytes" : 1.9730331766281128E9,
+        "transferEstimatedMs" : 1237.572622039948,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 19,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "OTHER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t1\".\"S_NAME\", \"t1\".\"S_NAME\") AS \"S_NAME\", \"t4\".\"C_NAME\", \"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\") AS \"FD_COL_2\", \"orders\".\"o_orderkey\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t1\" ON \"lineitem\".\"l_suppkey\" = \"t1\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t4\" ON \"orders\".\"o_custkey\" = \"t4\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "S_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "FD_COL_2",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"SUPPLIER_NAME\", \"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"CUSTOMER_NAME\", \"REVENUE\", \"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"FD_COL_2\") AS \"REVENUE\", COUNT(DISTINCT \"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nGROUP BY \"S_NAME\", \"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18500",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18500,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 5,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5.998605200000001E7,
+        "cutRowSizeOutBytes" : 394.6983895445787,
+        "cutOutputBytes" : 2.3676398119537357E10,
+        "transferEstimatedMs" : 14043.83734884478,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 17,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 10,
+            "AGGREGATE" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 5,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "FILTER" : 1,
+            "OTHER" : 2,
+            "AGGREGATE" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"lineitem\".\"l_orderkey\", \"lineitem\".\"l_orderkey\") AS \"l_orderkey\", \"lineitem\".\"l_partkey\", \"lineitem\".\"l_suppkey\", \"lineitem\".\"l_linenumber\", \"lineitem\".\"l_quantity\", \"lineitem\".\"l_extendedprice\", \"lineitem\".\"l_discount\", \"lineitem\".\"l_tax\", \"lineitem\".\"l_returnflag\", \"lineitem\".\"l_linestatus\", \"lineitem\".\"l_shipdate\", \"lineitem\".\"l_commitdate\", \"lineitem\".\"l_receiptdate\", \"lineitem\".\"l_shipinstruct\", \"lineitem\".\"l_shipmode\", \"lineitem\".\"l_comment\", \"orders\".\"o_orderkey\", \"orders\".\"o_custkey\", \"orders\".\"o_orderstatus\", \"orders\".\"o_totalprice\", \"orders\".\"o_orderdate\", \"orders\".\"o_orderpriority\", \"orders\".\"o_clerk\", \"orders\".\"o_shippriority\", \"orders\".\"o_comment\", \"t1\".\"S_SUPPKEY\", \"t1\".\"S_NAME\", \"t1\".\"SUPPLIER_RANK\", \"t4\".\"C_CUSTKEY\", \"t4\".\"C_NAME\", \"t4\".\"CUSTOMER_RANK\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t1\" ON \"lineitem\".\"l_suppkey\" = \"t1\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t4\" ON \"orders\".\"o_custkey\" = \"t4\".\"C_CUSTKEY\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "l_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_linenumber",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_quantity",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_extendedprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_discount",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_tax",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_returnflag",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_linestatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_commitdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_receiptdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_shipinstruct",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipmode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "S_SUPPKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "S_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_RANK",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_RANK",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"SUPPLIER_NAME\", \"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"CUSTOMER_NAME\", \"REVENUE\", \"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"l_extendedprice\" * (1 - \"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nWHERE \"o_orderstatus\" = 'O' AND \"l_shipdate\" >= '1997-01-01' AND \"l_shipdate\" <= '1997-12-31'\nGROUP BY \"S_NAME\", \"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18493",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18493,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5.998605200000001E7,
+        "cutRowSizeOutBytes" : 362.6983895445787,
+        "cutOutputBytes" : 2.1756844455537354E10,
+        "transferEstimatedMs" : 13314.622445363522,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 10,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "OTHER" : 6,
+            "JOIN" : 3,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 12,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 2,
+            "OTHER" : 6,
+            "AGGREGATE" : 2,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"lineitem\".\"l_orderkey\", \"lineitem\".\"l_orderkey\") AS \"l_orderkey\", \"lineitem\".\"l_partkey\", \"lineitem\".\"l_suppkey\", \"lineitem\".\"l_linenumber\", \"lineitem\".\"l_quantity\", \"lineitem\".\"l_extendedprice\", \"lineitem\".\"l_discount\", \"lineitem\".\"l_tax\", \"lineitem\".\"l_returnflag\", \"lineitem\".\"l_linestatus\", \"lineitem\".\"l_shipdate\", \"lineitem\".\"l_commitdate\", \"lineitem\".\"l_receiptdate\", \"lineitem\".\"l_shipinstruct\", \"lineitem\".\"l_shipmode\", \"lineitem\".\"l_comment\", \"orders\".\"o_orderkey\", \"orders\".\"o_custkey\", \"orders\".\"o_orderstatus\", \"orders\".\"o_totalprice\", \"orders\".\"o_orderdate\", \"orders\".\"o_orderpriority\", \"orders\".\"o_clerk\", \"orders\".\"o_shippriority\", \"orders\".\"o_comment\", \"t1\".\"S_SUPPKEY\", \"t1\".\"S_NAME\", \"t1\".\"SUPPLIER_RANK\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t1\" ON \"lineitem\".\"l_suppkey\" = \"t1\".\"S_SUPPKEY\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "l_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_linenumber",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_quantity",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_extendedprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_discount",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_tax",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_returnflag",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_linestatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_commitdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_receiptdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_shipinstruct",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipmode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "S_SUPPKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "S_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_RANK",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"s1\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"s1\".\"l_extendedprice\" * (1 - \"s1\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"s1\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"s1\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"s1\".\"o_orderstatus\" = 'O' AND \"s1\".\"l_shipdate\" >= '1997-01-01' AND \"s1\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"s1\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18486",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18486,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5.9986052E7,
+        "cutRowSizeOutBytes" : 322.6983895445787,
+        "cutOutputBytes" : 1.9357402375537354E10,
+        "transferEstimatedMs" : 12403.103816011955,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 10,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"lineitem\".\"l_orderkey\", \"lineitem\".\"l_orderkey\") AS \"l_orderkey\", \"lineitem\".\"l_partkey\", \"lineitem\".\"l_suppkey\", \"lineitem\".\"l_linenumber\", \"lineitem\".\"l_quantity\", \"lineitem\".\"l_extendedprice\", \"lineitem\".\"l_discount\", \"lineitem\".\"l_tax\", \"lineitem\".\"l_returnflag\", \"lineitem\".\"l_linestatus\", \"lineitem\".\"l_shipdate\", \"lineitem\".\"l_commitdate\", \"lineitem\".\"l_receiptdate\", \"lineitem\".\"l_shipinstruct\", \"lineitem\".\"l_shipmode\", \"lineitem\".\"l_comment\", \"orders\".\"o_orderkey\", \"orders\".\"o_custkey\", \"orders\".\"o_orderstatus\", \"orders\".\"o_totalprice\", \"orders\".\"o_orderdate\", \"orders\".\"o_orderpriority\", \"orders\".\"o_clerk\", \"orders\".\"o_shippriority\", \"orders\".\"o_comment\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "l_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_linenumber",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_quantity",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_extendedprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_discount",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_tax",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_returnflag",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_linestatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_commitdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_receiptdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_shipinstruct",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipmode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"s1\".\"l_extendedprice\" * (1 - \"s1\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"s1\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"s1\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"s1\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"s1\".\"o_orderstatus\" = 'O' AND \"s1\".\"l_shipdate\" >= '1997-01-01' AND \"s1\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18484",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18484,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 5.9986052E7,
+        "cutRowSizeOutBytes" : 179.59031221124536,
+        "cutOutputBytes" : 1.0772913807E10,
+        "transferEstimatedMs" : 9141.961853511502,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"l_orderkey\", \"l_orderkey\") AS \"l_orderkey\", \"l_partkey\", \"l_suppkey\", \"l_linenumber\", \"l_quantity\", \"l_extendedprice\", \"l_discount\", \"l_tax\", \"l_returnflag\", \"l_linestatus\", \"l_shipdate\", \"l_commitdate\", \"l_receiptdate\", \"l_shipinstruct\", \"l_shipmode\", \"l_comment\"\nFROM \"lineitem\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "l_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_linenumber",
+          "type" : "BIGINT"
+        }, {
+          "name" : "l_quantity",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_extendedprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_discount",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_tax",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "l_returnflag",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_linestatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_commitdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_receiptdate",
+          "type" : "DATE"
+        }, {
+          "name" : "l_shipinstruct",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_shipmode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "l_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"s1\".\"l_extendedprice\" * (1 - \"s1\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"s1\"\nINNER JOIN \"orders\" ON \"s1\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"s1\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"s1\".\"l_shipdate\" >= '1997-01-01' AND \"s1\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18485",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18485,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.5E7,
+        "cutRowSizeOutBytes" : 143.1080773333333,
+        "cutOutputBytes" : 2.1466211599999998E9,
+        "transferEstimatedMs" : 2132.948745120058,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"o_orderkey\", \"o_orderkey\") AS \"o_orderkey\", \"o_custkey\", \"o_orderstatus\", \"o_totalprice\", \"o_orderdate\", \"o_orderpriority\", \"o_clerk\", \"o_shippriority\", \"o_comment\"\nFROM \"orders\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"s1\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"s1\" ON \"lineitem\".\"l_orderkey\" = \"s1\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"s1\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"s1\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18492",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18492,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 100000.0,
+        "cutRowSizeOutBytes" : 40.0,
+        "cutOutputBytes" : 4000000.0,
+        "transferEstimatedMs" : 82.79392457450427,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 8,
+            "AGGREGATE" : 2,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"supplier\".\"s_suppkey\", \"supplier\".\"s_suppkey\") AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "S_SUPPKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "S_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_RANK",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"s1\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN \"s1\" ON \"lineitem\".\"l_suppkey\" = \"s1\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"s1\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18490",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18490,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8000000.000000001,
+        "cutRowSizeOutBytes" : 383.03374175,
+        "cutOutputBytes" : 3.0642699340000005E9,
+        "transferEstimatedMs" : 1901.0681517395863,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 18,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 9,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"supplier\".\"s_suppkey\", \"supplier\".\"s_suppkey\") AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", \"partsupp\".\"ps_availqty\", \"partsupp\".\"ps_supplycost\" * \"partsupp\".\"ps_availqty\" AS \"FD_COL_3\", CASE WHEN \"partsupp\".\"ps_availqty\" > 0 THEN CAST(\"partsupp\".\"ps_supplycost\" AS DECIMAL(15, 2)) ELSE NULL END AS \"FD_COL_4\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "S_SUPPKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "S_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "FD_COL_3",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "FD_COL_4",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"S_SUPPKEY\", \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"s1\"\nGROUP BY \"S_SUPPKEY\", \"S_NAME\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18487",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18487,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 100000.0,
+        "cutRowSizeOutBytes" : 211.49468,
+        "cutOutputBytes" : 2.1149468E7,
+        "transferEstimatedMs" : 89.49629052489058,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"s_suppkey\", \"s_suppkey\") AS \"s_suppkey\", \"s_name\", \"s_address\", \"s_nationkey\", \"s_phone\", \"s_acctbal\", \"s_comment\"\nFROM \"supplier\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "s_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "s_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "s_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"s1\".\"s_suppkey\" AS \"S_SUPPKEY\", \"s1\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"s1\"\nINNER JOIN \"partsupp\" ON \"s1\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"s1\".\"s_suppkey\", \"s1\".\"s_name\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18488",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18488,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 8000000.0,
+        "cutRowSizeOutBytes" : 171.53906175,
+        "cutOutputBytes" : 1.372312494E9,
+        "transferEstimatedMs" : 1258.1135411128844,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"ps_partkey\", \"ps_partkey\") AS \"ps_partkey\", \"ps_suppkey\", \"ps_availqty\", \"ps_supplycost\", \"ps_comment\"\nFROM \"partsupp\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ps_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_supplycost",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ps_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"s1\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"s1\" ON \"supplier\".\"s_suppkey\" = \"s1\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"customer\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18499",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18499,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 1499974.9475239723,
+        "cutRowSizeOutBytes" : 32.0,
+        "cutOutputBytes" : 4.799919832076711E7,
+        "transferEstimatedMs" : 215.64305918941466,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "JOIN" : 1,
+            "OTHER" : 4,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "FILTER" : 1,
+            "OTHER" : 8,
+            "AGGREGATE" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"customer\".\"c_custkey\", \"customer\".\"c_custkey\") AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"orders\" ON \"customer\".\"c_custkey\" = \"orders\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_RANK",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t5\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"s1\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders0\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" AS \"orders0\" ON \"lineitem\".\"l_orderkey\" = \"orders0\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t5\" ON \"lineitem\".\"l_suppkey\" = \"t5\".\"S_SUPPKEY\"\nINNER JOIN \"s1\" ON \"orders0\".\"o_custkey\" = \"s1\".\"C_CUSTKEY\"\nWHERE \"orders0\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t5\".\"S_NAME\", \"s1\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18497",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18497,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1.6499999E7,
+        "cutRowSizeOutBytes" : 374.3943953333333,
+        "cutOutputBytes" : 6.177507148605604E9,
+        "transferEstimatedMs" : 3788.8546932446866,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "JOIN" : 1,
+            "OTHER" : 3
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 18,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 3,
+            "OTHER" : 9,
+            "JOIN" : 4,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"customer\".\"c_custkey\", \"customer\".\"c_custkey\") AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", \"orders\".\"o_orderkey\", \"orders\".\"o_totalprice\"\nFROM \"customer\"\nLEFT JOIN \"orders\" ON \"customer\".\"c_custkey\" = \"orders\".\"o_custkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t3\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders0\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" AS \"orders0\" ON \"lineitem\".\"l_orderkey\" = \"orders0\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t3\" ON \"lineitem\".\"l_suppkey\" = \"t3\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"C_CUSTKEY\", \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"s1\"\nGROUP BY \"C_CUSTKEY\", \"C_NAME\") AS \"t5\" ON \"orders0\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders0\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t3\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18494",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18494,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1500000.0,
+        "cutRowSizeOutBytes" : 231.286318,
+        "cutOutputBytes" : 3.46929477E8,
+        "transferEstimatedMs" : 329.417869714345,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"c_custkey\", \"c_custkey\") AS \"c_custkey\", \"c_name\", \"c_address\", \"c_nationkey\", \"c_phone\", \"c_acctbal\", \"c_mktsegment\", \"c_comment\"\nFROM \"customer\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "c_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "c_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "c_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "c_mktsegment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" ON \"lineitem\".\"l_orderkey\" = \"orders\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"s1\".\"c_custkey\" AS \"C_CUSTKEY\", \"s1\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"orders0\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"s1\"\nLEFT JOIN \"orders\" AS \"orders0\" ON \"s1\".\"c_custkey\" = \"orders0\".\"o_custkey\"\nGROUP BY \"s1\".\"c_custkey\", \"s1\".\"c_name\") AS \"t5\" ON \"orders\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_18495",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 18495,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 28654.109272002817,
+      "costAllDatafusion" : 131992.49174148083,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_withTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 62.297202312292534,
+            "bMsPerRow" : 1.9855075008663652E-4,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 9.37543642726493E-7
+          },
+          "datafusion" : {
+            "aMs" : 72.934497671158,
+            "bMsPerRow" : 8.296144368777564E-5,
+            "cMsPerRowSizeByte" : 0.0010951149669102135,
+            "dMsPerOutputByte" : 3.7986948397307897E-7
+          }
+        },
+        "decorrelatedPlanSha256" : "bb32b73b5201f1c277fbd596ef21f55c9fb7f198cc306d79bc1936b477829441",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770194764324,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 22,
+        "maxDepth" : 11,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 12,
+          "AGGREGATE" : 3,
+          "FILTER" : 1,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 10.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.5E7,
+        "cutRowSizeOutBytes" : 143.1080773333333,
+        "cutOutputBytes" : 2.1466211599999998E9,
+        "transferEstimatedMs" : 2132.948745120058,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"o_orderkey\", \"o_orderkey\") AS \"o_orderkey\", \"o_custkey\", \"o_orderstatus\", \"o_totalprice\", \"o_orderdate\", \"o_orderpriority\", \"o_clerk\", \"o_shippriority\", \"o_comment\"\nFROM \"orders\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t10\".\"SUPPLIER_NAME\", \"t10\".\"SUPPLIER_NAME\") AS \"SUPPLIER_NAME\", \"t10\".\"CUSTOMER_NAME\", \"t10\".\"REVENUE\", \"t10\".\"NUMBER_OF_ORDERS\"\nFROM (SELECT MIN(\"t2\".\"S_NAME\") AS \"SUPPLIER_NAME\", MIN(\"t5\".\"C_NAME\") AS \"CUSTOMER_NAME\", SUM(\"lineitem\".\"l_extendedprice\" * (1 - \"lineitem\".\"l_discount\")) AS \"REVENUE\", COUNT(DISTINCT \"orders0\".\"o_orderkey\") AS \"NUMBER_OF_ORDERS\"\nFROM \"lineitem\"\nINNER JOIN \"orders\" AS \"orders0\" ON \"lineitem\".\"l_orderkey\" = \"orders0\".\"o_orderkey\"\nINNER JOIN (SELECT \"supplier\".\"s_suppkey\" AS \"S_SUPPKEY\", \"supplier\".\"s_name\" AS \"S_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"partsupp\".\"ps_availqty\") DESC NULLS FIRST) AS \"SUPPLIER_RANK\"\nFROM \"supplier\"\nINNER JOIN \"partsupp\" ON \"supplier\".\"s_suppkey\" = \"partsupp\".\"ps_suppkey\"\nGROUP BY \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\") AS \"t2\" ON \"lineitem\".\"l_suppkey\" = \"t2\".\"S_SUPPKEY\"\nINNER JOIN (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", DENSE_RANK() OVER (ORDER BY SUM(\"s1\".\"o_totalprice\") DESC NULLS FIRST) AS \"CUSTOMER_RANK\"\nFROM \"customer\"\nLEFT JOIN \"s1\" ON \"customer\".\"c_custkey\" = \"s1\".\"o_custkey\"\nGROUP BY \"customer\".\"c_custkey\", \"customer\".\"c_name\") AS \"t5\" ON \"orders0\".\"o_custkey\" = \"t5\".\"C_CUSTKEY\"\nWHERE \"orders0\".\"o_orderstatus\" = 'O' AND \"lineitem\".\"l_shipdate\" >= '1997-01-01' AND \"lineitem\".\"l_shipdate\" <= '1997-12-31'\nGROUP BY \"t2\".\"S_NAME\", \"t5\".\"C_NAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "SUPPLIER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REVENUE",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "NUMBER_OF_ORDERS",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  } ]
+}

@@ -1,0 +1,11 @@
+SELECT COALESCE("lineitem"."l_orderkey", "lineitem"."l_orderkey") AS "L_ORDERKEY", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "REVENUE", "orders"."o_orderdate" AS "O_ORDERDATE", "customer"."c_name" AS "C_NAME", "supplier"."s_name" AS "S_NAME", "part"."p_name" AS "P_NAME", "nation"."n_name" AS "N_NAME", "region"."r_name" AS "R_NAME"
+FROM "TPCH"."lineitem"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+INNER JOIN "TPCH"."partsupp" ON "lineitem"."l_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+INNER JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+WHERE "orders"."o_orderdate" >= DATE '1997-01-01' AND "orders"."o_orderdate" < DATE '1997-12-31'
+GROUP BY "lineitem"."l_orderkey", "orders"."o_orderdate", "customer"."c_name", "supplier"."s_name", "part"."p_name", "nation"."n_name", "region"."r_name"

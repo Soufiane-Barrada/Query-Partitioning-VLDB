@@ -1,0 +1,2068 @@
+{
+  "queryId" : "919",
+  "originalSql" : "WITH UserBadgeCounts AS (\n    SELECT \n        U.Id AS UserId, \n        U.DisplayName,\n        COUNT(B.Id) AS TotalBadges,\n        SUM(CASE WHEN B.Class = 1 THEN 1 ELSE 0 END) AS GoldBadges,\n        SUM(CASE WHEN B.Class = 2 THEN 1 ELSE 0 END) AS SilverBadges,\n        SUM(CASE WHEN B.Class = 3 THEN 1 ELSE 0 END) AS BronzeBadges\n    FROM \n        Users U\n    LEFT JOIN \n        Badges B ON U.Id = B.UserId\n    GROUP BY \n        U.Id, U.DisplayName\n),\nPostStatistics AS (\n    SELECT \n        P.OwnerUserId,\n        COUNT(CASE WHEN P.PostTypeId = 1 THEN 1 END) AS QuestionCount,\n        COUNT(CASE WHEN P.PostTypeId = 2 THEN 1 END) AS AnswerCount,\n        COALESCE(SUM(P.ViewCount), 0) AS TotalViews,\n        COALESCE(AVG(P.Score), 0) AS AvgScore\n    FROM \n        Posts P\n    GROUP BY \n        P.OwnerUserId\n),\nUserPerformance AS (\n    SELECT \n        U.Id AS UserId,\n        U.DisplayName,\n        COALESCE(UBC.TotalBadges, 0) AS BadgeCount,\n        COALESCE(PS.QuestionCount, 0) AS QuestionCount,\n        COALESCE(PS.AnswerCount, 0) AS AnswerCount,\n        COALESCE(PS.TotalViews, 0) AS TotalViews,\n        COALESCE(PS.AvgScore, 0) AS AvgScore\n    FROM \n        Users U\n    LEFT JOIN \n        UserBadgeCounts UBC ON U.Id = UBC.UserId\n    LEFT JOIN \n        PostStatistics PS ON U.Id = PS.OwnerUserId\n),\nHighestPerformingUsers AS (\n    SELECT \n        UserId,\n        DisplayName,\n        AVG(TotalViews) + SUM(BadgeCount) AS PerformanceScore\n    FROM \n        UserPerformance\n    GROUP BY \n        UserId, DisplayName\n    ORDER BY \n        PerformanceScore DESC\n    LIMIT 10\n)\nSELECT \n    U.UserId,\n    U.DisplayName,\n    U.BadgeCount,\n    U.QuestionCount,\n    U.AnswerCount,\n    U.TotalViews,\n    U.AvgScore,\n    HP.PerformanceScore\nFROM \n    UserPerformance U\nJOIN \n    HighestPerformingUsers HP ON U.UserId = HP.UserId\nWHERE \n    U.QuestionCount > 10\n    AND (U.AnswerCount > 5 OR U.BadgeCount > 5)\nORDER BY \n    U.AvgScore DESC, U.TotalViews DESC",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 30016,
+    "q1Engine" : "duckdb",
+    "q2Engine" : "datafusion",
+    "costAllDuckdb" : 2615.6490605840845,
+    "costAllDatafusion" : 22268.708237270697,
+    "chosenCost" : -1.0
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "random",
+      "doOptimize" : true,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+      "cutPolicy" : "RANDOM",
+      "randomSeed" : 1,
+      "schemaName" : "STACK"
+    },
+    "planStats" : {
+      "totalNodes" : 33,
+      "maxDepth" : 13,
+      "operatorKindCounts" : {
+        "OTHER" : 10,
+        "SORT" : 2,
+        "AGGREGATE" : 3,
+        "JOIN" : 4,
+        "FILTER" : 1
+      },
+      "rootOutputRows" : 17.519303764643247,
+      "rootRowSizeOutBytes" : 276.1378556527671
+    },
+    "cut" : {
+      "cutDepth" : 4,
+      "cutNodeOperatorKind" : "AGGREGATE",
+      "cutOutputRows" : 947156.973680583,
+      "cutRowSizeOutBytes" : 32.0,
+      "cutOutputBytes" : 3.0309023157778654E7,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 14,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "OTHER" : 8,
+          "AGGREGATE" : 3,
+          "JOIN" : 3
+        }
+      },
+      "q2Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 6,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "SORT" : 2,
+          "OTHER" : 2,
+          "JOIN" : 1,
+          "FILTER" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "USERID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "DISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "PERFORMANCESCORE",
+        "type" : "BIGINT"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t15\".\"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"USERID\", \"DISPLAYNAME\", \"PERFORMANCESCORE\"\nFROM \"s1\"\nORDER BY \"PERFORMANCESCORE\" DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t13\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t13\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t13\" ON \"Users1\".\"Id\" = \"t13\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t15\" ON \"t8\".\"USERID\" = \"t15\".\"USERID\"\nORDER BY \"t15\".\"AVGSCORE\" DESC NULLS FIRST, \"t15\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "USERID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "DISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "BADGECOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "QUESTIONCOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "ANSWERCOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTALVIEWS",
+        "type" : "INTEGER"
+      }, {
+        "name" : "AVGSCORE",
+        "type" : "INTEGER"
+      }, {
+        "name" : "PERFORMANCESCORE",
+        "type" : "BIGINT"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_30083",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30083,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 0,
+        "cutNodeOperatorKind" : "SORT",
+        "cutOutputRows" : 17.519303764643247,
+        "cutRowSizeOutBytes" : 276.1378556527671,
+        "cutOutputBytes" : 4837.742974098036,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 20,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 10,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 0,
+          "maxDepth" : 1,
+          "operatorKindCounts" : { }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t16\".\"USERID\", \"t16\".\"USERID\") AS \"USERID\", \"t16\".\"DISPLAYNAME\", \"t16\".\"BADGECOUNT\", \"t16\".\"QUESTIONCOUNT\", \"t16\".\"ANSWERCOUNT\", \"t16\".\"TOTALVIEWS\", \"t16\".\"AVGSCORE\", \"t16\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t14\".\"USERID\", \"t14\".\"DISPLAYNAME\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\", \"t7\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t7\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t12\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t12\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t10\" ON \"Users1\".\"Id\" = \"t10\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t12\" ON \"Users1\".\"Id\" = \"t12\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t14\" ON \"t7\".\"USERID\" = \"t14\".\"USERID\"\nORDER BY \"t14\".\"AVGSCORE\" DESC NULLS FIRST, \"t14\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t16\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"USERID\", \"USERID\") AS \"USERID\", \"DISPLAYNAME\", \"BADGECOUNT\", \"QUESTIONCOUNT\", \"ANSWERCOUNT\", \"TOTALVIEWS\", \"AVGSCORE\", \"PERFORMANCESCORE\"\nFROM \"s1\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30062",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30062,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 2,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 17.519303764643247,
+        "cutRowSizeOutBytes" : 276.1378556527671,
+        "cutOutputBytes" : 4837.742974098036,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 18,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 2,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "SORT" : 1,
+            "OTHER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t7\".\"USERID\", \"t7\".\"USERID\") AS \"USERID\", \"t7\".\"DISPLAYNAME\", \"t7\".\"PERFORMANCESCORE\", \"t14\".\"USERID\" AS \"USERID0\", \"t14\".\"DISPLAYNAME\" AS \"DISPLAYNAME0\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t7\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t12\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t12\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t10\" ON \"Users1\".\"Id\" = \"t10\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t12\" ON \"Users1\".\"Id\" = \"t12\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t14\" ON \"t7\".\"USERID\" = \"t14\".\"USERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        }, {
+          "name" : "USERID0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME0",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"USERID\", \"USERID\") AS \"USERID\", \"DISPLAYNAME\", \"BADGECOUNT\", \"QUESTIONCOUNT\", \"ANSWERCOUNT\", \"TOTALVIEWS\", \"AVGSCORE\", \"PERFORMANCESCORE\"\nFROM (SELECT \"USERID0\" AS \"USERID\", \"DISPLAYNAME0\" AS \"DISPLAYNAME\", \"BADGECOUNT\", \"QUESTIONCOUNT\", \"ANSWERCOUNT\", \"TOTALVIEWS\", \"AVGSCORE\", \"PERFORMANCESCORE\"\nFROM \"s1\"\nORDER BY \"AVGSCORE\" DESC NULLS FIRST, \"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30018",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30018,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "SORT",
+        "cutOutputRows" : 10.0,
+        "cutRowSizeOutBytes" : 32.0,
+        "cutOutputBytes" : 320.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 15,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "JOIN" : 3
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 5,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "SORT" : 1,
+            "OTHER" : 2,
+            "JOIN" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t7\".\"USERID\", \"t7\".\"USERID\") AS \"USERID\", \"t7\".\"DISPLAYNAME\", \"t7\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t7\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t15\".\"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"s1\".\"PERFORMANCESCORE\"\nFROM \"s1\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t13\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t13\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t13\" ON \"Users1\".\"Id\" = \"t13\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t15\" ON \"s1\".\"USERID\" = \"t15\".\"USERID\"\nORDER BY \"t15\".\"AVGSCORE\" DESC NULLS FIRST, \"t15\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30012",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30012,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5042830.72306044,
+        "cutRowSizeOutBytes" : 244.1378556527671,
+        "cutOutputBytes" : 1.2311458791478689E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 12,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 2,
+            "JOIN" : 3,
+            "OTHER" : 7
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 8,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 3,
+            "JOIN" : 1,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t15\".\"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"USERID\", \"DISPLAYNAME\", AVG(\"TOTALVIEWS\") + SUM(\"BADGECOUNT\") AS \"PERFORMANCESCORE\"\nFROM \"s1\"\nGROUP BY \"USERID\", \"DISPLAYNAME\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t13\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t13\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t13\" ON \"Users1\".\"Id\" = \"t13\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t15\" ON \"t8\".\"USERID\" = \"t15\".\"USERID\"\nORDER BY \"t15\".\"AVGSCORE\" DESC NULLS FIRST, \"t15\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30074",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30074,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 5,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5042830.72306044,
+        "cutRowSizeOutBytes" : 244.1378556527671,
+        "cutOutputBytes" : 1.2311458791478689E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 11,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 2,
+            "JOIN" : 3,
+            "OTHER" : 6
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 9,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 4,
+            "JOIN" : 1,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"Id\", \"Users\".\"Reputation\", \"Users\".\"CreationDate\", \"Users\".\"DisplayName\", \"Users\".\"LastAccessDate\", \"Users\".\"WebsiteUrl\", \"Users\".\"Location\", \"Users\".\"AboutMe\", \"Users\".\"Views\", \"Users\".\"UpVotes\", \"Users\".\"DownVotes\", \"Users\".\"ProfileImageUrl\", \"Users\".\"AccountId\", \"t1\".\"USERID\", \"t1\".\"DISPLAYNAME\" AS \"DISPLAYNAME_\", \"t1\".\"TOTALBADGES\", \"t1\".\"GOLDBADGES\", \"t1\".\"SILVERBADGES\", \"t1\".\"BRONZEBADGES\", \"t3\".\"OWNERUSERID\", \"t3\".\"QUESTIONCOUNT\", \"t3\".\"ANSWERCOUNT\", \"t3\".\"FD_D_f3\" AS \"TOTALVIEWS\", \"t3\".\"FD_D_f4\" AS \"AVGSCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME_",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTALBADGES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "GOLDBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "SILVERBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "BRONZEBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t12\".\"USERID\", \"t12\".\"USERID\") AS \"USERID\", \"t12\".\"DISPLAYNAME\", \"t12\".\"BADGECOUNT\", \"t12\".\"QUESTIONCOUNT\", \"t12\".\"ANSWERCOUNT\", \"t12\".\"TOTALVIEWS\", \"t12\".\"AVGSCORE\", \"t12\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t10\".\"USERID\", \"t10\".\"DISPLAYNAME\", \"t10\".\"BADGECOUNT\", \"t10\".\"QUESTIONCOUNT\", \"t10\".\"ANSWERCOUNT\", \"t10\".\"TOTALVIEWS\", \"t10\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Id\" AS \"USERID\", \"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"TOTALVIEWS\" IS NOT NULL THEN CAST(\"TOTALVIEWS\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"TOTALBADGES\" IS NOT NULL THEN CAST(\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"s1\"\nGROUP BY \"Id\", \"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Id\" AS \"USERID\", \"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"TOTALBADGES\" IS NOT NULL THEN CAST(\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"TOTALVIEWS\" IS NOT NULL THEN CAST(\"TOTALVIEWS\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"AVGSCORE\" IS NOT NULL THEN CAST(\"AVGSCORE\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"s1\"\nWHERE CASE WHEN \"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"TOTALBADGES\" IS NOT NULL THEN CAST(\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t10\" ON \"t8\".\"USERID\" = \"t10\".\"USERID\"\nORDER BY \"t10\".\"AVGSCORE\" DESC NULLS FIRST, \"t10\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t12\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30072",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30072,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 2521418.7538989326,
+        "cutRowSizeOutBytes" : 204.1378556527671,
+        "cutOutputBytes" : 5.147170176236002E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 7,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "JOIN" : 2,
+            "OTHER" : 4
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 13,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 6,
+            "AGGREGATE" : 2,
+            "JOIN" : 2,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"Id\", \"Users\".\"Reputation\", \"Users\".\"CreationDate\", \"Users\".\"DisplayName\", \"Users\".\"LastAccessDate\", \"Users\".\"WebsiteUrl\", \"Users\".\"Location\", \"Users\".\"AboutMe\", \"Users\".\"Views\", \"Users\".\"UpVotes\", \"Users\".\"DownVotes\", \"Users\".\"ProfileImageUrl\", \"Users\".\"AccountId\", \"t1\".\"USERID\", \"t1\".\"DISPLAYNAME\" AS \"DISPLAYNAME_\", \"t1\".\"TOTALBADGES\", \"t1\".\"GOLDBADGES\", \"t1\".\"SILVERBADGES\", \"t1\".\"BRONZEBADGES\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME_",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTALBADGES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "GOLDBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "SILVERBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "BRONZEBADGES",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t14\".\"USERID\", \"t14\".\"USERID\") AS \"USERID\", \"t14\".\"DISPLAYNAME\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\", \"t14\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t12\".\"USERID\", \"t12\".\"DISPLAYNAME\", \"t12\".\"BADGECOUNT\", \"t12\".\"QUESTIONCOUNT\", \"t12\".\"ANSWERCOUNT\", \"t12\".\"TOTALVIEWS\", \"t12\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"s1\".\"Id\" AS \"USERID\", \"s1\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"s1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"s1\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"s1\".\"Id\", \"s1\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"s10\".\"Id\" AS \"USERID\", \"s10\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"s10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t10\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t10\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t10\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t10\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"s1\" AS \"s10\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t10\" ON \"s10\".\"Id\" = \"t10\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"s10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t12\" ON \"t8\".\"USERID\" = \"t12\".\"USERID\"\nORDER BY \"t12\".\"AVGSCORE\" DESC NULLS FIRST, \"t12\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t14\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_26041",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 26041,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1260710.0,
+        "cutRowSizeOutBytes" : 148.1378556527671,
+        "cutOutputBytes" : 1.86758876E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 9,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"Reputation\", \"CreationDate\", \"DisplayName\", \"LastAccessDate\", \"WebsiteUrl\", \"Location\", \"AboutMe\", \"Views\", \"UpVotes\", \"DownVotes\", \"ProfileImageUrl\", \"AccountId\"\nFROM \"Users\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t15\".\"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"s1\".\"Id\" AS \"USERID\", \"s1\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t2\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t2\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"s1\"\nLEFT JOIN (SELECT MIN(\"s10\".\"Id\") AS \"USERID\", \"s10\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"s1\" AS \"s10\" ON \"Badges\".\"UserId\" = \"s10\".\"Id\"\nGROUP BY \"s10\".\"Id\", \"s10\".\"DisplayName\") AS \"t2\" ON \"s1\".\"Id\" = \"t2\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"s1\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"s1\".\"Id\", \"s1\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"s11\".\"Id\" AS \"USERID\", \"s11\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t13\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t13\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"s1\" AS \"s11\"\nLEFT JOIN (SELECT MIN(\"s12\".\"Id\") AS \"USERID\", \"s12\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"s1\" AS \"s12\" ON \"Badges0\".\"UserId\" = \"s12\".\"Id\"\nGROUP BY \"s12\".\"Id\", \"s12\".\"DisplayName\") AS \"t11\" ON \"s11\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t13\" ON \"s11\".\"Id\" = \"t13\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t15\" ON \"t8\".\"USERID\" = \"t15\".\"USERID\"\nORDER BY \"t15\".\"AVGSCORE\" DESC NULLS FIRST, \"t15\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_29989",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 29989,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 1011723.713958873,
+        "cutRowSizeOutBytes" : 56.0,
+        "cutOutputBytes" : 5.665652798169689E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "JOIN" : 1,
+            "OTHER" : 4
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 14,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 6,
+            "AGGREGATE" : 2,
+            "JOIN" : 3,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(ANY_VALUE(\"Users\".\"Id\"), ANY_VALUE(\"Users\".\"Id\")) AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" ON \"Badges\".\"UserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTALBADGES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "GOLDBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "SILVERBADGES",
+          "type" : "INTEGER"
+        }, {
+          "name" : "BRONZEBADGES",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t14\".\"USERID\", \"t14\".\"USERID\") AS \"USERID\", \"t14\".\"DISPLAYNAME\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\", \"t14\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t12\".\"USERID\", \"t12\".\"DISPLAYNAME\", \"t12\".\"BADGECOUNT\", \"t12\".\"QUESTIONCOUNT\", \"t12\".\"ANSWERCOUNT\", \"t12\".\"TOTALVIEWS\", \"t12\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users0\".\"Id\" AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"s1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\" AS \"Users0\"\nLEFT JOIN \"s1\" ON \"Users0\".\"Id\" = \"s1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"Users0\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"s10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t10\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t10\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t10\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t10\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN \"s1\" AS \"s10\" ON \"Users1\".\"Id\" = \"s10\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t10\" ON \"Users1\".\"Id\" = \"t10\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"s10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"s10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t12\" ON \"t8\".\"USERID\" = \"t12\".\"USERID\"\nORDER BY \"t12\".\"AVGSCORE\" DESC NULLS FIRST, \"t12\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t14\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30078",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30078,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 3582433.0,
+        "cutRowSizeOutBytes" : 179.14600864597386,
+        "cutOutputBytes" : 6.417785731916221E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "JOIN" : 1,
+            "OTHER" : 3
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 7,
+            "AGGREGATE" : 3,
+            "JOIN" : 3,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"Id\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", \"Badges\".\"Id\" AS \"Id0\", CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END AS \"FD_COL_3\", CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END AS \"FD_COL_4\", CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END AS \"FD_COL_5\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" ON \"Badges\".\"UserId\" = \"Users\".\"Id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_3",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_4",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_5",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t16\".\"USERID\", \"t16\".\"USERID\") AS \"USERID\", \"t16\".\"DISPLAYNAME\", \"t16\".\"BADGECOUNT\", \"t16\".\"QUESTIONCOUNT\", \"t16\".\"ANSWERCOUNT\", \"t16\".\"TOTALVIEWS\", \"t16\".\"AVGSCORE\", \"t16\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t14\".\"USERID\", \"t14\".\"DISPLAYNAME\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users0\".\"Id\" AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t2\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t2\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\" AS \"Users0\"\nLEFT JOIN (SELECT MIN(\"Id\") AS \"USERID\", \"DISPLAYNAME\", COUNT(\"Id0\") AS \"TOTALBADGES\", SUM(\"FD_COL_3\") AS \"GOLDBADGES\", SUM(\"FD_COL_4\") AS \"SILVERBADGES\", SUM(\"FD_COL_5\") AS \"BRONZEBADGES\"\nFROM \"s1\"\nGROUP BY \"Id\", \"DISPLAYNAME\") AS \"t2\" ON \"Users0\".\"Id\" = \"t2\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"Users0\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t12\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t12\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Id\") AS \"USERID\", \"DISPLAYNAME\", COUNT(\"Id0\") AS \"TOTALBADGES\", SUM(\"FD_COL_3\") AS \"GOLDBADGES\", SUM(\"FD_COL_4\") AS \"SILVERBADGES\", SUM(\"FD_COL_5\") AS \"BRONZEBADGES\"\nFROM \"s1\"\nGROUP BY \"Id\", \"DISPLAYNAME\") AS \"t10\" ON \"Users1\".\"Id\" = \"t10\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t12\" ON \"Users1\".\"Id\" = \"t12\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t10\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t10\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t14\" ON \"t8\".\"USERID\" = \"t14\".\"USERID\"\nORDER BY \"t14\".\"AVGSCORE\" DESC NULLS FIRST, \"t14\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t16\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_29949",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 29949,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 2321724.0,
+        "cutRowSizeOutBytes" : 31.00815299320677,
+        "cutOutputBytes" : 7.1992373E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 9,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"UserId\", \"Name\", \"Date\", \"Class\", \"TagBased\"\nFROM \"Badges\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Date",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Class",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "TagBased",
+          "type" : "BOOLEAN"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t15\".\"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t2\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t2\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT MIN(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"s1\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"s1\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"s1\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"s1\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"s1\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"s1\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t2\" ON \"Users\".\"Id\" = \"t2\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"Users\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t13\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t13\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t13\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"s10\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"s10\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"s10\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"s10\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"s1\" AS \"s10\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"s10\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t13\" ON \"Users1\".\"Id\" = \"t13\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t13\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t13\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t13\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t15\" ON \"t8\".\"USERID\" = \"t15\".\"USERID\"\nORDER BY \"t15\".\"AVGSCORE\" DESC NULLS FIRST, \"t15\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_29995",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 29995,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 371631.0,
+        "cutRowSizeOutBytes" : 40.0,
+        "cutOutputBytes" : 1.486524E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 17,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 8,
+            "AGGREGATE" : 2,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_COL_3\", AVG(\"Score\") AS \"FD_COL_4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "FD_COL_3",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_4",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t15\".\"USERID\", \"t15\".\"USERID\") AS \"USERID\", \"t15\".\"DISPLAYNAME\", \"t15\".\"BADGECOUNT\", \"t15\".\"QUESTIONCOUNT\", \"t15\".\"ANSWERCOUNT\", \"t15\".\"TOTALVIEWS\", \"t15\".\"AVGSCORE\", \"t15\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t13\".\"USERID\", \"t13\".\"DISPLAYNAME\", \"t13\".\"BADGECOUNT\", \"t13\".\"QUESTIONCOUNT\", \"t13\".\"ANSWERCOUNT\", \"t13\".\"TOTALVIEWS\", \"t13\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"s1\".\"FD_COL_3\" IS NOT NULL THEN CAST(\"s1\".\"FD_COL_3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t4\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t4\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT MIN(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t4\" ON \"Users\".\"Id\" = \"t4\".\"USERID\"\nLEFT JOIN \"s1\" ON \"Users\".\"Id\" = \"s1\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"s10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"s10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"s10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"s10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"s10\".\"FD_COL_3\" IS NOT NULL THEN CAST(\"s10\".\"FD_COL_3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"s10\".\"FD_COL_4\" IS NOT NULL THEN CAST(\"s10\".\"FD_COL_4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN \"s1\" AS \"s10\" ON \"Users1\".\"Id\" = \"s10\".\"OWNERUSERID\"\nWHERE CASE WHEN \"s10\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"s10\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"s10\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"s10\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t13\" ON \"t8\".\"USERID\" = \"t13\".\"USERID\"\nORDER BY \"t13\".\"AVGSCORE\" DESC NULLS FIRST, \"t13\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_29993",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 29993,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 18,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 8,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END AS \"FD_COL_1\", CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END AS \"FD_COL_2\", \"ViewCount\", \"Score\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_1",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_2",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t16\".\"USERID\", \"t16\".\"USERID\") AS \"USERID\", \"t16\".\"DISPLAYNAME\", \"t16\".\"BADGECOUNT\", \"t16\".\"QUESTIONCOUNT\", \"t16\".\"ANSWERCOUNT\", \"t16\".\"TOTALVIEWS\", \"t16\".\"AVGSCORE\", \"t16\".\"PERFORMANCESCORE\"\nFROM (SELECT \"t14\".\"USERID\", \"t14\".\"DISPLAYNAME\", \"t14\".\"BADGECOUNT\", \"t14\".\"QUESTIONCOUNT\", \"t14\".\"ANSWERCOUNT\", \"t14\".\"TOTALVIEWS\", \"t14\".\"AVGSCORE\", \"t8\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users\".\"Id\" AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t4\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t4\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t3\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t3\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT MIN(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"USERID\"\nLEFT JOIN (SELECT \"OWNERUSERID\", COUNT(\"FD_COL_1\") AS \"QUESTIONCOUNT\", COUNT(\"FD_COL_2\") AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"s1\"\nGROUP BY \"OWNERUSERID\") AS \"t4\" ON \"Users\".\"Id\" = \"t4\".\"OWNERUSERID\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t8\"\nINNER JOIN (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t12\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t12\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t12\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"USERID\"\nLEFT JOIN (SELECT \"OWNERUSERID\", COUNT(\"FD_COL_1\") AS \"QUESTIONCOUNT\", COUNT(\"FD_COL_2\") AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"s1\"\nGROUP BY \"OWNERUSERID\") AS \"t12\" ON \"Users1\".\"Id\" = \"t12\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t12\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t12\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t12\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t11\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t11\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)) AS \"t14\" ON \"t8\".\"USERID\" = \"t14\".\"USERID\"\nORDER BY \"t14\".\"AVGSCORE\" DESC NULLS FIRST, \"t14\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t16\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_30048",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 30048,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 2615.6490605840845,
+      "costAllDatafusion" : 22268.708237270697,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "7a57335391780e8adbcfd7dca48a3773d7909972641671400f6e8ea4f40e67f8",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 33,
+        "maxDepth" : 13,
+        "operatorKindCounts" : {
+          "OTHER" : 10,
+          "SORT" : 2,
+          "AGGREGATE" : 3,
+          "JOIN" : 4,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 17.519303764643247,
+        "rootRowSizeOutBytes" : 276.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 1891061.521147665,
+        "cutRowSizeOutBytes" : 244.1378556527671,
+        "cutOutputBytes" : 4.616797046804508E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 13,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "AGGREGATE" : 2,
+            "JOIN" : 3,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 7,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "SORT" : 2,
+            "OTHER" : 3,
+            "JOIN" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END AS \"BADGECOUNT\", CASE WHEN \"t3\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t3\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END AS \"QUESTIONCOUNT\", CASE WHEN \"t3\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t3\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END AS \"ANSWERCOUNT\", CASE WHEN \"t3\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f3\" AS INTEGER) ELSE 0 END AS \"TOTALVIEWS\", CASE WHEN \"t3\".\"FD_D_f4\" IS NOT NULL THEN CAST(\"t3\".\"FD_D_f4\" AS INTEGER) ELSE 0 END AS \"AVGSCORE\"\nFROM \"Users\"\nLEFT JOIN (SELECT ANY_VALUE(\"Users0\".\"Id\") AS \"USERID\", \"Users0\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\"\nRIGHT JOIN \"Users\" AS \"Users0\" ON \"Badges\".\"UserId\" = \"Users0\".\"Id\"\nGROUP BY \"Users0\".\"Id\", \"Users0\".\"DisplayName\") AS \"t1\" ON \"Users\".\"Id\" = \"t1\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"Users\".\"Id\" = \"t3\".\"OWNERUSERID\"\nWHERE CASE WHEN \"t3\".\"QUESTIONCOUNT\" IS NOT NULL THEN CAST(\"t3\".\"QUESTIONCOUNT\" AS BIGINT) ELSE 0 END > 10 AND (CASE WHEN \"t3\".\"ANSWERCOUNT\" IS NOT NULL THEN CAST(\"t3\".\"ANSWERCOUNT\" AS BIGINT) ELSE 0 END > 5 OR CASE WHEN \"t1\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t1\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END > 5)",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t17\".\"USERID\", \"t17\".\"USERID\") AS \"USERID\", \"t17\".\"DISPLAYNAME\", \"t17\".\"BADGECOUNT\", \"t17\".\"QUESTIONCOUNT\", \"t17\".\"ANSWERCOUNT\", \"t17\".\"TOTALVIEWS\", \"t17\".\"AVGSCORE\", \"t17\".\"PERFORMANCESCORE\"\nFROM (SELECT \"s1\".\"USERID\", \"s1\".\"DISPLAYNAME\", \"s1\".\"BADGECOUNT\", \"s1\".\"QUESTIONCOUNT\", \"s1\".\"ANSWERCOUNT\", \"s1\".\"TOTALVIEWS\", \"s1\".\"AVGSCORE\", \"t15\".\"PERFORMANCESCORE\"\nFROM (SELECT \"Users1\".\"Id\" AS \"USERID\", \"Users1\".\"DisplayName\" AS \"DISPLAYNAME\", AVG(CASE WHEN \"t11\".\"FD_D_f3\" IS NOT NULL THEN CAST(\"t11\".\"FD_D_f3\" AS INTEGER) ELSE 0 END) + SUM(CASE WHEN \"t9\".\"TOTALBADGES\" IS NOT NULL THEN CAST(\"t9\".\"TOTALBADGES\" AS BIGINT) ELSE 0 END) AS \"PERFORMANCESCORE\"\nFROM \"Users\" AS \"Users1\"\nLEFT JOIN (SELECT MIN(\"Users2\".\"Id\") AS \"USERID\", \"Users2\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Badges0\".\"Id\") AS \"TOTALBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"GOLDBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"SILVERBADGES\", SUM(CASE WHEN CAST(\"Badges0\".\"Class\" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS \"BRONZEBADGES\"\nFROM \"Badges\" AS \"Badges0\"\nRIGHT JOIN \"Users\" AS \"Users2\" ON \"Badges0\".\"UserId\" = \"Users2\".\"Id\"\nGROUP BY \"Users2\".\"Id\", \"Users2\".\"DisplayName\") AS \"t9\" ON \"Users1\".\"Id\" = \"t9\".\"USERID\"\nLEFT JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE NULL END) AS \"QUESTIONCOUNT\", COUNT(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS \"ANSWERCOUNT\", SUM(\"ViewCount\") AS \"FD_D_f3\", AVG(\"Score\") AS \"FD_D_f4\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t11\" ON \"Users1\".\"Id\" = \"t11\".\"OWNERUSERID\"\nGROUP BY \"Users1\".\"Id\", \"Users1\".\"DisplayName\"\nORDER BY 3 DESC NULLS FIRST\nLIMIT 10) AS \"t15\"\nINNER JOIN \"s1\" ON \"t15\".\"USERID\" = \"s1\".\"USERID\"\nORDER BY \"s1\".\"AVGSCORE\" DESC NULLS FIRST, \"s1\".\"TOTALVIEWS\" DESC NULLS FIRST) AS \"t17\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "BADGECOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "QUESTIONCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ANSWERCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PERFORMANCESCORE",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  } ]
+}

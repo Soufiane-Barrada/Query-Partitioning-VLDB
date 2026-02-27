@@ -1,0 +1,6 @@
+SELECT COALESCE(ANY_VALUE("t"."Id"), ANY_VALUE("t"."Id")) AS "USERID", "t"."DisplayName" AS "DISPLAYNAME", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES", COUNT(DISTINCT "Posts"."Id") AS "TOTALPOSTS"
+FROM (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Votes"."Id" AS "Id0", "Votes"."PostId", "Votes"."VoteTypeId", "Votes"."UserId", "Votes"."CreationDate" AS "CreationDate0", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" ON "Votes"."UserId" = "Users"."Id") AS "t"
+LEFT JOIN "STACK"."Posts" ON "t"."PostId" = "Posts"."Id"
+GROUP BY "t"."Id", "t"."DisplayName"

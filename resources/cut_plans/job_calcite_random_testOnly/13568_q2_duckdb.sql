@@ -1,0 +1,6 @@
+SELECT COALESCE("t3"."AKA_NAME", "t3"."AKA_NAME") AS "AKA_NAME", "t3"."MOVIE_TITLE", "t3"."CAST_NOTE", "t3"."COMPANY_NAME", "t3"."MOVIE_KEYWORD", "t3"."PERSON_INFO", "t3"."production_year"
+FROM (SELECT "aka_name"."name" AS "AKA_NAME", "aka_title"."title" AS "MOVIE_TITLE", "cast_info"."note" AS "CAST_NOTE", "company_name"."name" AS "COMPANY_NAME", "keyword"."keyword" AS "MOVIE_KEYWORD", "person_info"."info" AS "PERSON_INFO", "aka_title"."production_year"
+FROM "IMDB"."company_name"
+INNER JOIN ((SELECT SINGLE_VALUE("id") AS "$f0"
+FROM "s1") AS "t1" INNER JOIN ("IMDB"."cast_info" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id") ON "cast_info"."person_id" = "aka_name"."person_id") ON "t1"."$f0" = "person_info"."info_type_id" INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ("IMDB"."aka_title" INNER JOIN "IMDB"."movie_companies" ON "aka_title"."id" = "movie_companies"."movie_id") ON "movie_keyword"."movie_id" = "aka_title"."id") ON "cast_info"."movie_id" = "aka_title"."movie_id") ON "company_name"."id" = "movie_companies"."company_id"
+ORDER BY "aka_title"."production_year" DESC NULLS FIRST, "aka_name"."name") AS "t3"

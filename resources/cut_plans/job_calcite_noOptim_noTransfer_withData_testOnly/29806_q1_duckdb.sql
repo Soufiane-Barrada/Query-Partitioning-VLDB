@@ -1,0 +1,11 @@
+SELECT COALESCE("title"."id", "title"."id") AS "MOVIE_ID", "title"."title" AS "MOVIE_TITLE", "title"."production_year" AS "PRODUCTION_YEAR", "keyword"."keyword" AS "MOVIE_KEYWORD", ', ' AS "FD_COL_4", "company_name"."name" AS "COMPANY_NAME", "name"."name" || ' (' || "role_type"."role" || ')' AS "FD_COL_6"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."complete_cast" ON "title"."id" = "complete_cast"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "complete_cast"."subject_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."name" ON "cast_info"."person_id" = "name"."id"
+INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id"
+WHERE "title"."production_year" >= 2010 AND "keyword"."keyword" LIKE '%Action%'

@@ -1,0 +1,10 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", "Posts"."Title" AS "TITLE", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."Score" AS "SCORE", COUNT(CASE WHEN "Comments"."PostId" = "Posts"."Id" THEN 1 ELSE NULL END) AS "COMMENTCOUNT", COUNT(CASE WHEN "Votes"."PostId" = "Posts"."Id" THEN 1 ELSE NULL END) AS "VOTECOUNT", "Tags"."TagName" AS "TAGNAME", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", ANY_VALUE("PostHistory"."UserDisplayName") AS "LASTEDITEDBY", ANY_VALUE("PostHistory"."CreationDate") AS "LASTEDITEDDATE"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Tags" ON "Posts"."Id" = "Tags"."ExcerptPostId"
+LEFT JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."PostHistory" ON "Posts"."Id" = "PostHistory"."PostId"
+WHERE "Posts"."CreationDate" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP(0)) - INTERVAL '1' YEAR)
+GROUP BY "Posts"."Id", "Users"."DisplayName", "Posts"."Title", "Posts"."CreationDate", "Posts"."ViewCount", "Posts"."Score", "Tags"."TagName", "PostTypes"."Name", "PostHistory"."UserDisplayName", "PostHistory"."CreationDate"

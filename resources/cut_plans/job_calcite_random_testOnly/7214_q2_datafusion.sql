@@ -1,0 +1,16 @@
+SELECT COALESCE("t9"."ACTOR_NAME", "t9"."ACTOR_NAME") AS "ACTOR_NAME", "t9"."MOVIE_TITLE", "t9"."ROLE_ID", "t9"."COMPANY_TYPE", "t9"."COMPANY_COUNT", "t9"."AVG_MOVIE_RATING"
+FROM (SELECT "t2"."name", "t2"."title", "t2"."role_id", "company_type"."kind", ANY_VALUE("t2"."name") AS "ACTOR_NAME", ANY_VALUE("t2"."title") AS "MOVIE_TITLE", ANY_VALUE("t2"."role_id") AS "ROLE_ID", ANY_VALUE("company_type"."kind") AS "COMPANY_TYPE", COUNT(DISTINCT "t2"."company_id") AS "COMPANY_COUNT", AVG(CAST("t5"."info" AS INTEGER)) AS "AVG_MOVIE_RATING"
+FROM (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "aka_title"."id" AS "id1", "aka_title"."movie_id" AS "movie_id0", "aka_title"."title", "aka_title"."imdb_index" AS "imdb_index0", "aka_title"."kind_id", "aka_title"."production_year", "aka_title"."phonetic_code", "aka_title"."episode_of_id", "aka_title"."season_nr", "aka_title"."episode_nr", "aka_title"."note" AS "note0", "aka_title"."md5sum" AS "md5sum0", "movie_companies"."id" AS "id2", "movie_companies"."movie_id" AS "movie_id1", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note1"
+FROM "IMDB"."cast_info"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN ("IMDB"."movie_companies" RIGHT JOIN "IMDB"."aka_title" ON "movie_companies"."movie_id" = "aka_title"."id") ON "cast_info"."movie_id" = "aka_title"."id"
+WHERE "aka_title"."production_year" >= 1990 AND "aka_title"."production_year" <= 2020) AS "t2"
+LEFT JOIN "IMDB"."company_type" ON "t2"."company_type_id" = "company_type"."id"
+LEFT JOIN (SELECT "movie_info"."id", "movie_info"."movie_id", "movie_info"."info_type_id", "movie_info"."info", "movie_info"."note", "t3"."$f0"
+FROM (SELECT SINGLE_VALUE("id") AS "$f0"
+FROM "s1") AS "t3",
+"IMDB"."movie_info"
+WHERE "movie_info"."info_type_id" = "t3"."$f0") AS "t5" ON "t2"."id1" = "t5"."movie_id"
+GROUP BY "t2"."name", "t2"."title", "t2"."role_id", "company_type"."kind"
+HAVING COUNT(DISTINCT "t2"."company_id") > 1
+ORDER BY 10 DESC NULLS FIRST, 5) AS "t9"

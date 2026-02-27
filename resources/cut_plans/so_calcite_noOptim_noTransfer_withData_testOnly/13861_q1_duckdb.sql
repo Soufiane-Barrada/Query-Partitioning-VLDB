@@ -1,0 +1,5 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."Reputation" AS "REPUTATION", "Posts"."Id" AS "Id0", "Comments"."Id" AS "Id1", "Badges"."Id" AS "Id2"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"

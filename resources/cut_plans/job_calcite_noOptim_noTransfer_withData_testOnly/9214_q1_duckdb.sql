@@ -1,0 +1,12 @@
+SELECT COALESCE(ANY_VALUE("title"."title"), ANY_VALUE("title"."title")) AS "MOVIE_TITLE", ANY_VALUE("name"."name") AS "ACTOR_NAME", COUNT(*) AS "ALIAS_COUNT", LISTAGG("keyword"."keyword", ',') AS "KEYWORDS", ANY_VALUE("company_type"."kind") AS "COMPANY_TYPE"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."complete_cast" ON "title"."id" = "complete_cast"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "complete_cast"."subject_id" = "cast_info"."id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN "IMDB"."name" ON "aka_name"."person_id" = "name"."imdb_id"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+INNER JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+WHERE "title"."production_year" > 2000
+GROUP BY "title"."title", "name"."name", "company_type"."kind"

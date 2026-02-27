@@ -1,0 +1,16 @@
+SELECT COALESCE("t2"."ID", "t2"."ID") AS "ID", "t2"."DISPLAYNAME", "t2"."TOTALBADGES", "t2"."TOTALPOSTS", "Users0"."Id" AS "Id_", "Users0"."Reputation", "Users0"."CreationDate", "Users0"."DisplayName" AS "DisplayName_", "Users0"."LastAccessDate", "Users0"."WebsiteUrl", "Users0"."Location", "Users0"."AboutMe", "Users0"."Views", "Users0"."UpVotes", "Users0"."DownVotes", "Users0"."ProfileImageUrl", "Users0"."AccountId", "t6"."POSTID", "t6"."TITLE", "t6"."SCORE", "t6"."CREATIONDATE" AS "CREATIONDATE_", "t6"."OWNERUSERID", "t6"."ANSWERCOUNT", "t6"."COMMENTCOUNT", "t6"."UPVOTES" AS "UPVOTES_", "t6"."DOWNVOTES" AS "DOWNVOTES_"
+FROM (SELECT "t"."Id" AS "ID", "t"."DisplayName" AS "DISPLAYNAME", SUM(CASE WHEN "t"."Class" IS NOT NULL THEN CAST("t"."Class" AS INTEGER) ELSE 0 END) AS "TOTALBADGES", COUNT(DISTINCT "Posts"."Id") AS "TOTALPOSTS"
+FROM "STACK"."Posts"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id") AS "t" ON "Posts"."OwnerUserId" = "t"."Id"
+GROUP BY "t"."Id", "t"."DisplayName"
+ORDER BY 4 DESC NULLS FIRST, 3 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"
+INNER JOIN "STACK"."Users" AS "Users0" ON "t2"."ID" = "Users0"."Id"
+INNER JOIN (SELECT ANY_VALUE("t3"."Id") AS "POSTID", "t3"."Title" AS "TITLE", "t3"."Score" AS "SCORE", "t3"."CreationDate" AS "CREATIONDATE", "t3"."OwnerUserId" AS "OWNERUSERID", "t3"."AnswerCount" AS "ANSWERCOUNT", "t3"."CommentCount" AS "COMMENTCOUNT", COUNT(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE NULL END) AS "UPVOTES", COUNT(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE NULL END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" > (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS "t3" ON "Votes"."PostId" = "t3"."Id"
+GROUP BY "t3"."Id", "t3"."Title", "t3"."Score", "t3"."CreationDate", "t3"."OwnerUserId", "t3"."AnswerCount", "t3"."CommentCount") AS "t6" ON "Users0"."Id" = "t6"."OWNERUSERID"

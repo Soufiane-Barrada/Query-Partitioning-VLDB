@@ -1,0 +1,4 @@
+SELECT COALESCE("s1"."title", "s1"."title") AS "TITLE", "aka_name"."name" AS "ACTOR_NAME", "cast_info"."role_id" AS "ROLE_ID", "movie_info"."info" AS "MOVIE_INFO", "keyword"."keyword" AS "KEYWORD"
+FROM "IMDB"."company_name"
+INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id" INNER JOIN ("s1" INNER JOIN "IMDB"."movie_info" ON "s1"."id" = "movie_info"."movie_id" INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") ON "s1"."id" = "movie_keyword"."movie_id") ON "cast_info"."movie_id" = "s1"."id") ON "movie_companies"."movie_id" = "s1"."id"

@@ -1,0 +1,13 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t0"."OWNERUSERID", "t0"."TOTALPOSTS", "t0"."AVERAGESCORE", "t0"."TIMESCLOSED", "t0"."TIMESREOPENED", "t0"."HOTQUESTIONCHANGES", "t4"."USERID", "t4"."DISPLAYNAME" AS "DISPLAYNAME_", "t4"."UPVOTES" AS "UPVOTES_", "t4"."DOWNVOTES" AS "DOWNVOTES_", "t4"."TOTALPOSTS" AS "TOTALPOSTS0"
+FROM "STACK"."Users"
+INNER JOIN (SELECT "Posts"."OwnerUserId" AS "OWNERUSERID", COUNT(*) AS "TOTALPOSTS", AVG("Posts"."Score") AS "AVERAGESCORE", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 10 THEN 1 ELSE 0 END) AS "TIMESCLOSED", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 11 THEN 1 ELSE 0 END) AS "TIMESREOPENED", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) IN (52, 53) THEN 1 ELSE 0 END) AS "HOTQUESTIONCHANGES"
+FROM "STACK"."PostHistory"
+RIGHT JOIN "STACK"."Posts" ON "PostHistory"."PostId" = "Posts"."Id"
+GROUP BY "Posts"."OwnerUserId") AS "t0" ON "Users"."Id" = "t0"."OWNERUSERID"
+INNER JOIN (SELECT ANY_VALUE("t1"."Id") AS "USERID", "t1"."DisplayName" AS "DISPLAYNAME", SUM(CASE WHEN CAST("t1"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("t1"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES", COUNT(DISTINCT "Posts0"."Id") AS "TOTALPOSTS"
+FROM (SELECT "Users0"."Id", "Users0"."Reputation", "Users0"."CreationDate", "Users0"."DisplayName", "Users0"."LastAccessDate", "Users0"."WebsiteUrl", "Users0"."Location", "Users0"."AboutMe", "Users0"."Views", "Users0"."UpVotes", "Users0"."DownVotes", "Users0"."ProfileImageUrl", "Users0"."AccountId", "Votes"."Id" AS "Id0", "Votes"."PostId", "Votes"."VoteTypeId", "Votes"."UserId", "Votes"."CreationDate" AS "CreationDate0", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Votes"."UserId" = "Users0"."Id") AS "t1"
+LEFT JOIN "STACK"."Posts" AS "Posts0" ON "t1"."PostId" = "Posts0"."Id"
+GROUP BY "t1"."Id", "t1"."DisplayName") AS "t4" ON "t0"."OWNERUSERID" = "t4"."USERID"
+WHERE "Users"."Reputation" > 1000

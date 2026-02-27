@@ -1,0 +1,17 @@
+SELECT COALESCE("n_name", "n_name") AS "N_NAME", "r_name" AS "R_NAME", "TOTAL_SUPPLY_VALUE", "TOTAL_ORDERS", "AVG_ORDER_VALUE"
+FROM (SELECT "t3"."n_nationkey", "t3"."n_name", "t3"."n_regionkey", "t3"."n_comment", "t3"."r_regionkey", "t3"."r_name", "t3"."r_comment", "t3"."PS_SUPPKEY", "t3"."TOTAL_SUPPLY_VALUE", "t3"."PART_COUNT", "t6"."C_CUSTKEY", "t6"."C_NAME", "t6"."TOTAL_ORDERS", "t6"."AVG_ORDER_VALUE"
+FROM (SELECT "t"."n_nationkey", "t"."n_name", "t"."n_regionkey", "t"."n_comment", "t"."r_regionkey", "t"."r_name", "t"."r_comment", "t2"."PS_SUPPKEY", "t2"."TOTAL_SUPPLY_VALUE", "t2"."PART_COUNT", CAST("t"."n_nationkey" AS BIGINT) AS "n_nationkey0"
+FROM (SELECT "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "region"."r_regionkey", "region"."r_name", "region"."r_comment", CAST("nation"."n_nationkey" AS BIGINT) AS "n_nationkey0"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") AS "t"
+LEFT JOIN (SELECT "partsupp"."ps_suppkey" AS "PS_SUPPKEY", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_SUPPLY_VALUE", COUNT(DISTINCT "partsupp"."ps_partkey") AS "PART_COUNT"
+FROM "TPCH"."partsupp"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+WHERE "supplier"."s_acctbal" > 10000.00
+GROUP BY "partsupp"."ps_suppkey") AS "t2" ON "t"."n_nationkey0" = "t2"."PS_SUPPKEY") AS "t3"
+LEFT JOIN (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", COUNT("orders"."o_orderkey") AS "TOTAL_ORDERS", AVG("orders"."o_totalprice") AS "AVG_ORDER_VALUE"
+FROM "TPCH"."customer"
+LEFT JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name"
+HAVING COUNT("orders"."o_orderkey") > 5) AS "t6" ON "t3"."n_nationkey0" = "t6"."C_CUSTKEY") AS "t7"
+WHERE "t7"."r_name" LIKE 'Europe%'

@@ -1,0 +1,6 @@
+SELECT COALESCE("t2"."TITLE", "t2"."TITLE") AS "TITLE", "t2"."CREATIONDATE", "t2"."OWNERDISPLAYNAME", "t2"."VIEWCOUNT", "t2"."ANSWERCOUNT"
+FROM (SELECT "s1"."Title" AS "TITLE", "s1"."CreationDate" AS "CREATIONDATE", "Users"."DisplayName" AS "OWNERDISPLAYNAME", "s1"."ViewCount" AS "VIEWCOUNT", "s1"."AnswerCount" AS "ANSWERCOUNT"
+FROM "s1"
+INNER JOIN "STACK"."Users" ON "s1"."OwnerUserId" = "Users"."Id"
+ORDER BY "s1"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"

@@ -1,0 +1,4 @@
+SELECT COALESCE("ParentId", "ParentId") AS "PARENTID", COUNT(*) AS "ANSWERCOUNT"
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 2
+GROUP BY "ParentId"

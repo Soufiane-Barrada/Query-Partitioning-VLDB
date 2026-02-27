@@ -1,0 +1,8 @@
+SELECT COALESCE(ANY_VALUE("t0"."Id"), ANY_VALUE("t0"."Id")) AS "USERID", "t0"."DisplayName" AS "DISPLAYNAME", COUNT("t0"."Id0") AS "POSTCOUNT", SUM(CASE WHEN CAST("t0"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONCOUNT", SUM(CASE WHEN CAST("t0"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERCOUNT", SUM("Votes"."BountyAmount") AS "TOTALBOUNTY", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t"."Id", "t"."Reputation", "t"."CreationDate", "t"."DisplayName", "t"."LastAccessDate", "t"."WebsiteUrl", "t"."Location", "t"."AboutMe", "t"."Views", "t"."UpVotes", "t"."DownVotes", "t"."ProfileImageUrl", "t"."AccountId", "Posts"."Id" AS "Id0", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate" AS "CreationDate0", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense"
+FROM "STACK"."Posts"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "Reputation" > 1000) AS "t" ON "Posts"."OwnerUserId" = "t"."Id") AS "t0" ON "Votes"."PostId" = "t0"."Id0"
+GROUP BY "t0"."Id", "t0"."DisplayName"

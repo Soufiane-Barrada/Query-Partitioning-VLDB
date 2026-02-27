@@ -1,0 +1,8 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."DISPLAYNAME", "t1"."POSTCOUNT", "t1"."QUESTIONCOUNT", "t1"."ANSWERCOUNT", "t1"."COMMENTCOUNT", "t1"."UPVOTES", "t1"."DOWNVOTES", "Users0"."Reputation" AS "REPUTATION", "Users0"."CreationDate" AS "CREATIONDATE", "Users0"."LastAccessDate" AS "LASTACCESSDATE"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "Posts"."Id") AS "POSTCOUNT", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONCOUNT", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERCOUNT", SUM(CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE 0 END) AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+INNER JOIN "STACK"."Users" AS "Users0" ON "t1"."USERID" = "Users0"."Id"

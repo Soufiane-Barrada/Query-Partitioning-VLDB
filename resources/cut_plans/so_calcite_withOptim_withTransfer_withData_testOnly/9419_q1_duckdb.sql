@@ -1,0 +1,12 @@
+SELECT COALESCE("t4"."POSTID", "t4"."POSTID") AS "POSTID", "t4"."TITLE", "t4"."CREATIONDATE", "t4"."SCORE", "t4"."VIEWCOUNT", "t4"."OWNERDISPLAYNAME", "t4"."COMMENTCOUNT", "t4"."UPVOTES", "t4"."DOWNVOTES", "t"."PostId" AS "POSTID0", "t"."EDITCOUNT", "t"."MOSTRECENTEDIT"
+FROM (SELECT "PostId", COUNT(*) AS "EDITCOUNT", MAX("CreationDate") AS "MOSTRECENTEDIT"
+FROM "STACK"."PostHistory"
+GROUP BY "PostId") AS "t"
+RIGHT JOIN (SELECT ANY_VALUE("t1"."Id") AS "POSTID", "t1"."Title" AS "TITLE", "t1"."CreationDate" AS "CREATIONDATE", "t1"."Score" AS "SCORE", "t1"."ViewCount" AS "VIEWCOUNT", ANY_VALUE("t1"."DisplayName") AS "OWNERDISPLAYNAME", COUNT("t1"."Id1") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t0"."Id", "t0"."PostTypeId", "t0"."AcceptedAnswerId", "t0"."ParentId", "t0"."CreationDate", "t0"."Score", "t0"."ViewCount", "t0"."Body", "t0"."OwnerUserId", "t0"."OwnerDisplayName", "t0"."LastEditorUserId", "t0"."LastEditorDisplayName", "t0"."LastEditDate", "t0"."LastActivityDate", "t0"."Title", "t0"."Tags", "t0"."AnswerCount", "t0"."CommentCount", "t0"."FavoriteCount", "t0"."ClosedDate", "t0"."CommunityOwnedDate", "t0"."ContentLicense", "Users"."Id" AS "Id0", "Users"."Reputation", "Users"."CreationDate" AS "CreationDate0", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Comments"."Id" AS "Id1", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate1", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN ((SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS "t0" INNER JOIN "STACK"."Users" ON "t0"."OwnerUserId" = "Users"."Id") ON "Comments"."PostId" = "t0"."Id") AS "t1" ON "Votes"."PostId" = "t1"."Id"
+GROUP BY "t1"."Id", "t1"."Title", "t1"."CreationDate", "t1"."Score", "t1"."ViewCount", "t1"."DisplayName") AS "t4" ON "t"."PostId" = "t4"."POSTID"

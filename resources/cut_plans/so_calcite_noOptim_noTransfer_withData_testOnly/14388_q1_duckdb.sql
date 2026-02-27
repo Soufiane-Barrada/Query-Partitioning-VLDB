@@ -1,0 +1,10 @@
+SELECT COALESCE("PostTypes"."Name", "PostTypes"."Name") AS "Name", "Posts0"."Id" AS "Id1", CASE WHEN "t0"."COMMENTCOUNT" IS NOT NULL THEN CAST("t0"."COMMENTCOUNT" AS BIGINT) ELSE 0 END AS "FD_COL_2", CASE WHEN "t2"."VOTECOUNT" IS NOT NULL THEN CAST("t2"."VOTECOUNT" AS BIGINT) ELSE 0 END AS "FD_COL_3", "Posts"."Score"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Posts" AS "Posts0" ON "Posts"."Id" = "Posts0"."ParentId" AND CAST("Posts0"."PostTypeId" AS INTEGER) = 2
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."POSTID"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t2" ON "Posts"."Id" = "t2"."POSTID"

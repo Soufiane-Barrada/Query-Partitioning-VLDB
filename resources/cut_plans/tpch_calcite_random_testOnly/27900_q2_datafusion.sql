@@ -1,0 +1,10 @@
+SELECT COALESCE("t3"."SUPPLIER_INFO", "t3"."SUPPLIER_INFO") AS "SUPPLIER_INFO", "t3"."TOTAL_ORDERS", "t3"."TOTAL_REVENUE", "t3"."AVG_DISCOUNTED_PRICE", "t3"."PART_NAMES", "t3"."FURNITURE_CUSTOMERS"
+FROM (SELECT "supplier"."s_name", "nation"."n_name", "region"."r_name", ANY_VALUE(CONCAT("supplier"."s_name", ' from ', "nation"."n_name", ' in ', "region"."r_name")) AS "SUPPLIER_INFO", COUNT(DISTINCT "s1"."o_orderkey") AS "TOTAL_ORDERS", SUM("s1"."l_extendedprice" * (1 - "s1"."l_discount")) AS "TOTAL_REVENUE", AVG(CASE WHEN "s1"."l_discount" > 0.00 THEN CAST("s1"."l_extendedprice" AS DECIMAL(15, 2)) ELSE NULL END) AS "AVG_DISCOUNTED_PRICE", LISTAGG(DISTINCT "part"."p_name", ', ') AS "PART_NAMES", COUNT(DISTINCT CASE WHEN "customer"."c_mktsegment" = 'FURNITURE' THEN "customer"."c_custkey" ELSE NULL END) AS "FURNITURE_CUSTOMERS"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN ("TPCH"."customer" INNER JOIN "s1" ON "customer"."c_custkey" = "s1"."o_custkey") ON "part"."p_partkey" = "s1"."l_partkey"
+GROUP BY "supplier"."s_name", "nation"."n_name", "region"."r_name"
+ORDER BY 6 DESC NULLS FIRST, 5 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t3"

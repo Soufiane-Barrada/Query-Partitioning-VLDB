@@ -1,0 +1,12 @@
+SELECT COALESCE("t2"."POSTID", "t2"."POSTID") AS "POSTID", "t2"."TITLE", "t2"."CREATIONDATE", "t2"."VIEWCOUNT", "t2"."SCORE", "t2"."COMMENTCOUNT", "t2"."VOTECOUNT", "t2"."UPVOTES", "t2"."DOWNVOTES", "t5"."DISPLAYNAME" AS "OWNERDISPLAYNAME", "t5"."REPUTATION" AS "USERREPUTATION", "t5"."POSTSCOUNT" AS "TOTALPOSTS", "t5"."BADGESCOUNT" AS "TOTALBADGES"
+FROM (SELECT ANY_VALUE("Posts"."Id") AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."Score" AS "SCORE", COUNT("Comments"."Id") AS "COMMENTCOUNT", COUNT("Votes"."Id") AS "VOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES", "Posts"."OwnerUserId" AS "OWNERUSERID"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+WHERE "Posts"."CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)
+GROUP BY "Posts"."Id", "Posts"."Title", "Posts"."CreationDate", "Posts"."ViewCount", "Posts"."Score", "Posts"."OwnerUserId") AS "t2"
+INNER JOIN (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", "Users"."Reputation" AS "REPUTATION", COUNT(DISTINCT "Posts0"."Id") AS "POSTSCOUNT", SUM("Badges"."Class") AS "BADGESCOUNT"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" AS "Posts0" ON "Users"."Id" = "Posts0"."OwnerUserId"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+GROUP BY "Users"."Id", "Users"."DisplayName", "Users"."Reputation") AS "t5" ON "t2"."OWNERUSERID" = "t5"."USERID"

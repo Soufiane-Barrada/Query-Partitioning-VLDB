@@ -1,0 +1,4 @@
+SELECT COALESCE("UserId", "UserId") AS "UserId", COUNT(*) AS "EDITCOUNT", COUNT(DISTINCT "PostId") AS "POSTSEDITED"
+FROM "STACK"."PostHistory"
+WHERE CAST("PostHistoryTypeId" AS INTEGER) IN (4, 5, 6, 24)
+GROUP BY "UserId"

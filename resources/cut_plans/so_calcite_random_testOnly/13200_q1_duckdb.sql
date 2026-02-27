@@ -1,0 +1,7 @@
+SELECT COALESCE("t0"."Id", "t0"."Id") AS "Id", "t0"."PostTypeId" AS "POSTTYPEID", "t0"."Id0", "Votes"."Id" AS "Id1", CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END AS "FD_COL_4", CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END AS "FD_COL_5"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t"."Id", "t"."PostTypeId", "t"."AcceptedAnswerId", "t"."ParentId", "t"."CreationDate", "t"."Score", "t"."ViewCount", "t"."Body", "t"."OwnerUserId", "t"."OwnerDisplayName", "t"."LastEditorUserId", "t"."LastEditorDisplayName", "t"."LastEditDate", "t"."LastActivityDate", "t"."Title", "t"."Tags", "t"."AnswerCount", "t"."CommentCount", "t"."FavoriteCount", "t"."ClosedDate", "t"."CommunityOwnedDate", "t"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' MONTH)) AS "t" ON "Comments"."PostId" = "t"."Id") AS "t0" ON "Votes"."PostId" = "t0"."Id"

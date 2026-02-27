@@ -1,0 +1,11 @@
+SELECT COALESCE("t6"."USERID", "t6"."USERID") AS "USERID", "t6"."DISPLAYNAME", "t6"."POSTCOUNT", "t6"."COMMENTCOUNT", "t6"."UPVOTES", "t6"."DOWNVOTES", "t6"."REPUTATION"
+FROM (SELECT "Users0"."Id" AS "USERID", "Users0"."DisplayName" AS "DISPLAYNAME", "t4"."POSTCOUNT", "t4"."COMMENTCOUNT", "t4"."UPVOTES", "t4"."DOWNVOTES", "t4"."REPUTATION"
+FROM "STACK"."Users" AS "Users0"
+INNER JOIN (SELECT ANY_VALUE("t1"."Id") AS "USERID", "t1"."Reputation" AS "REPUTATION", COUNT(DISTINCT "t1"."Id0") AS "POSTCOUNT", COUNT(DISTINCT "t1"."Id1") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM (SELECT "s1"."Id", "s1"."Reputation", "s1"."CreationDate", "s1"."DisplayName", "s1"."LastAccessDate", "s1"."WebsiteUrl", "s1"."Location", "s1"."AboutMe", "s1"."Views", "s1"."UpVotes", "s1"."DownVotes", "s1"."ProfileImageUrl", "s1"."AccountId", "s1"."Id0", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate0", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "Comments"."Id" AS "Id1", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate1", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN "s1" ON "Comments"."PostId" = "s1"."Id0") AS "t1"
+LEFT JOIN "STACK"."Votes" ON "t1"."Id0" = "Votes"."PostId"
+GROUP BY "t1"."Id", "t1"."Reputation") AS "t4" ON "Users0"."Id" = "t4"."USERID"
+ORDER BY "t4"."REPUTATION" DESC NULLS FIRST, "t4"."POSTCOUNT" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t6"

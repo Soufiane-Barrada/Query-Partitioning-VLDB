@@ -1,0 +1,21 @@
+SELECT COALESCE("t2"."REGION_NAME", "t2"."REGION_NAME") AS "REGION_NAME", "t2"."TOTAL_SALES", "t2"."ORDER_COUNT", ("t2"."TOTAL_SALES" - "t7"."AVG_SALES") / CASE WHEN "t7"."AVG_SALES" = 0.0000 THEN NULL ELSE "t7"."AVG_SALES" END * 100 AS "SALES_VARIANCE_PERCENTAGE", ("t2"."ORDER_COUNT" - "t7"."AVG_ORDER_COUNT") / CASE WHEN "t7"."AVG_ORDER_COUNT" = 0 THEN NULL ELSE "t7"."AVG_ORDER_COUNT" END * 100 AS "ORDER_COUNT_VARIANCE_PERCENTAGE"
+FROM (SELECT ANY_VALUE("region"."r_name") AS "REGION_NAME", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_SALES", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+WHERE "orders"."o_orderdate" >= DATE '1996-01-01' AND "orders"."o_orderdate" < DATE '1997-01-01'
+GROUP BY "region"."r_name") AS "t2",
+(SELECT AVG(SUM("lineitem0"."l_extendedprice" * (1 - "lineitem0"."l_discount"))) AS "AVG_SALES", AVG(COUNT(DISTINCT "orders0"."o_orderkey")) AS "AVG_ORDER_COUNT"
+FROM "TPCH"."region" AS "region0"
+INNER JOIN "TPCH"."nation" AS "nation0" ON "region0"."r_regionkey" = "nation0"."n_regionkey"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "nation0"."n_nationkey" = "supplier0"."s_nationkey"
+INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "supplier0"."s_suppkey" = "partsupp0"."ps_suppkey"
+INNER JOIN "TPCH"."part" AS "part0" ON "partsupp0"."ps_partkey" = "part0"."p_partkey"
+INNER JOIN "TPCH"."lineitem" AS "lineitem0" ON "part0"."p_partkey" = "lineitem0"."l_partkey"
+INNER JOIN "TPCH"."orders" AS "orders0" ON "lineitem0"."l_orderkey" = "orders0"."o_orderkey"
+WHERE "orders0"."o_orderdate" >= DATE '1996-01-01' AND "orders0"."o_orderdate" < DATE '1997-01-01'
+GROUP BY "region0"."r_name") AS "t7"

@@ -1,0 +1,16 @@
+SELECT COALESCE("t4"."MOVIE_ID", "t4"."MOVIE_ID") AS "MOVIE_ID", "t4"."TITLE", "t4"."PRODUCTION_YEAR", "t"."KEYWORD", ', ' AS "FD_COL_4", "t4"."name"
+FROM (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", "keyword"."keyword" AS "KEYWORD"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") AS "t"
+RIGHT JOIN (SELECT "t3"."MOVIE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."CAST_COUNT", "t3"."id", "t3"."movie_id", "t3"."company_id", "t3"."company_type_id", "t3"."note", "company_name"."id" AS "id0", "company_name"."name", "company_name"."country_code", "company_name"."imdb_id", "company_name"."name_pcode_nf", "company_name"."name_pcode_sf", "company_name"."md5sum"
+FROM "IMDB"."company_name"
+RIGHT JOIN (SELECT "t2"."MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."CAST_COUNT", "movie_companies"."id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN (SELECT "t1"."MOVIE_ID", "t1"."title" AS "TITLE", "t1"."production_year" AS "PRODUCTION_YEAR", "t1"."CAST_COUNT"
+FROM (SELECT "title"."id" AS "id00", "title"."title", "title"."production_year", ANY_VALUE("title"."id") AS "MOVIE_ID", COUNT(DISTINCT "cast_info"."person_id") AS "CAST_COUNT"
+FROM "IMDB"."cast_info"
+INNER JOIN ("IMDB"."complete_cast" INNER JOIN "IMDB"."title" ON "complete_cast"."movie_id" = "title"."id") ON "cast_info"."id" = "complete_cast"."subject_id"
+GROUP BY "title"."id", "title"."title", "title"."production_year"
+ORDER BY 5 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t1") AS "t2" ON "movie_companies"."movie_id" = "t2"."MOVIE_ID") AS "t3" ON "company_name"."id" = "t3"."company_id") AS "t4" ON "t"."MOVIE_ID" = "t4"."MOVIE_ID"
+WHERE "t4"."PRODUCTION_YEAR" >= 2000

@@ -1,0 +1,10 @@
+SELECT COALESCE("t4"."SUPPLIER_NAME", "t4"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t4"."PART_NAME", "t4"."NUMBER_OF_ORDERS", "t4"."TOTAL_QUANTITY", "t4"."AVERAGE_EXTENDED_PRICE", "t4"."CUSTOMER_NAMES", "t4"."PART_COMMENTS"
+FROM (SELECT "supplier"."s_name", "s1"."p_name", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("s1"."p_name") AS "PART_NAME", COUNT(DISTINCT "t1"."o_orderkey") AS "NUMBER_OF_ORDERS", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", AVG("lineitem"."l_extendedprice") AS "AVERAGE_EXTENDED_PRICE", LISTAGG(DISTINCT CONCAT("customer"."c_name", ' from ', "region"."r_name"), ', ') AS "CUSTOMER_NAMES", LISTAGG(DISTINCT "s1"."p_comment", '; ') AS "PART_COMMENTS"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."customer" INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01' AND "o_orderdate" < DATE '1998-01-01') AS "t1" ON "customer"."c_custkey" = "t1"."o_custkey" INNER JOIN ("TPCH"."lineitem" INNER JOIN ("s1" INNER JOIN "TPCH"."partsupp" ON "s1"."p_partkey" = "partsupp"."ps_partkey") ON "lineitem"."l_partkey" = "s1"."p_partkey") ON "t1"."o_orderkey" = "lineitem"."l_orderkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_name", "s1"."p_name"
+ORDER BY 5 DESC NULLS FIRST, 6 DESC NULLS FIRST) AS "t4"

@@ -1,0 +1,8 @@
+SELECT COALESCE("part"."p_partkey", "part"."p_partkey") AS "p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment", "customer"."c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "region"."r_regionkey", "region"."r_name", "region"."r_comment"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+INNER JOIN "TPCH"."customer" ON "lineitem"."l_orderkey" = "customer"."c_custkey"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"

@@ -1,0 +1,18 @@
+SELECT COALESCE("t10"."REGION_NAME", "t10"."REGION_NAME") AS "REGION_NAME", "t10"."NATION_NAME", "t10"."CUSTOMER_COUNT", "t10"."TOTAL_ORDER_VALUE", CASE WHEN "t10"."$f4" IS NOT NULL THEN CAST("t10"."$f4" AS DECIMAL(19, 4)) ELSE 0.0000 END AS "TOTAL_LINEITEM_VALUE", "t10"."AVERAGE_SUPPLIER_COUNT"
+FROM (SELECT "t6"."REGION_NAME", "t6"."NATION_NAME", COUNT(DISTINCT "t6"."C_CUSTKEY") AS "CUSTOMER_COUNT", SUM("t6"."O_TOTALPRICE") AS "TOTAL_ORDER_VALUE", SUM("t6"."l_extendedprice" * (1 - "t6"."l_discount")) AS "$f4", AVG("s1"."SUPPLIER_COUNT") AS "AVERAGE_SUPPLIER_COUNT"
+FROM (SELECT "t5"."C_CUSTKEY", "t5"."NATION_NAME", "t5"."REGION_NAME", "t5"."C_ACCTBAL", "t5"."O_ORDERKEY", "t5"."O_ORDERDATE", "t5"."O_TOTALPRICE", "t5"."O_ORDERSTATUS", "t5"."ORDER_RANK", "t5"."O_CUSTKEY", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN (SELECT "t4"."C_CUSTKEY", "t4"."NATION_NAME", "t4"."REGION_NAME", "t4"."C_ACCTBAL", "t2"."O_ORDERKEY", "t2"."O_ORDERDATE", "t2"."O_TOTALPRICE", "t2"."O_ORDERSTATUS", "t2"."ORDER_RANK", "t2"."O_CUSTKEY"
+FROM (SELECT "o_orderkey" AS "O_ORDERKEY", "o_orderdate" AS "O_ORDERDATE", "o_totalprice" AS "O_TOTALPRICE", "o_orderstatus" AS "O_ORDERSTATUS", DENSE_RANK() OVER (PARTITION BY "o_orderstatus" ORDER BY "o_totalprice" DESC NULLS FIRST) AS "ORDER_RANK", "o_custkey" AS "O_CUSTKEY"
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1996-01-01' AND "o_orderdate" < DATE '1997-01-01') AS "t2"
+RIGHT JOIN (SELECT "t3"."c_custkey" AS "C_CUSTKEY", "nation"."n_name" AS "NATION_NAME", "region"."r_name" AS "REGION_NAME", "t3"."c_acctbal" AS "C_ACCTBAL"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN (SELECT *
+FROM "TPCH"."customer"
+WHERE "c_acctbal" > 1000.00) AS "t3" ON "nation"."n_nationkey" = "t3"."c_nationkey") AS "t4" ON "t2"."O_CUSTKEY" = "t4"."C_CUSTKEY") AS "t5" ON "lineitem"."l_orderkey" = "t5"."O_ORDERKEY") AS "t6"
+LEFT JOIN "s1" ON "t6"."l_partkey" = "s1"."ps_partkey"
+GROUP BY "t6"."REGION_NAME", "t6"."NATION_NAME"
+HAVING COUNT(DISTINCT "t6"."C_CUSTKEY") > 5
+ORDER BY 4 DESC NULLS FIRST, "t6"."REGION_NAME", "t6"."NATION_NAME") AS "t10"

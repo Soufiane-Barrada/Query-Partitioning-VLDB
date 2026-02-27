@@ -1,0 +1,11 @@
+SELECT COALESCE("t2"."MOVIE_ID", "t2"."MOVIE_ID") AS "MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."CAST_COUNT", "t4"."KEYWORD_COUNT", "t4"."KEYWORDS", "t2"."ACTOR_NAMES", CASE WHEN "t2"."CAST_COUNT" < 5 THEN 'Low   ' WHEN "t2"."CAST_COUNT" >= 5 AND "t2"."CAST_COUNT" <= 10 THEN 'Medium' ELSE 'High  ' END AS "CAST_SIZE_CATEGORY"
+FROM (SELECT ANY_VALUE("title"."id") AS "MOVIE_ID", "title"."title" AS "TITLE", "title"."production_year" AS "PRODUCTION_YEAR", COUNT("cast_info"."id") AS "CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTOR_NAMES"
+FROM "IMDB"."title"
+LEFT JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id"
+LEFT JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+WHERE "title"."production_year" >= 1990 AND "title"."production_year" <= 2023
+GROUP BY "title"."id", "title"."title", "title"."production_year") AS "t2"
+LEFT JOIN (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", COUNT(*) AS "KEYWORD_COUNT", LISTAGG("keyword"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."movie_keyword"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "movie_keyword"."movie_id") AS "t4" ON "t2"."MOVIE_ID" = "t4"."MOVIE_ID"

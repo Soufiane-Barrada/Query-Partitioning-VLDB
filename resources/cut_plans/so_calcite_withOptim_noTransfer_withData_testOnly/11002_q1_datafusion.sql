@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("PostTypes"."Name"), ANY_VALUE("PostTypes"."Name")) AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "TOTALQUESTIONS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALANSWERS", SUM("Posts"."ViewCount") AS "TOTALVIEWS", AVG("Posts"."Score") AS "AVGSCORE", AVG("Posts"."AnswerCount") AS "AVGANSWERSPERQUESTION"
+FROM "STACK"."PostTypes"
+INNER JOIN "STACK"."Posts" ON "PostTypes"."Id" = "Posts"."PostTypeId"
+GROUP BY "PostTypes"."Name"

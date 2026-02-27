@@ -1,0 +1,11 @@
+SELECT COALESCE("t5"."SUPPLIER_NAME", "t5"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t5"."PART_NAME", "t5"."TOTAL_AVAILABLE_QUANTITY", "t5"."AVERAGE_PRICE_AFTER_DISCOUNT", "t5"."TOTAL_ORDERS", "t5"."UNIQUE_CUSTOMERS", "t5"."SHORT_COMMENT"
+FROM (SELECT "supplier"."s_name", "part"."p_name", "partsupp"."ps_availqty", "t2"."l_extendedprice", "t2"."l_discount", "orders"."o_orderkey", "customer"."c_custkey", "part"."p_comment", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("part"."p_name") AS "PART_NAME", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", AVG("t2"."l_extendedprice" * (1 - "t2"."l_discount")) AS "AVERAGE_PRICE_AFTER_DISCOUNT", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS", COUNT(DISTINCT "customer"."c_custkey") AS "UNIQUE_CUSTOMERS", ANY_VALUE(SUBSTRING("part"."p_comment", 1, 10)) AS "SHORT_COMMENT"
+FROM (SELECT SINGLE_VALUE("n_nationkey") AS "$f0"
+FROM "s1") AS "t1"
+INNER JOIN "TPCH"."supplier" ON "t1"."$f0" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN ("TPCH"."customer" INNER JOIN ((SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1997-01-01' AND "l_shipdate" <= DATE '1997-12-31') AS "t2" INNER JOIN "TPCH"."orders" ON "t2"."l_orderkey" = "orders"."o_orderkey") ON "customer"."c_custkey" = "orders"."o_custkey") ON "part"."p_partkey" = "t2"."l_partkey"
+GROUP BY "supplier"."s_name", "part"."p_name", "partsupp"."ps_availqty", "t2"."l_extendedprice", "t2"."l_discount", "orders"."o_orderkey", "customer"."c_custkey", "part"."p_comment"
+ORDER BY 11 DESC NULLS FIRST, 12 DESC NULLS FIRST) AS "t5"

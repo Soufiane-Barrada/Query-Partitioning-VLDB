@@ -1,0 +1,6 @@
+SELECT COALESCE("p_brand", "p_brand") AS "p_brand", "SUPPLIER_COUNT"
+FROM (SELECT "p_brand", COUNT(DISTINCT "ps_suppkey") AS "SUPPLIER_COUNT"
+FROM "s1"
+GROUP BY "p_brand"
+ORDER BY 2 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t1"

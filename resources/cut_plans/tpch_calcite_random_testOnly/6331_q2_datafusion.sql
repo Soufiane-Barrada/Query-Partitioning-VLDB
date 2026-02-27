@@ -1,0 +1,13 @@
+SELECT COALESCE("t2"."SUPPLIER_NATION", "t2"."SUPPLIER_NATION") AS "SUPPLIER_NATION", AVG("t5"."TOTAL_ORDER_VALUE") AS "AVG_ORDER_VALUE", SUM("t2"."TOTAL_SUPPLY_COST") AS "TOTAL_SUPPLY_COST"
+FROM (SELECT "s1"."s_suppkey" AS "S_SUPPKEY", "s1"."s_name" AS "S_NAME", ANY_VALUE("s1"."n_name") AS "SUPPLIER_NATION", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_SUPPLY_COST", MOD("s1"."s_suppkey", 10) AS "$f4"
+FROM "s1"
+INNER JOIN "TPCH"."partsupp" ON "s1"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "s1"."s_suppkey", "s1"."s_name", "s1"."n_name") AS "t2"
+INNER JOIN (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", SUM("t3"."o_totalprice") AS "TOTAL_ORDER_VALUE", MOD("customer"."c_custkey", 10) AS "$f3"
+FROM "TPCH"."customer"
+INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01' AND "o_orderdate" < DATE '1998-01-01') AS "t3" ON "customer"."c_custkey" = "t3"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t5" ON "t2"."$f4" = "t5"."$f3"
+GROUP BY "t2"."SUPPLIER_NATION"
+ORDER BY "t2"."SUPPLIER_NATION"

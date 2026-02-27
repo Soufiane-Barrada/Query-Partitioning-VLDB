@@ -1,0 +1,5 @@
+SELECT COALESCE("p_mfgr", "p_mfgr") AS "p_mfgr", "SUPPLIER_COUNT", "TOTAL_SUPPLY_COST"
+FROM (SELECT "p_mfgr", COUNT(DISTINCT "ps_suppkey") AS "SUPPLIER_COUNT", SUM("ps_supplycost") AS "TOTAL_SUPPLY_COST"
+FROM "s1"
+GROUP BY "p_mfgr"
+ORDER BY 2 DESC NULLS FIRST) AS "t2"

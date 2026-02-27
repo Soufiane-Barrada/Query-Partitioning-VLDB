@@ -1,0 +1,17 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t0"."USERID", "t0"."DISPLAYNAME" AS "DISPLAYNAME_", "t0"."BADGECOUNT", "t0"."TOTALREPUTATION", "t6"."POSTID", "t6"."TITLE", "t6"."CREATIONDATE" AS "CREATIONDATE_", "t6"."COMMENTCOUNT", "t6"."TOTALBOUNTY", "t6"."TAGS"
+FROM "STACK"."Users"
+INNER JOIN (SELECT ANY_VALUE("Users0"."Id") AS "USERID", "Users0"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "Badges"."Id") AS "BADGECOUNT", SUM("Users0"."Reputation") AS "TOTALREPUTATION"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Badges"."UserId" = "Users0"."Id"
+GROUP BY "Users0"."Id", "Users0"."DisplayName") AS "t0" ON "Users"."Id" = "t0"."USERID"
+INNER JOIN (SELECT ANY_VALUE("t2"."Id") AS "POSTID", "t2"."Title" AS "TITLE", "t2"."CreationDate" AS "CREATIONDATE", COUNT(DISTINCT "t2"."Id0") AS "COMMENTCOUNT", CASE WHEN SUM("t3"."BountyAmount") IS NOT NULL THEN CAST(SUM("t3"."BountyAmount") AS INTEGER) ELSE 0 END AS "TOTALBOUNTY", LISTAGG(DISTINCT "Tags"."TagName", ', ') AS "TAGS"
+FROM (SELECT "t1"."Id", "t1"."PostTypeId", "t1"."AcceptedAnswerId", "t1"."ParentId", "t1"."CreationDate", "t1"."Score", "t1"."ViewCount", "t1"."Body", "t1"."OwnerUserId", "t1"."OwnerDisplayName", "t1"."LastEditorUserId", "t1"."LastEditorDisplayName", "t1"."LastEditDate", "t1"."LastActivityDate", "t1"."Title", "t1"."Tags", "t1"."AnswerCount", "t1"."CommentCount", "t1"."FavoriteCount", "t1"."ClosedDate", "t1"."CommunityOwnedDate", "t1"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 1) AS "t1" ON "Comments"."PostId" = "t1"."Id") AS "t2"
+LEFT JOIN (SELECT *
+FROM "STACK"."Votes"
+WHERE CAST("VoteTypeId" AS INTEGER) = 9) AS "t3" ON "t2"."Id" = "t3"."PostId"
+LEFT JOIN "STACK"."Tags" ON "t2"."Id" = "Tags"."ExcerptPostId" OR "t2"."Id" = "Tags"."WikiPostId"
+GROUP BY "t2"."Id", "t2"."Title", "t2"."CreationDate") AS "t6" ON "Users"."Id" = "t6"."POSTID"

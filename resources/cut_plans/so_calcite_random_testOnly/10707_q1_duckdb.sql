@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."Id", "t"."Id") AS "Id", "t"."DisplayName" AS "DISPLAYNAME", "t"."Id0", CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END AS "FD_COL_3", CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END AS "FD_COL_4", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id") AS "t" ON "Votes"."UserId" = "t"."Id"

@@ -1,0 +1,12 @@
+SELECT COALESCE(ANY_VALUE("aka_name"."name"), ANY_VALUE("aka_name"."name")) AS "ACTOR_NAME", ANY_VALUE("title"."title") AS "MOVIE_TITLE", ANY_VALUE("comp_cast_type"."kind") AS "CAST_TYPE", ANY_VALUE("movie_info"."info") AS "MOVIE_INFO", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", COUNT(DISTINCT "keyword"."id") AS "FD_COL_5", "aka_name"."name"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."title" ON "cast_info"."movie_id" = "title"."id"
+INNER JOIN "IMDB"."comp_cast_type" ON "cast_info"."person_role_id" = "comp_cast_type"."id"
+INNER JOIN "IMDB"."movie_info" ON "title"."id" = "movie_info"."movie_id"
+LEFT JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+WHERE "movie_info"."info_type_id" IN (SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" LIKE 'budget') AND "title"."production_year" > 2000
+GROUP BY "aka_name"."name", "title"."title", "comp_cast_type"."kind", "movie_info"."info"

@@ -1,0 +1,18 @@
+SELECT COALESCE("t9"."POSTID", "t9"."POSTID") AS "POSTID", "t9"."TITLE", "t9"."POSTCREATIONDATE", "t9"."SCORE", "t9"."VIEWCOUNT", "t9"."ACCEPTEDANSWERCOUNT", "t9"."COMMENTCOUNT", "t9"."VOTECOUNT", "t9"."USERREPUTATION", "t9"."USERLOCATION", "t9"."USERCREATIONDATE"
+FROM (SELECT "t7"."Id" AS "POSTID", "t7"."Title" AS "TITLE", "t7"."CreationDate" AS "POSTCREATIONDATE", "t7"."Score" AS "SCORE", "t7"."ViewCount" AS "VIEWCOUNT", CASE WHEN "t7"."ACCEPTEDANSWERCOUNT" IS NOT NULL THEN CAST("t7"."ACCEPTEDANSWERCOUNT" AS BIGINT) ELSE 0 END AS "ACCEPTEDANSWERCOUNT", CASE WHEN "t7"."COMMENTCOUNT" IS NOT NULL THEN CAST("t7"."COMMENTCOUNT" AS BIGINT) ELSE 0 END AS "COMMENTCOUNT", CASE WHEN "t7"."VOTECOUNT" IS NOT NULL THEN CAST("t7"."VOTECOUNT" AS BIGINT) ELSE 0 END AS "VOTECOUNT", "Users"."Reputation" AS "USERREPUTATION", "Users"."Location" AS "USERLOCATION", "Users"."CreationDate" AS "USERCREATIONDATE"
+FROM "STACK"."Users"
+INNER JOIN (SELECT "t6"."Id", "t6"."PostTypeId", "t6"."AcceptedAnswerId", "t6"."ParentId", "t6"."CreationDate", "t6"."Score", "t6"."ViewCount", "t6"."Body", "t6"."OwnerUserId", "t6"."OwnerDisplayName", "t6"."LastEditorUserId", "t6"."LastEditorDisplayName", "t6"."LastEditDate", "t6"."LastActivityDate", "t6"."Title", "t6"."Tags", "t6"."AnswerCount", "t6"."CommentCount", "t6"."FavoriteCount", "t6"."ClosedDate", "t6"."CommunityOwnedDate", "t6"."ContentLicense", "t6"."PARENTID", "t6"."ACCEPTEDANSWERCOUNT", "t6"."POSTID", "t6"."COMMENTCOUNT", "t2"."PostId" AS "POSTID0", "t2"."VOTECOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t2"
+RIGHT JOIN (SELECT "t5"."Id", "t5"."PostTypeId", "t5"."AcceptedAnswerId", "t5"."ParentId", "t5"."CreationDate", "t5"."Score", "t5"."ViewCount", "t5"."Body", "t5"."OwnerUserId", "t5"."OwnerDisplayName", "t5"."LastEditorUserId", "t5"."LastEditorDisplayName", "t5"."LastEditDate", "t5"."LastActivityDate", "t5"."Title", "t5"."Tags", "t5"."AnswerCount", "t5"."CommentCount", "t5"."FavoriteCount", "t5"."ClosedDate", "t5"."CommunityOwnedDate", "t5"."ContentLicense", "t5"."PARENTID", "t5"."ACCEPTEDANSWERCOUNT", "t3"."PostId" AS "POSTID", "t3"."COMMENTCOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t3"
+RIGHT JOIN (SELECT "t4"."Id", "t4"."PostTypeId", "t4"."AcceptedAnswerId", "t4"."ParentId", "t4"."CreationDate", "t4"."Score", "t4"."ViewCount", "t4"."Body", "t4"."OwnerUserId", "t4"."OwnerDisplayName", "t4"."LastEditorUserId", "t4"."LastEditorDisplayName", "t4"."LastEditDate", "t4"."LastActivityDate", "t4"."Title", "t4"."Tags", "t4"."AnswerCount", "t4"."CommentCount", "t4"."FavoriteCount", "t4"."ClosedDate", "t4"."CommunityOwnedDate", "t4"."ContentLicense", "s1"."ParentId" AS "PARENTID", "s1"."ACCEPTEDANSWERCOUNT"
+FROM "s1"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= TIMESTAMP '2023-01-01 00:00:00') AS "t4" ON "s1"."ParentId" = "t4"."Id") AS "t5" ON "t3"."PostId" = "t5"."Id") AS "t6" ON "t2"."PostId" = "t6"."Id") AS "t7" ON "Users"."Id" = "t7"."OwnerUserId"
+ORDER BY "t7"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t9"

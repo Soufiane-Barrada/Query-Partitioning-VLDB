@@ -1,0 +1,10 @@
+SELECT COALESCE("t3"."MOVIE_TITLE", "t3"."MOVIE_TITLE") AS "MOVIE_TITLE", "t3"."ACTOR_NAME", "t3"."CHARACTER_TYPE", "t3"."MOVIE_KEYWORD", "t3"."PERSON_INFO", "t3"."MOVIE_NOTE", "t3"."production_year"
+FROM (SELECT "t1"."title" AS "MOVIE_TITLE", "aka_name"."name" AS "ACTOR_NAME", "t1"."kind" AS "CHARACTER_TYPE", "keyword"."keyword" AS "MOVIE_KEYWORD", "person_info"."info" AS "PERSON_INFO", "movie_info"."note" AS "MOVIE_NOTE", "t1"."production_year"
+FROM "IMDB"."movie_info"
+INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id" INNER JOIN (SELECT "s1"."id" AS "id", "s1"."kind" AS "kind", "s1"."id0" AS "id0", "s1"."person_id" AS "person_id", "s1"."movie_id" AS "movie_id", "s1"."person_role_id" AS "person_role_id", "s1"."note" AS "note", "s1"."nr_order" AS "nr_order", "s1"."role_id" AS "role_id", "complete_cast"."id" AS "id1", "complete_cast"."movie_id" AS "movie_id0", "complete_cast"."subject_id" AS "subject_id", "complete_cast"."status_id" AS "status_id", "t0"."id" AS "id00", "t0"."title" AS "title", "t0"."imdb_index" AS "imdb_index", "t0"."kind_id" AS "kind_id", "t0"."production_year" AS "production_year", "t0"."imdb_id" AS "imdb_id", "t0"."phonetic_code" AS "phonetic_code", "t0"."episode_of_id" AS "episode_of_id", "t0"."season_nr" AS "season_nr", "t0"."episode_nr" AS "episode_nr", "t0"."series_years" AS "series_years", "t0"."md5sum" AS "md5sum"
+FROM "s1"
+INNER JOIN ("IMDB"."complete_cast" INNER JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000) AS "t0" ON "complete_cast"."movie_id" = "t0"."id") ON "s1"."movie_id" = "t0"."id"
+WHERE "s1"."person_id" = "complete_cast"."subject_id") AS "t1" ON "aka_name"."person_id" = "t1"."person_id") ON "movie_keyword"."movie_id" = "t1"."id00") ON "movie_info"."movie_id" = "t1"."id00"
+ORDER BY "t1"."production_year" DESC NULLS FIRST, "aka_name"."name") AS "t3"

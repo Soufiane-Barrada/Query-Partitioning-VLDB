@@ -1,0 +1,5 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId" AS "POSTTYPEID", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."AnswerCount" AS "ANSWERCOUNT", "Posts"."CommentCount" AS "COMMENTCOUNT", "Posts"."FavoriteCount" AS "FAVORITECOUNT", "Users"."Reputation", "Comments"."Id" AS "Id1", "Votes"."VoteTypeId"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"

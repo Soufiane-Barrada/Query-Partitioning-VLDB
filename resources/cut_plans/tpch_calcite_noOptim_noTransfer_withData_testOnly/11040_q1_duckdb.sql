@@ -1,0 +1,8 @@
+SELECT COALESCE("part"."p_name", "part"."p_name") AS "P_NAME", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", SUM("lineitem"."l_extendedprice") AS "TOTAL_REVENUE", AVG("supplier"."s_acctbal") AS "AVG_SUPPLIER_BALANCE"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+GROUP BY "part"."p_name"

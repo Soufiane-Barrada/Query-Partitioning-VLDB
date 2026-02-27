@@ -1,0 +1,7 @@
+SELECT COALESCE("customer"."c_custkey", "customer"."c_custkey") AS "c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment", "part"."p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "t"."o_orderkey", "t"."o_custkey", "t"."o_orderstatus", "t"."o_totalprice", "t"."o_orderdate", "t"."o_orderpriority", "t"."o_clerk", "t"."o_shippriority", "t"."o_comment", "t0"."l_orderkey", "t0"."l_partkey", "t0"."l_suppkey", "t0"."l_linenumber", "t0"."l_quantity", "t0"."l_extendedprice", "t0"."l_discount", "t0"."l_tax", "t0"."l_returnflag", "t0"."l_linestatus", "t0"."l_shipdate", "t0"."l_commitdate", "t0"."l_receiptdate", "t0"."l_shipinstruct", "t0"."l_shipmode", "t0"."l_comment"
+FROM "TPCH"."customer"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey" INNER JOIN ((SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01' AND "o_orderdate" <= DATE '1997-12-31') AS "t" INNER JOIN (SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipmode" LIKE '%AIR%' AND "l_returnflag" = 'N') AS "t0" ON "t"."o_orderkey" = "t0"."l_orderkey") ON "part"."p_partkey" = "t0"."l_partkey") ON "customer"."c_custkey" = "t"."o_custkey"

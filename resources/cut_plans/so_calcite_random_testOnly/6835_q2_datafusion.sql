@@ -1,0 +1,11 @@
+SELECT COALESCE("t16"."USERID", "t16"."USERID") AS "USERID", "t16"."DisplayName" AS "DISPLAYNAME", "t16"."Reputation" AS "REPUTATION", "t16"."ENGAGEDPOSTCOUNT", "t16"."Reputation" AS "Reputation_"
+FROM (SELECT "Users0"."Id", "Users0"."DisplayName", "Users0"."Reputation", ANY_VALUE("Users0"."Id") AS "USERID", COUNT("t12"."POSTID") AS "ENGAGEDPOSTCOUNT"
+FROM (SELECT "s1"."POSTID", "s1"."TITLE", "s1"."COMMENTCOUNT", "s1"."EDITCOUNT", "s1"."DISPLAYNAME", "s1"."REPUTATION", "t11"."$f1" AS "$f0"
+FROM "s1"
+LEFT JOIN (SELECT "Id", SINGLE_VALUE("OwnerUserId") AS "$f1"
+FROM "STACK"."Posts"
+GROUP BY "Id") AS "t11" ON "s1"."POSTID" = "t11"."Id") AS "t12"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "t12"."$f0" = "Users0"."Id"
+GROUP BY "Users0"."Id", "Users0"."Reputation", "Users0"."DisplayName"
+ORDER BY 5 DESC NULLS FIRST, "Users0"."Reputation" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t16"

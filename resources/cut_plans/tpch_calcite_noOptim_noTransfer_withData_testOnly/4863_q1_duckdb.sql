@@ -1,0 +1,13 @@
+SELECT COALESCE(ANY_VALUE("t1"."S_NAME"), ANY_VALUE("t1"."S_NAME")) AS "SUPPLIER_NAME", ANY_VALUE("t4"."C_NAME") AS "CUSTOMER_NAME", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "REVENUE", COUNT(DISTINCT "orders"."o_orderkey") AS "NUMBER_OF_ORDERS"
+FROM "TPCH"."lineitem"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", DENSE_RANK() OVER (ORDER BY SUM("partsupp"."ps_availqty") DESC NULLS FIRST) AS "SUPPLIER_RANK"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name") AS "t1" ON "lineitem"."l_suppkey" = "t1"."S_SUPPKEY"
+INNER JOIN (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", DENSE_RANK() OVER (ORDER BY SUM("orders0"."o_totalprice") DESC NULLS FIRST) AS "CUSTOMER_RANK"
+FROM "TPCH"."customer"
+LEFT JOIN "TPCH"."orders" AS "orders0" ON "customer"."c_custkey" = "orders0"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t4" ON "orders"."o_custkey" = "t4"."C_CUSTKEY"
+WHERE "orders"."o_orderstatus" = 'O' AND "lineitem"."l_shipdate" >= '1997-01-01' AND "lineitem"."l_shipdate" <= '1997-12-31'
+GROUP BY "t1"."S_NAME", "t4"."C_NAME"

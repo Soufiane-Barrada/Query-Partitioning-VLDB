@@ -1,0 +1,13 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."DISPLAYNAME", "t1"."TOTALBADGES", "t1"."GOLDBADGES", "t1"."SILVERBADGES", "t1"."BRONZEBADGES", "t5"."OWNERUSERID", "t5"."TITLE", "t5"."CREATIONDATE", "t5"."COMMENTCOUNT", "t5"."VOTECOUNT"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "TOTALBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+LEFT JOIN (SELECT "t3"."OwnerUserId" AS "OWNERUSERID", "t3"."Title" AS "TITLE", "t3"."CreationDate" AS "CREATIONDATE", COUNT("t3"."Id0") AS "COMMENTCOUNT", SUM(CASE WHEN "Votes"."CreationDate" IS NOT NULL THEN 1 ELSE 0 END) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t2"."Id", "t2"."PostTypeId", "t2"."AcceptedAnswerId", "t2"."ParentId", "t2"."CreationDate", "t2"."Score", "t2"."ViewCount", "t2"."Body", "t2"."OwnerUserId", "t2"."OwnerDisplayName", "t2"."LastEditorUserId", "t2"."LastEditorDisplayName", "t2"."LastEditDate", "t2"."LastActivityDate", "t2"."Title", "t2"."Tags", "t2"."AnswerCount", "t2"."CommentCount", "t2"."FavoriteCount", "t2"."ClosedDate", "t2"."CommunityOwnedDate", "t2"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS "t2" ON "Comments"."PostId" = "t2"."Id") AS "t3" ON "Votes"."PostId" = "t3"."Id"
+GROUP BY "t3"."OwnerUserId", "t3"."Title", "t3"."CreationDate") AS "t5" ON "t1"."USERID" = "t5"."OWNERUSERID"

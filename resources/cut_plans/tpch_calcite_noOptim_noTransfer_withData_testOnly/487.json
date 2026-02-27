@@ -1,0 +1,3521 @@
+{
+  "queryId" : "487",
+  "originalSql" : "WITH RegionNation AS (\n    SELECT \n        r.r_regionkey,\n        r.r_name AS region_name,\n        n.n_name AS nation_name,\n        COUNT(DISTINCT s.s_suppkey) AS supplier_count\n    FROM region r\n    JOIN nation n ON r.r_regionkey = n.n_regionkey\n    LEFT JOIN supplier s ON n.n_nationkey = s.s_nationkey\n    GROUP BY r.r_regionkey, r.r_name, n.n_name\n),\nPartSupplierStats AS (\n    SELECT \n        ps.ps_partkey,\n        SUM(ps.ps_availqty) AS total_available_quantity,\n        AVG(ps.ps_supplycost) AS avg_supply_cost\n    FROM partsupp ps\n    GROUP BY ps.ps_partkey\n),\nOrderTotals AS (\n    SELECT \n        o.o_custkey,\n        SUM(o.o_totalprice) AS total_spent,\n        COUNT(o.o_orderkey) AS order_count\n    FROM orders o\n    WHERE o.o_orderdate >= DATE '1997-01-01'\n    GROUP BY o.o_custkey\n),\nCustomerPerformance AS (\n    SELECT \n        c.c_custkey,\n        c.c_name,\n        COALESCE(ot.total_spent, 0) AS total_spent,\n        COALESCE(ot.order_count, 0) AS order_count,\n        CASE \n            WHEN COALESCE(ot.total_spent, 0) > 10000 THEN 'High Value'\n            WHEN COALESCE(ot.total_spent, 0) BETWEEN 5000 AND 10000 THEN 'Medium Value'\n            ELSE 'Low Value'\n        END AS customer_segment\n    FROM customer c\n    LEFT JOIN OrderTotals ot ON c.c_custkey = ot.o_custkey\n),\nSupplierPartRegion AS (\n    SELECT \n        sp.ps_partkey,\n        n.n_name AS nation_name,\n        r.r_name AS region_name,\n        sp.ps_supplycost\n    FROM partsupp sp\n    JOIN supplier s ON sp.ps_suppkey = s.s_suppkey\n    JOIN nation n ON s.s_nationkey = n.n_nationkey\n    JOIN region r ON n.n_regionkey = r.r_regionkey\n)\nSELECT \n    cp.c_name,\n    rp.region_name,\n    rp.nation_name,\n    SUM(sp.ps_supplycost) AS total_supply_cost,\n    SUM(COALESCE(ps.total_available_quantity, 0)) AS total_available_quantity,\n    cp.customer_segment\nFROM CustomerPerformance cp\nJOIN RegionNation rp ON cp.c_custkey = rp.supplier_count\nLEFT JOIN PartSupplierStats ps ON cp.c_custkey = ps.ps_partkey\nLEFT JOIN SupplierPartRegion sp ON cp.c_custkey = sp.ps_partkey\nWHERE cp.order_count > 1 \nAND rp.supplier_count > 0\nGROUP BY cp.c_name, rp.region_name, rp.nation_name, cp.customer_segment\nHAVING SUM(sp.ps_supplycost) > 5000\nORDER BY total_supply_cost DESC, cp.c_name",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 44355,
+    "q1Engine" : "datafusion",
+    "q2Engine" : "duckdb",
+    "costAllDuckdb" : 1701.0499926676991,
+    "costAllDatafusion" : 104581.94314872554,
+    "chosenCost" : 1432.4902274644858
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "tpch_noOptim_noTransfer",
+      "doOptimize" : false,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+      "cutPolicy" : "DP",
+      "randomSeed" : 1770074343454,
+      "schemaName" : "TPCH"
+    },
+    "planStats" : {
+      "totalNodes" : 35,
+      "maxDepth" : 14,
+      "operatorKindCounts" : {
+        "JOIN" : 9,
+        "OTHER" : 18,
+        "AGGREGATE" : 4,
+        "FILTER" : 3,
+        "SORT" : 1
+      },
+      "rootOutputRows" : 5.702169756543804,
+      "rootRowSizeOutBytes" : 48.0
+    },
+    "cut" : {
+      "cutDepth" : 8,
+      "cutNodeOperatorKind" : "AGGREGATE",
+      "cutOutputRows" : 2000000.0,
+      "cutRowSizeOutBytes" : 24.0,
+      "cutOutputBytes" : 4.8E7,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 3,
+        "maxDepth" : 3,
+        "operatorKindCounts" : {
+          "OTHER" : 2,
+          "AGGREGATE" : 1
+        }
+      },
+      "q2Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 32,
+        "maxDepth" : 15,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 16,
+          "FILTER" : 3,
+          "AGGREGATE" : 3,
+          "SORT" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"ps_partkey\", \"ps_partkey\") AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\"",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "PS_PARTKEY",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTAL_AVAILABLE_QUANTITY",
+        "type" : "BIGINT"
+      }, {
+        "name" : "AVG_SUPPLY_COST",
+        "type" : "DECIMAL"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t5\".\"C_NAME\", \"t8\".\"REGION_NAME\", \"t8\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"s1\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t5\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t4\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t4\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t4\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t4\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t4\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t4\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t4\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t4\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t4\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t4\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t4\" ON \"customer\".\"c_custkey\" = \"t4\".\"O_CUSTKEY\") AS \"t5\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t8\" ON \"t5\".\"C_CUSTKEY\" = \"t8\".\"SUPPLIER_COUNT\"\nLEFT JOIN \"s1\" ON \"t5\".\"C_CUSTKEY\" = \"s1\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t5\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t5\".\"ORDER_COUNT\" > 1 AND \"t8\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t5\".\"C_NAME\", \"t8\".\"REGION_NAME\", \"t8\".\"NATION_NAME\", \"t5\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t5\".\"C_NAME\") AS \"t15\"",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "C_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "REGION_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "NATION_NAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "TOTAL_SUPPLY_COST",
+        "type" : "DECIMAL"
+      }, {
+        "name" : "TOTAL_AVAILABLE_QUANTITY",
+        "type" : "BIGINT"
+      }, {
+        "name" : "CUSTOMER_SEGMENT",
+        "type" : "CHAR"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_44370",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44370,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 1,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 5.702169756543804,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 273.7041483141026,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 34,
+          "maxDepth" : 14,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 18,
+            "AGGREGATE" : 4,
+            "FILTER" : 3
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_NAME\", \"t2\".\"C_NAME\") AS \"C_NAME\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", SUM(\"t8\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t7\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t7\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t2\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t7\" ON \"t2\".\"C_CUSTKEY\" = \"t7\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t8\" ON \"t2\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nWHERE \"t2\".\"ORDER_COUNT\" > 1 AND \"t5\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t2\".\"C_NAME\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t2\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t8\".\"PS_SUPPLYCOST\") > 5000.00",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"C_NAME\", \"C_NAME\") AS \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"TOTAL_SUPPLY_COST\", \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nORDER BY \"TOTAL_SUPPLY_COST\" DESC NULLS FIRST, \"C_NAME\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44368",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44368,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 45.61735805235043,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 2189.633186512821,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 32,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "FILTER" : 1,
+            "OTHER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_NAME\", \"t2\".\"C_NAME\") AS \"C_NAME\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t2\".\"CUSTOMER_SEGMENT\", SUM(\"t8\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t7\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t7\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t7\" ON \"t2\".\"C_CUSTKEY\" = \"t7\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t8\" ON \"t2\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nWHERE \"t2\".\"ORDER_COUNT\" > 1 AND \"t5\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t2\".\"C_NAME\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t2\".\"CUSTOMER_SEGMENT\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"C_NAME\", \"C_NAME\") AS \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"TOTAL_SUPPLY_COST\", \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nWHERE \"TOTAL_SUPPLY_COST\" > 5000.00\nORDER BY \"TOTAL_SUPPLY_COST\" DESC NULLS FIRST, \"C_NAME\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44367",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44367,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 137.07210302510236,
+        "cutRowSizeOutBytes" : 1015.9200597500001,
+        "cutOutputBytes" : 139254.29909532017,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 31,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 3,
+            "FILTER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "FILTER" : 1,
+            "OTHER" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_NAME\", \"t2\".\"C_NAME\") AS \"C_NAME\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t2\".\"CUSTOMER_SEGMENT\", \"t8\".\"PS_SUPPLYCOST\", CASE WHEN \"t7\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t7\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END AS \"FD_COL_5\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t7\" ON \"t2\".\"C_CUSTKEY\" = \"t7\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t8\" ON \"t2\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nWHERE \"t2\".\"ORDER_COUNT\" > 1 AND \"t5\".\"SUPPLIER_COUNT\" > 0",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        }, {
+          "name" : "PS_SUPPLYCOST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "FD_COL_5",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"C_NAME\", \"C_NAME\") AS \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"TOTAL_SUPPLY_COST\", \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM (SELECT \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", SUM(\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(\"FD_COL_5\") AS \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nGROUP BY \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"CUSTOMER_SEGMENT\"\nHAVING SUM(\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44365",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44365,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 548.2884121004095,
+        "cutRowSizeOutBytes" : 1015.9200597500001,
+        "cutOutputBytes" : 557017.1963812807,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 29,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 16,
+            "AGGREGATE" : 3,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "FILTER" : 2,
+            "OTHER" : 2,
+            "AGGREGATE" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_CUSTKEY\", \"t2\".\"C_CUSTKEY\") AS \"C_CUSTKEY\", \"t2\".\"C_NAME\", \"t2\".\"TOTAL_SPENT\", \"t2\".\"ORDER_COUNT\", \"t2\".\"CUSTOMER_SEGMENT\", \"t5\".\"R_REGIONKEY\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t5\".\"SUPPLIER_COUNT\", \"t7\".\"PS_PARTKEY\", \"t7\".\"TOTAL_AVAILABLE_QUANTITY\", \"t7\".\"AVG_SUPPLY_COST\", \"t8\".\"PS_PARTKEY\" AS \"PS_PARTKEY0\", \"t8\".\"NATION_NAME\" AS \"NATION_NAME0\", \"t8\".\"REGION_NAME\" AS \"REGION_NAME0\", \"t8\".\"PS_SUPPLYCOST\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t7\" ON \"t2\".\"C_CUSTKEY\" = \"t7\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t8\" ON \"t2\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SPENT",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ORDER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        }, {
+          "name" : "R_REGIONKEY",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "PS_PARTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "AVG_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "PS_PARTKEY0",
+          "type" : "BIGINT"
+        }, {
+          "name" : "NATION_NAME0",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME0",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PS_SUPPLYCOST",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"C_NAME\", \"C_NAME\") AS \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"TOTAL_SUPPLY_COST\", \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM (SELECT \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", SUM(\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nWHERE \"ORDER_COUNT\" > 1 AND \"SUPPLIER_COUNT\" > 0\nGROUP BY \"C_NAME\", \"REGION_NAME\", \"NATION_NAME\", \"CUSTOMER_SEGMENT\"\nHAVING SUM(\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44356",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44356,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 105.20109740007504,
+        "cutRowSizeOutBytes" : 327.286318,
+        "cutOutputBytes" : 34430.87981762993,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 20,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "AGGREGATE" : 3,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 15,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "JOIN" : 4,
+            "FILTER" : 2,
+            "AGGREGATE" : 1,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_CUSTKEY\", \"t2\".\"C_CUSTKEY\") AS \"C_CUSTKEY\", \"t2\".\"C_NAME\", \"t2\".\"TOTAL_SPENT\", \"t2\".\"ORDER_COUNT\", \"t2\".\"CUSTOMER_SEGMENT\", \"t5\".\"R_REGIONKEY\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t5\".\"SUPPLIER_COUNT\", \"t7\".\"PS_PARTKEY\", \"t7\".\"TOTAL_AVAILABLE_QUANTITY\", \"t7\".\"AVG_SUPPLY_COST\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t7\" ON \"t2\".\"C_CUSTKEY\" = \"t7\".\"PS_PARTKEY\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SPENT",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ORDER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        }, {
+          "name" : "R_REGIONKEY",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "PS_PARTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "AVG_SUPPLY_COST",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"s1\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"s1\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"s1\".\"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"s1\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"s1\".\"ORDER_COUNT\" > 1 AND \"s1\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"s1\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", \"s1\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"s1\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44352",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44352,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 52.60056185017798,
+        "cutRowSizeOutBytes" : 303.286318,
+        "cutOutputBytes" : 15953.030728271748,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 16,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 9,
+            "FILTER" : 1,
+            "AGGREGATE" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 19,
+          "maxDepth" : 12,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "AGGREGATE" : 2,
+            "JOIN" : 5,
+            "FILTER" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t2\".\"C_CUSTKEY\", \"t2\".\"C_CUSTKEY\") AS \"C_CUSTKEY\", \"t2\".\"C_NAME\", \"t2\".\"TOTAL_SPENT\", \"t2\".\"ORDER_COUNT\", \"t2\".\"CUSTOMER_SEGMENT\", \"t5\".\"R_REGIONKEY\", \"t5\".\"REGION_NAME\", \"t5\".\"NATION_NAME\", \"t5\".\"SUPPLIER_COUNT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\") AS \"t2\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t5\" ON \"t2\".\"C_CUSTKEY\" = \"t5\".\"SUPPLIER_COUNT\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SPENT",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ORDER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        }, {
+          "name" : "R_REGIONKEY",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_COUNT",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"s1\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"s1\".\"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"s1\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"s1\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"s1\".\"ORDER_COUNT\" > 1 AND \"s1\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"s1\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", \"s1\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"s1\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44343",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44343,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 2999998.4999729996,
+        "cutRowSizeOutBytes" : 255.286318,
+        "cutOutputBytes" : 7.658585710636301E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 7,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "FILTER" : 1,
+            "AGGREGATE" : 1,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 28,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 8,
+            "OTHER" : 14,
+            "AGGREGATE" : 3,
+            "FILTER" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"customer\".\"c_custkey\", \"customer\".\"c_custkey\") AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t1\" ON \"customer\".\"c_custkey\" = \"t1\".\"O_CUSTKEY\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "C_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SPENT",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ORDER_COUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"s1\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"s1\".\"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"s1\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"s1\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"s1\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"s1\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"s1\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"s1\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"s1\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44337",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44337,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1500000.0,
+        "cutRowSizeOutBytes" : 231.286318,
+        "cutOutputBytes" : 3.46929477E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"c_custkey\", \"c_custkey\") AS \"c_custkey\", \"c_name\", \"c_address\", \"c_nationkey\", \"c_phone\", \"c_acctbal\", \"c_mktsegment\", \"c_comment\"\nFROM \"customer\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "c_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "c_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "c_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "c_mktsegment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "c_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"s1\".\"c_custkey\" AS \"C_CUSTKEY\", \"s1\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"s1\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44341",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44341,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 999982.0,
+        "cutRowSizeOutBytes" : 24.0,
+        "cutOutputBytes" : 2.3999568E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 4,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 31,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 16,
+            "AGGREGATE" : 3,
+            "FILTER" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"o_custkey\", \"o_custkey\") AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "O_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTAL_SPENT",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ORDER_COUNT",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"s1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"s1\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"s1\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"s1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"s1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"s1\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"s1\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN \"s1\" ON \"customer\".\"c_custkey\" = \"s1\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44340",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44340,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 12,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 3604989.4988536835,
+        "cutRowSizeOutBytes" : 143.1080773333333,
+        "cutOutputBytes" : 5.1590311598780745E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 32,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 16,
+            "AGGREGATE" : 4,
+            "FILTER" : 2,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"o_custkey\", \"o_custkey\") AS \"O_CUSTKEY\", \"o_totalprice\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "O_CUSTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"s1\"\nGROUP BY \"O_CUSTKEY\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44338",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44338,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 14,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.5E7,
+        "cutRowSizeOutBytes" : 143.1080773333333,
+        "cutOutputBytes" : 2.1466211599999998E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"o_orderkey\", \"o_orderkey\") AS \"o_orderkey\", \"o_custkey\", \"o_orderstatus\", \"o_totalprice\", \"o_orderdate\", \"o_orderpriority\", \"o_clerk\", \"o_shippriority\", \"o_comment\"\nFROM \"orders\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "o_orderkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_custkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "o_orderstatus",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_totalprice",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "o_orderdate",
+          "type" : "DATE"
+        }, {
+          "name" : "o_orderpriority",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_clerk",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "o_shippriority",
+          "type" : "INTEGER"
+        }, {
+          "name" : "o_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"s1\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44351",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44351,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 22.740935141045444,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 1091.5648867701814,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 8,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "OTHER" : 5,
+            "JOIN" : 2,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 27,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 7,
+            "OTHER" : 13,
+            "AGGREGATE" : 3,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"region\".\"r_regionkey\", \"region\".\"r_regionkey\") AS \"R_REGIONKEY\", MIN(\"region\".\"r_name\") AS \"REGION_NAME\", MIN(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "R_REGIONKEY",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "SUPPLIER_COUNT",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t6\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t6\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t5\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t5\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t5\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t5\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t5\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t5\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t5\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t5\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t5\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t5\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t5\" ON \"customer\".\"c_custkey\" = \"t5\".\"O_CUSTKEY\") AS \"t6\"\nINNER JOIN \"s1\" ON \"t6\".\"C_CUSTKEY\" = \"s1\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t6\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t6\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t6\".\"ORDER_COUNT\" > 1 AND \"s1\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t6\".\"C_NAME\", \"s1\".\"REGION_NAME\", \"s1\".\"NATION_NAME\", \"t6\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t6\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44349",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44349,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 100024.0,
+        "cutRowSizeOutBytes" : 517.09468,
+        "cutOutputBytes" : 5.172187827232E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 6,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 29,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 7,
+            "OTHER" : 14,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"region\".\"r_regionkey\", \"region\".\"r_regionkey\") AS \"R_REGIONKEY\", \"region\".\"r_name\", \"nation\".\"n_name\", \"supplier\".\"s_suppkey\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "R_REGIONKEY",
+          "type" : "INTEGER"
+        }, {
+          "name" : "r_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t4\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t4\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t3\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t3\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t3\" ON \"customer\".\"c_custkey\" = \"t3\".\"O_CUSTKEY\") AS \"t4\"\nINNER JOIN (SELECT \"R_REGIONKEY\", ANY_VALUE(\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"s1\"\nGROUP BY \"R_REGIONKEY\", \"r_name\", \"n_name\") AS \"t6\" ON \"t4\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t4\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t4\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t4\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t4\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t4\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t4\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44346",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44346,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 13,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 25.0,
+        "cutRowSizeOutBytes" : 305.6,
+        "cutOutputBytes" : 7640.000000000001,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 32,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 8,
+            "OTHER" : 16,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"region\".\"r_regionkey\", \"region\".\"r_regionkey\") AS \"r_regionkey\", \"region\".\"r_name\", \"region\".\"r_comment\", \"nation\".\"n_nationkey\", \"nation\".\"n_name\", \"nation\".\"n_regionkey\", \"nation\".\"n_comment\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "r_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "r_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "r_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"s1\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"s1\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"s1\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"s1\"\nLEFT JOIN \"supplier\" ON \"s1\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"s1\".\"r_regionkey\", \"s1\".\"r_name\", \"s1\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44344",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44344,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 14,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 5.0,
+        "cutRowSizeOutBytes" : 164.4,
+        "cutOutputBytes" : 822.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"r_regionkey\", \"r_regionkey\") AS \"r_regionkey\", \"r_name\", \"r_comment\"\nFROM \"region\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "r_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "r_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "r_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"s1\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"s1\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"s1\"\nINNER JOIN \"nation\" ON \"s1\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"s1\".\"r_regionkey\", \"s1\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44345",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44345,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 14,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 25.0,
+        "cutRowSizeOutBytes" : 141.2,
+        "cutOutputBytes" : 3529.9999999999995,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"n_nationkey\", \"n_nationkey\") AS \"n_nationkey\", \"n_name\", \"n_regionkey\", \"n_comment\"\nFROM \"nation\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "n_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"s1\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"s1\" ON \"region\".\"r_regionkey\" = \"s1\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"s1\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"s1\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44347",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44347,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 13,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 100000.0,
+        "cutRowSizeOutBytes" : 211.49468,
+        "cutOutputBytes" : 2.1149468E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s_suppkey\", \"s_suppkey\") AS \"s_suppkey\", \"s_name\", \"s_address\", \"s_nationkey\", \"s_phone\", \"s_acctbal\", \"s_comment\"\nFROM \"supplier\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "s_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "s_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "s_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"s1\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"s1\" ON \"nation\".\"n_nationkey\" = \"s1\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44354",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44354,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 8000000.0,
+        "cutRowSizeOutBytes" : 171.53906175,
+        "cutOutputBytes" : 1.372312494E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 33,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "AGGREGATE" : 4,
+            "OTHER" : 16,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"ps_partkey\", \"ps_partkey\") AS \"PS_PARTKEY\", \"ps_availqty\", \"ps_supplycost\"\nFROM \"partsupp\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "PS_PARTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_supplycost",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t4\".\"C_NAME\", \"t7\".\"REGION_NAME\", \"t7\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t4\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t3\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t3\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t3\" ON \"customer\".\"c_custkey\" = \"t3\".\"O_CUSTKEY\") AS \"t4\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t7\" ON \"t4\".\"C_CUSTKEY\" = \"t7\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"s1\"\nGROUP BY \"PS_PARTKEY\") AS \"t8\" ON \"t4\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t4\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t4\".\"ORDER_COUNT\" > 1 AND \"t7\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t4\".\"C_NAME\", \"t7\".\"REGION_NAME\", \"t7\".\"NATION_NAME\", \"t4\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t4\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44364",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44364,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8000000.000000002,
+        "cutRowSizeOutBytes" : 688.63374175,
+        "cutOutputBytes" : 5.509069934000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 8,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "OTHER" : 5,
+            "JOIN" : 3
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 27,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 6,
+            "OTHER" : 13,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"partsupp\".\"ps_partkey\", \"partsupp\".\"ps_partkey\") AS \"PS_PARTKEY\", \"nation\".\"n_name\" AS \"NATION_NAME\", \"region\".\"r_name\" AS \"REGION_NAME\", \"partsupp\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\"\nINNER JOIN \"supplier\" ON \"partsupp\".\"ps_suppkey\" = \"supplier\".\"s_suppkey\"\nINNER JOIN \"nation\" ON \"supplier\".\"s_nationkey\" = \"nation\".\"n_nationkey\"\nINNER JOIN \"region\" ON \"nation\".\"n_regionkey\" = \"region\".\"r_regionkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "PS_PARTKEY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PS_SUPPLYCOST",
+          "type" : "DECIMAL"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t4\".\"C_NAME\", \"t7\".\"REGION_NAME\", \"t7\".\"NATION_NAME\", SUM(\"s1\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t9\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t9\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t4\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t3\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t3\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t3\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t3\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t3\" ON \"customer\".\"c_custkey\" = \"t3\".\"O_CUSTKEY\") AS \"t4\"\nINNER JOIN (SELECT \"region0\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region0\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation0\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier0\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\" AS \"region0\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"region0\".\"r_regionkey\" = \"nation0\".\"n_regionkey\"\nLEFT JOIN \"supplier\" AS \"supplier0\" ON \"nation0\".\"n_nationkey\" = \"supplier0\".\"s_nationkey\"\nGROUP BY \"region0\".\"r_regionkey\", \"region0\".\"r_name\", \"nation0\".\"n_name\") AS \"t7\" ON \"t4\".\"C_CUSTKEY\" = \"t7\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t9\" ON \"t4\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nLEFT JOIN \"s1\" ON \"t4\".\"C_CUSTKEY\" = \"s1\".\"PS_PARTKEY\"\nWHERE \"t4\".\"ORDER_COUNT\" > 1 AND \"t7\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t4\".\"C_NAME\", \"t7\".\"REGION_NAME\", \"t7\".\"NATION_NAME\", \"t4\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"s1\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t4\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44361",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44361,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8000000.000000001,
+        "cutRowSizeOutBytes" : 524.23374175,
+        "cutOutputBytes" : 4.193869934000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 5,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 30,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 7,
+            "OTHER" : 15,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"partsupp\".\"ps_partkey\", \"partsupp\".\"ps_partkey\") AS \"ps_partkey\", \"partsupp\".\"ps_suppkey\", \"partsupp\".\"ps_availqty\", \"partsupp\".\"ps_supplycost\", \"partsupp\".\"ps_comment\", \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\", \"supplier\".\"s_address\", \"supplier\".\"s_nationkey\", \"supplier\".\"s_phone\", \"supplier\".\"s_acctbal\", \"supplier\".\"s_comment\", \"nation\".\"n_nationkey\", \"nation\".\"n_name\", \"nation\".\"n_regionkey\", \"nation\".\"n_comment\"\nFROM \"partsupp\"\nINNER JOIN \"supplier\" ON \"partsupp\".\"ps_suppkey\" = \"supplier\".\"s_suppkey\"\nINNER JOIN \"nation\" ON \"supplier\".\"s_nationkey\" = \"nation\".\"n_nationkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ps_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_supplycost",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ps_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "s_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "s_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "s_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation0\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier0\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"region\".\"r_regionkey\" = \"nation0\".\"n_regionkey\"\nLEFT JOIN \"supplier\" AS \"supplier0\" ON \"nation0\".\"n_nationkey\" = \"supplier0\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation0\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"s1\".\"ps_partkey\" AS \"PS_PARTKEY\", \"s1\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"s1\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"s1\"\nINNER JOIN \"region\" AS \"region0\" ON \"s1\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44359",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44359,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8000000.000000001,
+        "cutRowSizeOutBytes" : 383.03374175,
+        "cutOutputBytes" : 3.0642699340000005E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 32,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 8,
+            "OTHER" : 16,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"partsupp\".\"ps_partkey\", \"partsupp\".\"ps_partkey\") AS \"ps_partkey\", \"partsupp\".\"ps_suppkey\", \"partsupp\".\"ps_availqty\", \"partsupp\".\"ps_supplycost\", \"partsupp\".\"ps_comment\", \"supplier\".\"s_suppkey\", \"supplier\".\"s_name\", \"supplier\".\"s_address\", \"supplier\".\"s_nationkey\", \"supplier\".\"s_phone\", \"supplier\".\"s_acctbal\", \"supplier\".\"s_comment\"\nFROM \"partsupp\"\nINNER JOIN \"supplier\" ON \"partsupp\".\"ps_suppkey\" = \"supplier\".\"s_suppkey\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ps_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_supplycost",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ps_comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "s_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "s_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "s_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier0\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" AS \"supplier0\" ON \"nation\".\"n_nationkey\" = \"supplier0\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"s1\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"s1\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"s1\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"s1\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44357",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44357,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 8000000.0,
+        "cutRowSizeOutBytes" : 171.53906175,
+        "cutOutputBytes" : 1.372312494E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"ps_partkey\", \"ps_partkey\") AS \"ps_partkey\", \"ps_suppkey\", \"ps_availqty\", \"ps_supplycost\", \"ps_comment\"\nFROM \"partsupp\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ps_partkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_availqty",
+          "type" : "BIGINT"
+        }, {
+          "name" : "ps_supplycost",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "ps_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"s1\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"s1\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"s1\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"s1\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44358",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44358,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 11,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 100000.0,
+        "cutRowSizeOutBytes" : 211.49468,
+        "cutOutputBytes" : 2.1149468E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s_suppkey\", \"s_suppkey\") AS \"s_suppkey\", \"s_name\", \"s_address\", \"s_nationkey\", \"s_phone\", \"s_acctbal\", \"s_comment\"\nFROM \"supplier\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "s_suppkey",
+          "type" : "BIGINT"
+        }, {
+          "name" : "s_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_address",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "s_phone",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "s_acctbal",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "s_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier0\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" ON \"region\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" AS \"supplier0\" ON \"nation\".\"n_nationkey\" = \"supplier0\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"s1\" ON \"partsupp0\".\"ps_suppkey\" = \"s1\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"s1\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"nation0\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44360",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44360,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 25.0,
+        "cutRowSizeOutBytes" : 141.2,
+        "cutOutputBytes" : 3529.9999999999995,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"n_nationkey\", \"n_nationkey\") AS \"n_nationkey\", \"n_name\", \"n_regionkey\", \"n_comment\"\nFROM \"nation\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "n_nationkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "n_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "n_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation0\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"region\".\"r_regionkey\" = \"nation0\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation0\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region\".\"r_regionkey\", \"region\".\"r_name\", \"nation0\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"s1\".\"n_name\" AS \"NATION_NAME\", \"region0\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"s1\" ON \"supplier0\".\"s_nationkey\" = \"s1\".\"n_nationkey\"\nINNER JOIN \"region\" AS \"region0\" ON \"s1\".\"n_regionkey\" = \"region0\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_44362",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 44362,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 1701.0499926676991,
+      "costAllDatafusion" : 104581.94314872554,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "tpch_noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "3e142958ccc06a40f8a29e8c6d6e3583b0f993a8f50f157458e0e8c92200138a",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770074343454,
+        "schemaName" : "TPCH"
+      },
+      "planStats" : {
+        "totalNodes" : 35,
+        "maxDepth" : 14,
+        "operatorKindCounts" : {
+          "JOIN" : 9,
+          "OTHER" : 18,
+          "AGGREGATE" : 4,
+          "FILTER" : 3,
+          "SORT" : 1
+        },
+        "rootOutputRows" : 5.702169756543804,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 5.0,
+        "cutRowSizeOutBytes" : 164.4,
+        "cutOutputBytes" : 822.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 34,
+          "maxDepth" : 15,
+          "operatorKindCounts" : {
+            "JOIN" : 9,
+            "OTHER" : 17,
+            "AGGREGATE" : 4,
+            "FILTER" : 3,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"r_regionkey\", \"r_regionkey\") AS \"r_regionkey\", \"r_name\", \"r_comment\"\nFROM \"region\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "r_regionkey",
+          "type" : "INTEGER"
+        }, {
+          "name" : "r_name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "r_comment",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t15\".\"C_NAME\", \"t15\".\"C_NAME\") AS \"C_NAME\", \"t15\".\"REGION_NAME\", \"t15\".\"NATION_NAME\", \"t15\".\"TOTAL_SUPPLY_COST\", \"t15\".\"TOTAL_AVAILABLE_QUANTITY\", \"t15\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", SUM(\"t9\".\"PS_SUPPLYCOST\") AS \"TOTAL_SUPPLY_COST\", SUM(CASE WHEN \"t8\".\"TOTAL_AVAILABLE_QUANTITY\" IS NOT NULL THEN CAST(\"t8\".\"TOTAL_AVAILABLE_QUANTITY\" AS BIGINT) ELSE 0 END) AS \"TOTAL_AVAILABLE_QUANTITY\", \"t3\".\"CUSTOMER_SEGMENT\"\nFROM (SELECT \"customer\".\"c_custkey\" AS \"C_CUSTKEY\", \"customer\".\"c_name\" AS \"C_NAME\", CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END AS \"TOTAL_SPENT\", CASE WHEN \"t2\".\"ORDER_COUNT\" IS NOT NULL THEN CAST(\"t2\".\"ORDER_COUNT\" AS BIGINT) ELSE 0 END AS \"ORDER_COUNT\", CASE WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN \"t2\".\"TOTAL_SPENT\" IS NOT NULL THEN CAST(\"t2\".\"TOTAL_SPENT\" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS \"CUSTOMER_SEGMENT\"\nFROM \"customer\"\nLEFT JOIN (SELECT \"o_custkey\" AS \"O_CUSTKEY\", SUM(\"o_totalprice\") AS \"TOTAL_SPENT\", COUNT(*) AS \"ORDER_COUNT\"\nFROM \"orders\"\nWHERE \"o_orderdate\" >= DATE '1997-01-01'\nGROUP BY \"o_custkey\") AS \"t2\" ON \"customer\".\"c_custkey\" = \"t2\".\"O_CUSTKEY\") AS \"t3\"\nINNER JOIN (SELECT \"region0\".\"r_regionkey\" AS \"R_REGIONKEY\", ANY_VALUE(\"region0\".\"r_name\") AS \"REGION_NAME\", ANY_VALUE(\"nation\".\"n_name\") AS \"NATION_NAME\", COUNT(DISTINCT \"supplier\".\"s_suppkey\") AS \"SUPPLIER_COUNT\"\nFROM \"region\" AS \"region0\"\nINNER JOIN \"nation\" ON \"region0\".\"r_regionkey\" = \"nation\".\"n_regionkey\"\nLEFT JOIN \"supplier\" ON \"nation\".\"n_nationkey\" = \"supplier\".\"s_nationkey\"\nGROUP BY \"region0\".\"r_regionkey\", \"region0\".\"r_name\", \"nation\".\"n_name\") AS \"t6\" ON \"t3\".\"C_CUSTKEY\" = \"t6\".\"SUPPLIER_COUNT\"\nLEFT JOIN (SELECT \"ps_partkey\" AS \"PS_PARTKEY\", SUM(\"ps_availqty\") AS \"TOTAL_AVAILABLE_QUANTITY\", AVG(\"ps_supplycost\") AS \"AVG_SUPPLY_COST\"\nFROM \"partsupp\"\nGROUP BY \"ps_partkey\") AS \"t8\" ON \"t3\".\"C_CUSTKEY\" = \"t8\".\"PS_PARTKEY\"\nLEFT JOIN (SELECT \"partsupp0\".\"ps_partkey\" AS \"PS_PARTKEY\", \"nation0\".\"n_name\" AS \"NATION_NAME\", \"s1\".\"r_name\" AS \"REGION_NAME\", \"partsupp0\".\"ps_supplycost\" AS \"PS_SUPPLYCOST\"\nFROM \"partsupp\" AS \"partsupp0\"\nINNER JOIN \"supplier\" AS \"supplier0\" ON \"partsupp0\".\"ps_suppkey\" = \"supplier0\".\"s_suppkey\"\nINNER JOIN \"nation\" AS \"nation0\" ON \"supplier0\".\"s_nationkey\" = \"nation0\".\"n_nationkey\"\nINNER JOIN \"s1\" ON \"nation0\".\"n_regionkey\" = \"s1\".\"r_regionkey\") AS \"t9\" ON \"t3\".\"C_CUSTKEY\" = \"t9\".\"PS_PARTKEY\"\nWHERE \"t3\".\"ORDER_COUNT\" > 1 AND \"t6\".\"SUPPLIER_COUNT\" > 0\nGROUP BY \"t3\".\"C_NAME\", \"t6\".\"REGION_NAME\", \"t6\".\"NATION_NAME\", \"t3\".\"CUSTOMER_SEGMENT\"\nHAVING SUM(\"t9\".\"PS_SUPPLYCOST\") > 5000.00\nORDER BY 4 DESC NULLS FIRST, \"t3\".\"C_NAME\") AS \"t15\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "C_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REGION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "NATION_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TOTAL_SUPPLY_COST",
+          "type" : "DECIMAL"
+        }, {
+          "name" : "TOTAL_AVAILABLE_QUANTITY",
+          "type" : "BIGINT"
+        }, {
+          "name" : "CUSTOMER_SEGMENT",
+          "type" : "CHAR"
+        } ]
+      } ]
+    }
+  } ]
+}

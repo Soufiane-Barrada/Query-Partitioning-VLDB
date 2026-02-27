@@ -1,0 +1,7 @@
+SELECT COALESCE("t5"."ACTOR_NAME", "t5"."ACTOR_NAME") AS "ACTOR_NAME", "t5"."MOVIE_TITLE", "t5"."COMPANY_TYPE", "t5"."KEYWORDS", "t5"."NUM_PERSONAL_INFOS"
+FROM (SELECT "s1"."name", "s1"."title", "s1"."kind", ANY_VALUE("s1"."name") AS "ACTOR_NAME", ANY_VALUE("s1"."title") AS "MOVIE_TITLE", ANY_VALUE("s1"."kind") AS "COMPANY_TYPE", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", COUNT(DISTINCT "person_info"."info") AS "NUM_PERSONAL_INFOS"
+FROM "s1"
+LEFT JOIN "IMDB"."keyword" ON "s1"."keyword_id" = "keyword"."id"
+LEFT JOIN "IMDB"."person_info" ON "s1"."person_id" = "person_info"."person_id"
+GROUP BY "s1"."name", "s1"."title", "s1"."kind"
+ORDER BY 4, 5) AS "t5"

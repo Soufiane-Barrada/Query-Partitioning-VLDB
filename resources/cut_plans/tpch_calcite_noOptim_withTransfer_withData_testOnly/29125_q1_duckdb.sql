@@ -1,0 +1,6 @@
+SELECT COALESCE("supplier"."s_suppkey", "supplier"."s_suppkey") AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", ANY_VALUE("nation"."n_name") AS "NATION", COUNT(DISTINCT "part"."p_partkey") AS "TOTAL_PARTS", SUM("partsupp"."ps_supplycost") AS "TOTAL_SUPPLYCOST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name", "nation"."n_name"

@@ -1,0 +1,11 @@
+SELECT COALESCE("t2"."id", "t2"."id") AS "id", "t2"."title" AS "TITLE", "t2"."production_year" AS "PRODUCTION_YEAR", "t2"."name", ',' AS "FD_COL_4", "t2"."keyword", "t2"."company_id", "cast_info"."person_id" AS "person_id0"
+FROM "IMDB"."cast_info"
+RIGHT JOIN (SELECT "t1"."id", "t1"."movie_id", "t1"."title", "t1"."imdb_index", "t1"."kind_id", "t1"."production_year", "t1"."phonetic_code", "t1"."episode_of_id", "t1"."season_nr", "t1"."episode_nr", "t1"."note", "t1"."md5sum", "t1"."id0", "t1"."person_id", "t1"."name", "t1"."imdb_index0", "t1"."name_pcode_cf", "t1"."name_pcode_nf", "t1"."surname_pcode", "t1"."md5sum0", "t1"."id1", "t1"."movie_id0", "t1"."keyword_id", "keyword"."id" AS "id2", "keyword"."keyword", "keyword"."phonetic_code" AS "phonetic_code0", "movie_companies"."id" AS "id3", "movie_companies"."movie_id" AS "movie_id1", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN ((SELECT "t0"."id", "t0"."movie_id", "t0"."title", "t0"."imdb_index", "t0"."kind_id", "t0"."production_year", "t0"."phonetic_code", "t0"."episode_of_id", "t0"."season_nr", "t0"."episode_nr", "t0"."note", "t0"."md5sum", "t0"."id0", "t0"."person_id", "t0"."name", "t0"."imdb_index0", "t0"."name_pcode_cf", "t0"."name_pcode_nf", "t0"."surname_pcode", "t0"."md5sum0", "movie_keyword"."id" AS "id1", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT "t"."id", "t"."movie_id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."note", "t"."md5sum", "aka_name"."id" AS "id0", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index" AS "imdb_index0", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum" AS "md5sum0"
+FROM "IMDB"."aka_name"
+RIGHT JOIN (SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t" ON "aka_name"."person_id" = "t"."id") AS "t0" ON "movie_keyword"."movie_id" = "t0"."id") AS "t1" LEFT JOIN "IMDB"."keyword" ON "t1"."keyword_id" = "keyword"."id") ON "movie_companies"."movie_id" = "t1"."id") AS "t2" ON "cast_info"."movie_id" = "t2"."id"

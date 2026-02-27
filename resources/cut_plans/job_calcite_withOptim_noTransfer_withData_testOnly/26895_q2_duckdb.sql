@@ -1,0 +1,18 @@
+SELECT COALESCE("t11"."MOVIE_ID", "t11"."MOVIE_ID") AS "MOVIE_ID", "t11"."TITLE", "t11"."PRODUCTION_YEAR", "t11"."CAST_COUNT", "t11"."CAST_NAMES", "t11"."KEYWORDS", "t11"."ACTOR_ROLES"
+FROM (SELECT "t9"."MOVIE_ID", "t9"."TITLE", "t9"."PRODUCTION_YEAR", "t9"."CAST_COUNT", "t9"."CAST_NAMES", "t9"."KEYWORDS", CASE WHEN "t1"."ROLE_NAMES" IS NOT NULL THEN CAST("t1"."ROLE_NAMES" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'No Roles' END AS "ACTOR_ROLES"
+FROM (SELECT "MOVIE_ID", LISTAGG(DISTINCT "role", "FD_COL_2") AS "ROLE_NAMES"
+FROM "s1"
+GROUP BY "MOVIE_ID") AS "t1"
+RIGHT JOIN (SELECT "t6"."MOVIE_ID", "t6"."TITLE", "t6"."PRODUCTION_YEAR", "t6"."CAST_COUNT", "t6"."CAST_NAMES", CASE WHEN LISTAGG(DISTINCT "keyword"."keyword", ', ') IS NOT NULL THEN CAST(LISTAGG(DISTINCT "keyword"."keyword", ', ') AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'No Keywords' END AS "KEYWORDS"
+FROM "IMDB"."keyword"
+RIGHT JOIN (SELECT "t5"."MOVIE_ID", "t5"."TITLE", "t5"."PRODUCTION_YEAR", "t5"."CAST_COUNT", "t5"."CAST_NAMES", "movie_keyword"."id", "movie_keyword"."movie_id", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT ANY_VALUE("t2"."id") AS "MOVIE_ID", "t2"."title" AS "TITLE", "t2"."production_year" AS "PRODUCTION_YEAR", COUNT(DISTINCT "cast_info0"."person_id") AS "CAST_COUNT", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "CAST_NAMES"
+FROM (SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t2"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "aka_name"."person_id" = "cast_info0"."person_id") ON "t2"."id" = "cast_info0"."movie_id"
+GROUP BY "t2"."id", "t2"."title", "t2"."production_year") AS "t5" ON "movie_keyword"."movie_id" = "t5"."MOVIE_ID") AS "t6" ON "keyword"."id" = "t6"."keyword_id"
+GROUP BY "t6"."MOVIE_ID", "t6"."TITLE", "t6"."PRODUCTION_YEAR", "t6"."CAST_COUNT", "t6"."CAST_NAMES") AS "t9" ON "t1"."MOVIE_ID" = "t9"."MOVIE_ID"
+ORDER BY "t9"."PRODUCTION_YEAR" DESC NULLS FIRST, "t9"."CAST_COUNT" DESC NULLS FIRST
+FETCH NEXT 50 ROWS ONLY) AS "t11"

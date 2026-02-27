@@ -1,0 +1,3 @@
+SELECT COALESCE("Badges"."Id", "Badges"."Id") AS "Id", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased", "Users"."Id" AS "Id0", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id"

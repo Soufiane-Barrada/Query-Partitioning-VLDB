@@ -1,0 +1,15 @@
+SELECT COALESCE(ANY_VALUE("region"."r_name"), ANY_VALUE("region"."r_name")) AS "REGION", COUNT(DISTINCT "customer"."c_custkey") AS "CUSTOMER_COUNT", SUM("supplier"."s_acctbal") AS "TOTAL_SUPPLIER_BALANCE", AVG("t3"."O_TOTALPRICE") AS "AVERAGE_ORDER_VALUE"
+FROM "TPCH"."region"
+LEFT JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+LEFT JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+LEFT JOIN "TPCH"."customer" ON "nation"."n_nationkey" = "customer"."c_nationkey"
+LEFT JOIN (SELECT "orders"."o_orderkey" AS "O_ORDERKEY", "orders"."o_totalprice" AS "O_TOTALPRICE", "orders"."o_orderstatus" AS "O_ORDERSTATUS", "t1"."TOTAL_REVENUE", "t1"."PART_COUNT", ROW_NUMBER() OVER (PARTITION BY "orders"."o_orderstatus" ORDER BY "t1"."TOTAL_REVENUE" DESC NULLS FIRST) AS "RN"
+FROM "TPCH"."orders"
+INNER JOIN (SELECT "orders0"."o_orderkey" AS "O_ORDERKEY", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", COUNT(DISTINCT "lineitem"."l_partkey") AS "PART_COUNT"
+FROM "TPCH"."orders" AS "orders0"
+INNER JOIN "TPCH"."lineitem" ON "orders0"."o_orderkey" = "lineitem"."l_orderkey"
+WHERE "orders0"."o_orderdate" >= '1995-01-01' AND "orders0"."o_orderdate" <= '1995-12-31'
+GROUP BY "orders0"."o_orderkey") AS "t1" ON "orders"."o_orderkey" = "t1"."O_ORDERKEY"
+WHERE "orders"."o_totalprice" > 10000.00) AS "t3" ON "customer"."c_custkey" = "t3"."O_ORDERKEY"
+WHERE "customer"."c_acctbal" IS NOT NULL AND "supplier"."s_acctbal" > 1000.00
+GROUP BY "region"."r_name"

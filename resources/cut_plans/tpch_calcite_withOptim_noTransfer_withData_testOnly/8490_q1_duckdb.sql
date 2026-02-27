@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."PS_SUPPKEY", "t1"."PS_SUPPKEY") AS "PS_SUPPKEY", "t1"."TOTAL_SUPPLY_VALUE", "t1"."TOTAL_PARTS_SUPPLIED", "t1"."$f3" AS "FD_COL_3", "t5"."O_ORDERKEY", "t5"."TOTAL_REVENUE", "t5"."UNIQUE_CUSTOMERS", "t5"."AVG_CUSTOMER_BALANCE", "t5"."LAST_SHIP_DATE", "t5"."$f5" AS "FD_COL_9"
+FROM (SELECT "partsupp"."ps_suppkey" AS "PS_SUPPKEY", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_SUPPLY_VALUE", COUNT(DISTINCT "part"."p_partkey") AS "TOTAL_PARTS_SUPPLIED", MOD("partsupp"."ps_suppkey", 10) AS "$f3"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+GROUP BY "partsupp"."ps_suppkey") AS "t1"
+INNER JOIN (SELECT "t2"."o_orderkey" AS "O_ORDERKEY", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", COUNT(DISTINCT "t2"."o_custkey") AS "UNIQUE_CUSTOMERS", AVG("customer"."c_acctbal") AS "AVG_CUSTOMER_BALANCE", MAX("lineitem"."l_shipdate") AS "LAST_SHIP_DATE", MOD("t2"."o_orderkey", 10) AS "$f5"
+FROM "TPCH"."lineitem"
+INNER JOIN ("TPCH"."customer" INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01' AND "o_orderdate" < DATE '1998-01-01') AS "t2" ON "customer"."c_custkey" = "t2"."o_custkey") ON "lineitem"."l_orderkey" = "t2"."o_orderkey"
+GROUP BY "t2"."o_orderkey") AS "t5" ON "t1"."$f3" = "t5"."$f5"

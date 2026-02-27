@@ -1,0 +1,17 @@
+SELECT COALESCE("t7"."ACTOR_NAME", "t7"."ACTOR_NAME") AS "ACTOR_NAME", "t7"."MOVIE_TITLE", "t7"."ACTOR_COUNT", "t7"."MOVIE_TITLE0"
+FROM (SELECT "t5"."ACTOR_NAME", "t3"."title" AS "MOVIE_TITLE", "t3"."ACTOR_COUNT", "t5"."MOVIE_TITLE" AS "MOVIE_TITLE0"
+FROM (SELECT "s1"."title", COUNT(DISTINCT "aka_name"."name") AS "ACTOR_COUNT"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN ((SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" IN ('Distributor', 'Producer')) AS "t1" INNER JOIN "s1" ON "t1"."id" = "s1"."company_type_id" INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") ON "s1"."id" = "movie_keyword"."movie_id") ON "cast_info"."movie_id" = "s1"."movie_id"
+GROUP BY "s1"."title"
+HAVING COUNT(DISTINCT "aka_name"."name") > 5) AS "t3"
+INNER JOIN (SELECT "aka_name0"."name" AS "ACTOR_NAME", "s10"."title" AS "MOVIE_TITLE", "s10"."production_year" AS "PRODUCTION_YEAR", "t4"."kind" AS "COMP_TYPE", "keyword0"."keyword" AS "MOVIE_KEYWORD"
+FROM "IMDB"."aka_name" AS "aka_name0"
+INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "aka_name0"."person_id" = "cast_info0"."person_id"
+INNER JOIN ((SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" IN ('Distributor', 'Producer')) AS "t4" INNER JOIN "s1" AS "s10" ON "t4"."id" = "s10"."company_type_id" INNER JOIN ("IMDB"."keyword" AS "keyword0" INNER JOIN "IMDB"."movie_keyword" AS "movie_keyword0" ON "keyword0"."id" = "movie_keyword0"."keyword_id") ON "s10"."id" = "movie_keyword0"."movie_id") ON "cast_info0"."movie_id" = "s10"."movie_id") AS "t5" ON "t3"."title" = "t5"."MOVIE_TITLE"
+ORDER BY "t3"."ACTOR_COUNT" DESC NULLS FIRST, "t5"."MOVIE_TITLE") AS "t7"

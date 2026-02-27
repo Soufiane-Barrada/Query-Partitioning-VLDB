@@ -1,0 +1,8 @@
+SELECT COALESCE("t9"."CUSTKEY", "t9"."CUSTKEY") AS "CUSTKEY", "t9"."C_NAME", "t9"."AVG_ORDER_AMOUNT", "t9"."MAX_ORDER_VALUE", "t9"."SUPPLIER_REGION", "t9"."CUSTOMER_SEGMENT"
+FROM (SELECT "s1"."c_custkey" AS "CUSTKEY", "s1"."c_name" AS "C_NAME", CASE WHEN "s1"."AVG_TOTALPRICE" IS NOT NULL THEN CAST("s1"."AVG_TOTALPRICE" AS DECIMAL(15, 2)) ELSE 0.00 END AS "AVG_ORDER_AMOUNT", CASE WHEN "s1"."MAX_ORDER_PRICE" IS NOT NULL THEN CAST("s1"."MAX_ORDER_PRICE" AS DECIMAL(15, 2)) ELSE 0.00 END AS "MAX_ORDER_VALUE", "t7"."R_NAME" AS "SUPPLIER_REGION", CASE WHEN "s1"."ORDER_COUNT" > 10 THEN 'High Value Customer  ' WHEN "s1"."ORDER_COUNT" >= 5 AND "s1"."ORDER_COUNT" <= 10 THEN 'Medium Value Customer' ELSE 'Low Value Customer   ' END AS "CUSTOMER_SEGMENT"
+FROM "s1"
+LEFT JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "region"."r_name" AS "R_NAME"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey") AS "t7" ON "s1"."PS_SUPPKEY" = "t7"."S_SUPPKEY"
+ORDER BY 3 DESC NULLS FIRST, 4 DESC NULLS FIRST) AS "t9"

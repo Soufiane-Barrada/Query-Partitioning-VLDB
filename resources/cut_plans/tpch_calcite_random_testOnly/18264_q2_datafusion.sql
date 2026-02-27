@@ -1,0 +1,7 @@
+SELECT COALESCE("t1"."n_name", "t1"."n_name") AS "n_name", "t1"."ORDER_COUNT"
+FROM (SELECT "s1"."n_name", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT"
+FROM "TPCH"."orders"
+INNER JOIN "TPCH"."lineitem" ON "orders"."o_orderkey" = "lineitem"."l_orderkey"
+INNER JOIN "s1" ON "lineitem"."l_partkey" = "s1"."p_partkey"
+GROUP BY "s1"."n_name"
+ORDER BY 2 DESC NULLS FIRST) AS "t1"

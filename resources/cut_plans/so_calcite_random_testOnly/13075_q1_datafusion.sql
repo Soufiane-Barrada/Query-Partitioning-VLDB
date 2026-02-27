@@ -1,0 +1,10 @@
+SELECT COALESCE("t0"."POSTTYPENAME", "t0"."POSTTYPENAME") AS "POSTTYPENAME", "t0"."POSTCOUNT", "t0"."TOTALSCORE", "t0"."AVERAGEVIEWCOUNT", "t4"."USERID", "t4"."DISPLAYNAME", "t4"."TOTALPOSTS", "t4"."QUESTIONS", "t4"."ANSWERS", "t4"."WIKIS", "t4"."TOTALSCORE" AS "TOTALSCORE0", "t4"."TOTALVIEWS", "t4"."$f8" AS "FD_COL_12"
+FROM (SELECT ANY_VALUE("PostTypes"."Name") AS "POSTTYPENAME", COUNT("Posts"."Id") AS "POSTCOUNT", SUM("Posts"."Score") AS "TOTALSCORE", AVG("Posts"."ViewCount") AS "AVERAGEVIEWCOUNT"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+GROUP BY "PostTypes"."Name") AS "t0",
+(SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Posts0"."Id") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Posts0"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONS", SUM(CASE WHEN CAST("Posts0"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERS", SUM(CASE WHEN CAST("Posts0"."PostTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "WIKIS", SUM("Posts0"."Score") AS "TOTALSCORE", SUM(CASE WHEN "Posts0"."ViewCount" IS NOT NULL THEN CAST("Posts0"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", COUNT("Posts0"."Id") > 0 AS "$f8"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN "STACK"."Users" ON "Posts0"."OwnerUserId" = "Users"."Id"
+GROUP BY "Users"."Id", "Users"."DisplayName"
+HAVING COUNT("Posts0"."Id") > 0) AS "t4"

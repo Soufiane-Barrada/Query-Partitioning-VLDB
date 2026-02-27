@@ -1,0 +1,5 @@
+SELECT COALESCE("Id", "Id") AS "POSTID", "Title" AS "TITLE", "DisplayName" AS "OWNER", "CreationDate" AS "CREATIONDATE", "Score" AS "SCORE", "ViewCount" AS "VIEWCOUNT", "AnswerCount" AS "ANSWERCOUNT", "CommentCount" AS "COMMENTCOUNT"
+FROM "s1"
+WHERE CAST("PostTypeId" AS INTEGER) = 1
+ORDER BY "CreationDate" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY

@@ -1,0 +1,7 @@
+SELECT COALESCE("t4"."POSTTYPE", "t4"."POSTTYPE") AS "POSTTYPE", "t4"."POSTCOUNT", "t4"."AVGSCORE", "t4"."TOTALVIEWS", "s1"."DISPLAYNAME", "s1"."REPUTATION", "s1"."BADGECOUNT"
+FROM (SELECT ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "POSTCOUNT", AVG("Posts"."Score") AS "AVGSCORE", SUM("Posts"."ViewCount") AS "TOTALVIEWS"
+FROM "STACK"."PostTypes"
+INNER JOIN "STACK"."Posts" ON "PostTypes"."Id" = "Posts"."PostTypeId"
+GROUP BY "PostTypes"."Name") AS "t4",
+"s1"
+ORDER BY "t4"."POSTTYPE"

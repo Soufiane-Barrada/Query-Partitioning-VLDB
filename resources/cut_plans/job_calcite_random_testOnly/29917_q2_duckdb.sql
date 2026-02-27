@@ -1,0 +1,9 @@
+SELECT COALESCE("t10"."TITLE", "t10"."TITLE") AS "TITLE", "t10"."PRODUCTION_YEAR", "t10"."KEYWORDS", "t10"."COMPANIES"
+FROM (SELECT "s1"."TITLE", "s1"."PRODUCTION_YEAR", LISTAGG(DISTINCT "t5"."KEYWORD", ', ') AS "KEYWORDS", LISTAGG(DISTINCT "s1"."name", ', ') AS "COMPANIES"
+FROM (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", "keyword"."keyword" AS "KEYWORD"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") AS "t5"
+RIGHT JOIN "s1" ON "t5"."MOVIE_ID" = "s1"."MOVIE_ID"
+WHERE "s1"."PRODUCTION_YEAR" >= 2000
+GROUP BY "s1"."MOVIE_ID", "s1"."TITLE", "s1"."PRODUCTION_YEAR"
+ORDER BY "s1"."PRODUCTION_YEAR" DESC NULLS FIRST) AS "t10"

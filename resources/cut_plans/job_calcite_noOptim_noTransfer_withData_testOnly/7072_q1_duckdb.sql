@@ -1,0 +1,13 @@
+SELECT COALESCE(ANY_VALUE("aka_name"."name"), ANY_VALUE("aka_name"."name")) AS "ACTOR_NAME", ANY_VALUE("title"."title") AS "MOVIE_TITLE", ANY_VALUE("cast_info"."role_id") AS "ROLE", ANY_VALUE("comp_cast_type"."kind") AS "CASTING_TYPE", ANY_VALUE("company_name"."name") AS "COMPANY_NAME", ANY_VALUE("keyword"."keyword") AS "MOVIE_KEYWORD", ANY_VALUE("info_type"."info") AS "MOVIE_INFO", COUNT(DISTINCT "aka_name"."id") AS "ACTOR_COUNT", "title"."production_year"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."title" ON "cast_info"."movie_id" = "title"."id"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."movie_info" ON "title"."id" = "movie_info"."movie_id"
+INNER JOIN "IMDB"."info_type" ON "movie_info"."info_type_id" = "info_type"."id"
+INNER JOIN "IMDB"."comp_cast_type" ON "cast_info"."person_role_id" = "comp_cast_type"."id"
+WHERE "title"."production_year" >= 2000 AND "title"."production_year" <= 2023 AND "keyword"."keyword" LIKE '%action%'
+GROUP BY "aka_name"."name", "title"."title", "cast_info"."role_id", "comp_cast_type"."kind", "company_name"."name", "keyword"."keyword", "info_type"."info", "title"."production_year"

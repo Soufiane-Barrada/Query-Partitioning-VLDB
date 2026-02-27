@@ -1,0 +1,13 @@
+SELECT COALESCE("aka_title"."id", "aka_title"."id") AS "MOVIE_ID", "aka_title"."title" AS "MOVIE_TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ALIASES", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", LISTAGG(DISTINCT "company_name"."name", ', ') AS "COMPANIES", LISTAGG(DISTINCT "name"."name" || ' (' || "role_type"."role" || ')', ', ') AS "CAST_INFO"
+FROM "IMDB"."aka_title"
+INNER JOIN "IMDB"."movie_keyword" ON "aka_title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."movie_companies" ON "aka_title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."complete_cast" ON "aka_title"."id" = "complete_cast"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "complete_cast"."subject_id" = "cast_info"."id"
+INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN "IMDB"."name" ON "aka_name"."person_id" = "name"."imdb_id"
+WHERE "aka_title"."production_year" >= 2000 AND "company_name"."country_code" = 'USA'
+GROUP BY "aka_title"."id", "aka_title"."title", "aka_title"."production_year"

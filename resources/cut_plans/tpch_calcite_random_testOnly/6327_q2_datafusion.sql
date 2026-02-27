@@ -1,0 +1,16 @@
+SELECT COALESCE("t11"."S_NAME", "t11"."S_NAME") AS "S_NAME", "t11"."TOTAL_COST", "t11"."ORDER_YEAR", "t11"."ORDER_MONTH", "t11"."TOTAL_SALES", "t11"."ORDER_COUNT", "t11"."REVENUE", "t11"."AVG_QUANTITY"
+FROM (SELECT "t5"."S_NAME", "t5"."TOTAL_COST", "t9"."ORDER_YEAR", "t9"."ORDER_MONTH", "t9"."TOTAL_SALES", "s1"."ORDER_COUNT", "s1"."REVENUE", "s1"."AVG_QUANTITY"
+FROM (SELECT "supplier0"."s_suppkey" AS "S_SUPPKEY", "supplier0"."s_name" AS "S_NAME", SUM("partsupp0"."ps_supplycost" * "partsupp0"."ps_availqty") AS "TOTAL_COST"
+FROM "TPCH"."supplier" AS "supplier0"
+INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "supplier0"."s_suppkey" = "partsupp0"."ps_suppkey"
+GROUP BY "supplier0"."s_suppkey", "supplier0"."s_name"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t5"
+INNER JOIN "s1" ON "t5"."S_SUPPKEY" = "s1"."S_SUPPKEY"
+CROSS JOIN (SELECT ANY_VALUE(EXTRACT(YEAR FROM "t6"."o_orderdate")) AS "ORDER_YEAR", ANY_VALUE(EXTRACT(MONTH FROM "t6"."o_orderdate")) AS "ORDER_MONTH", SUM("lineitem0"."l_extendedprice" * (1 - "lineitem0"."l_discount")) AS "TOTAL_SALES"
+FROM (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1996-01-01' AND "o_orderdate" < DATE '1997-01-01') AS "t6"
+INNER JOIN "TPCH"."lineitem" AS "lineitem0" ON "t6"."o_orderkey" = "lineitem0"."l_orderkey"
+GROUP BY EXTRACT(YEAR FROM "t6"."o_orderdate"), EXTRACT(MONTH FROM "t6"."o_orderdate")) AS "t9"
+ORDER BY "t5"."TOTAL_COST" DESC NULLS FIRST, "t9"."ORDER_YEAR", "t9"."ORDER_MONTH") AS "t11"

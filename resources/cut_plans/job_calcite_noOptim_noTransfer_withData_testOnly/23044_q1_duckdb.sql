@@ -1,0 +1,12 @@
+SELECT COALESCE("t1"."MOVIE_ID", "t1"."MOVIE_ID") AS "MOVIE_ID", "t1"."TITLE", "t1"."PRODUCTION_YEAR", "t1"."GENRES", CASE WHEN "t3"."TOTAL_CAST" IS NOT NULL THEN CAST("t3"."TOTAL_CAST" AS BIGINT) ELSE 0 END AS "TOTAL_CAST", CASE WHEN "t3"."DIRECTOR_COUNT" IS NOT NULL THEN CAST("t3"."DIRECTOR_COUNT" AS INTEGER) ELSE 0 END AS "DIRECTOR_COUNT", CASE WHEN "t1"."GENRES" IS NOT NULL THEN 'Valid Movie    ' ELSE 'Incomplete Data' END AS "MOVIE_STATUS"
+FROM (SELECT "t"."MOVIE_ID", "t"."TITLE", "t"."PRODUCTION_YEAR", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "GENRES"
+FROM (SELECT "id" AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", ROW_NUMBER() OVER (PARTITION BY "production_year" ORDER BY "title") AS "YEAR_RANK"
+FROM "IMDB"."aka_title") AS "t"
+LEFT JOIN "IMDB"."movie_keyword" ON "t"."MOVIE_ID" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "t"."MOVIE_ID", "t"."TITLE", "t"."PRODUCTION_YEAR") AS "t1"
+LEFT JOIN (SELECT "cast_info"."movie_id" AS "MOVIE_ID", COUNT(DISTINCT "cast_info"."person_id") AS "TOTAL_CAST", SUM(CASE WHEN "role_type"."role" = 'Director' THEN 1 ELSE 0 END) AS "DIRECTOR_COUNT"
+FROM "IMDB"."cast_info"
+INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id"
+GROUP BY "cast_info"."movie_id") AS "t3" ON "t1"."MOVIE_ID" = "t3"."MOVIE_ID"
+WHERE "t1"."PRODUCTION_YEAR" >= 2000 AND "t1"."PRODUCTION_YEAR" <= 2023

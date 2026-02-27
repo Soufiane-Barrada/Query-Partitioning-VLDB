@@ -1,0 +1,7 @@
+SELECT COALESCE("t6"."POSTID", "t6"."POSTID") AS "POSTID", "t6"."TITLE", "t6"."CREATIONDATE", "t6"."SCORE", "t6"."VIEWCOUNT", "t6"."OWNERDISPLAYNAME", "t6"."REPUTATION", "t6"."COMMENTCOUNT", "t6"."VOTECOUNT", "t6"."TAGNAME", "t6"."POSTHISTORYTYPEID", "t6"."HISTORYCREATIONDATE"
+FROM (SELECT ANY_VALUE("s1"."Id") AS "POSTID", "s1"."Title" AS "TITLE", "s1"."CreationDate" AS "CREATIONDATE", "s1"."Score" AS "SCORE", "s1"."ViewCount" AS "VIEWCOUNT", ANY_VALUE("s1"."DisplayName") AS "OWNERDISPLAYNAME", "s1"."Reputation" AS "REPUTATION", COUNT("s1"."Id1") AS "COMMENTCOUNT", COUNT("s1"."Id2") AS "VOTECOUNT", "Tags"."TagName" AS "TAGNAME", "PostHistory"."PostHistoryTypeId" AS "POSTHISTORYTYPEID", ANY_VALUE("PostHistory"."CreationDate") AS "HISTORYCREATIONDATE"
+FROM "s1"
+LEFT JOIN "STACK"."Tags" ON "s1"."Id" = "Tags"."ExcerptPostId"
+LEFT JOIN "STACK"."PostHistory" ON "s1"."Id" = "PostHistory"."PostId"
+GROUP BY "s1"."Id", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Title", "s1"."Reputation", "s1"."DisplayName", "Tags"."TagName", "PostHistory"."PostHistoryTypeId", "PostHistory"."CreationDate"
+ORDER BY "s1"."Score" DESC NULLS FIRST, "s1"."ViewCount" DESC NULLS FIRST) AS "t6"

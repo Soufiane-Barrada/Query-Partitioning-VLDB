@@ -1,0 +1,10 @@
+SELECT COALESCE("aka_title"."id", "aka_title"."id") AS "id", "aka_title"."title" AS "TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", "keyword"."keyword", ', ' AS "FD_COL_4", "company_type"."kind", "company_name"."name", "name"."name" AS "name0"
+FROM "IMDB"."aka_title"
+LEFT JOIN "IMDB"."movie_keyword" ON "aka_title"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+LEFT JOIN "IMDB"."movie_companies" ON "aka_title"."id" = "movie_companies"."movie_id"
+LEFT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+LEFT JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+LEFT JOIN "IMDB"."complete_cast" ON "aka_title"."id" = "complete_cast"."movie_id"
+LEFT JOIN "IMDB"."name" ON "complete_cast"."subject_id" = "name"."id"
+WHERE "aka_title"."production_year" >= 2000

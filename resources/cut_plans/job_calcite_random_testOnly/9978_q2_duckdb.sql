@@ -1,0 +1,5 @@
+SELECT COALESCE("ACTOR_NAME", "ACTOR_NAME") AS "ACTOR_NAME", "MOVIE_TITLE", "COMPANY_TYPE", "COMPANY_NOTE", "MOVIE_INFO", "production_year"
+FROM (SELECT "name", "title", "kind", "note00", "info0", "production_year", ANY_VALUE("name") AS "ACTOR_NAME", ANY_VALUE("title") AS "MOVIE_TITLE", ANY_VALUE("kind") AS "COMPANY_TYPE", ANY_VALUE("note00") AS "COMPANY_NOTE", ANY_VALUE("info0") AS "MOVIE_INFO"
+FROM "s1"
+GROUP BY "kind", "name", "info0", "title", "production_year", "note00"
+ORDER BY "production_year" DESC NULLS FIRST, 7) AS "t4"

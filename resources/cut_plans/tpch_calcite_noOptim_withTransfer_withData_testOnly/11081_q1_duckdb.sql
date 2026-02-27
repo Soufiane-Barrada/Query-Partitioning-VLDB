@@ -1,0 +1,7 @@
+SELECT COALESCE("lineitem"."l_orderkey", "lineitem"."l_orderkey") AS "L_ORDERKEY", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", "orders"."o_orderdate" AS "O_ORDERDATE", "customer"."c_name" AS "C_NAME", "supplier"."s_name" AS "S_NAME"
+FROM "TPCH"."lineitem"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+INNER JOIN "TPCH"."partsupp" ON "lineitem"."l_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+GROUP BY "lineitem"."l_orderkey", "orders"."o_orderdate", "customer"."c_name", "supplier"."s_name"

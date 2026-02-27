@@ -1,0 +1,4 @@
+SELECT COALESCE("PostTypes"."Name", "PostTypes"."Name") AS "Name", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", SUM(CASE WHEN "Posts"."Score" > 0 THEN 1 ELSE 0 END) AS "POSITIVESCOREDPOSTS", SUM("Posts"."ViewCount") AS "TOTALVIEWS", AVG("Posts"."Score") AS "AVERAGESCORE", AVG("Posts"."AnswerCount") AS "AVERAGEANSWERCOUNT", AVG("Posts"."CommentCount") AS "AVERAGECOMMENTCOUNT", COUNT(DISTINCT "Posts"."OwnerUserId") AS "UNIQUEPOSTOWNERS", AVG("Users"."Reputation") AS "AVERAGEUSERREPUTATION"
+FROM "STACK"."PostTypes"
+INNER JOIN ("STACK"."Users" INNER JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId") ON "PostTypes"."Id" = "Posts"."PostTypeId"
+GROUP BY "PostTypes"."Name"

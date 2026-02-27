@@ -1,0 +1,8 @@
+SELECT COALESCE(ANY_VALUE(CONCAT("supplier"."s_name", ' (', SUBSTRING("supplier"."s_address", 1, 20), '...)')), ANY_VALUE(CONCAT("supplier"."s_name", ' (', SUBSTRING("supplier"."s_address", 1, 20), '...)'))) AS "SUPPLIER_INFO", ANY_VALUE("part"."p_name") AS "PART_NAME", ANY_VALUE("partsupp"."ps_availqty") AS "AVAILABLE_QUANTITY", ANY_VALUE(REPLACE("part"."p_comment", 'old', 'new')) AS "MODIFIED_COMMENT", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", CASE WHEN SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) > 1000.0000 THEN 'High  ' WHEN SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) >= 500.0000 AND SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) <= 1000.0000 THEN 'Medium' ELSE 'Low   ' END AS "REVENUE_CATEGORY"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+LEFT JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+LEFT JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+WHERE "supplier"."s_comment" LIKE '%urgent%' AND "part"."p_size" >= 10 AND "part"."p_size" <= 20
+GROUP BY "supplier"."s_name", "supplier"."s_address", "part"."p_name", "partsupp"."ps_availqty", "part"."p_comment"

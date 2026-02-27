@@ -1,0 +1,12 @@
+SELECT COALESCE(ANY_VALUE("aka_name"."name"), ANY_VALUE("aka_name"."name")) AS "ACTOR_NAME", ANY_VALUE("aka_title"."title") AS "MOVIE_TITLE", ANY_VALUE("company_type"."kind") AS "COMPANY_TYPE", ANY_VALUE("company_name"."name") AS "COMPANY_NAME", "title"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("keyword"."keyword") AS "MOVIE_KEYWORD", SUM(1) AS "ACTOR_COUNT", "title"."production_year" AS "production_year_"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."aka_title" ON "cast_info"."movie_id" = "aka_title"."movie_id"
+INNER JOIN "IMDB"."movie_companies" ON "aka_title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+INNER JOIN "IMDB"."movie_keyword" ON "aka_title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."title" ON "aka_title"."id" = "title"."id"
+WHERE "title"."production_year" > 2000
+GROUP BY "aka_name"."name", "aka_title"."title", "company_type"."kind", "company_name"."name", "title"."production_year", "keyword"."keyword"

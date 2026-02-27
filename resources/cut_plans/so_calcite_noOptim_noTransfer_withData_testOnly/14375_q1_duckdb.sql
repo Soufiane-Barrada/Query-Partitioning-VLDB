@@ -1,0 +1,7 @@
+SELECT COALESCE(ANY_VALUE("PostTypes"."Name"), ANY_VALUE("PostTypes"."Name")) AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", AVG("Posts"."Score") AS "AVERAGESCORE", SUM("t0"."COMMENTCOUNT") AS "TOTALCOMMENTS"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."POSTID"
+GROUP BY "PostTypes"."Name"

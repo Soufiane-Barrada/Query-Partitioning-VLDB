@@ -1,0 +1,5 @@
+SELECT COALESCE("t0"."$f0", "t0"."$f0") AS "FD_COL_0", "movie_info"."id", "movie_info"."movie_id", "movie_info"."info_type_id", "movie_info"."info", "movie_info"."note"
+FROM (SELECT SINGLE_VALUE("id") AS "$f0"
+FROM "IMDB"."info_type"
+WHERE "info" = 'summary') AS "t0"
+INNER JOIN "IMDB"."movie_info" ON "t0"."$f0" = "movie_info"."info_type_id"

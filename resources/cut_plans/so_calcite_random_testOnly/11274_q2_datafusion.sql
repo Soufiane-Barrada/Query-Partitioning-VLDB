@@ -1,0 +1,10 @@
+SELECT COALESCE("t6"."POSTID", "t6"."POSTID") AS "POSTID", "t6"."TITLE", "t6"."CREATIONDATE", "t6"."VIEWCOUNT", "t6"."SCORE", "t6"."COMMENTCOUNT", "t6"."VOTECOUNT", "t6"."TAGS", "t6"."OWNERDISPLAYNAME", "t6"."OWNERREPUTATION"
+FROM (SELECT ANY_VALUE("t2"."Id") AS "POSTID", "t2"."Title" AS "TITLE", "t2"."CreationDate" AS "CREATIONDATE", "t2"."ViewCount" AS "VIEWCOUNT", "t2"."Score" AS "SCORE", COUNT("t2"."Id0") AS "COMMENTCOUNT", COUNT("t2"."Id1") AS "VOTECOUNT", ARRAY_AGG(DISTINCT "Tags"."TagName") AS "TAGS", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", ANY_VALUE("Users"."Reputation") AS "OWNERREPUTATION"
+FROM (SELECT "s1"."Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "s1"."Id0", "s1"."PostId", "s1"."Score0", "s1"."Text", "s1"."CreationDate0", "s1"."UserDisplayName", "s1"."UserId", "s1"."ContentLicense0", "Votes"."Id" AS "Id1", "Votes"."PostId" AS "PostId0", "Votes"."VoteTypeId", "Votes"."UserId" AS "UserId0", "Votes"."CreationDate" AS "CreationDate1", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "s1" ON "Votes"."PostId" = "s1"."Id") AS "t2"
+LEFT JOIN "STACK"."Users" ON "t2"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Tags" ON "t2"."Id" = "Tags"."WikiPostId" OR "t2"."Id" = "Tags"."ExcerptPostId"
+GROUP BY "t2"."Id", "t2"."CreationDate", "t2"."Score", "t2"."ViewCount", "t2"."Title", "Users"."Id", "Users"."Reputation", "Users"."DisplayName"
+ORDER BY "t2"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t6"

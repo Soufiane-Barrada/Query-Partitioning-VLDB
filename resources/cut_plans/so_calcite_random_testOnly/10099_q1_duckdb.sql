@@ -1,0 +1,3 @@
+SELECT COALESCE("PostId", "PostId") AS "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId"

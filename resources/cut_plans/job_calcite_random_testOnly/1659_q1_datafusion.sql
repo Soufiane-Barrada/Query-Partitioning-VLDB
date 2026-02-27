@@ -1,0 +1,7 @@
+SELECT COALESCE("t"."person_id", "t"."person_id") AS "PERSON_ID", "t"."name" AS "NAME", COUNT(DISTINCT "t"."movie_id") AS "MOVIE_COUNT", LISTAGG(DISTINCT "t0"."TITLE", ', ') AS "MOVIE_TITLES"
+FROM (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id") AS "t"
+LEFT JOIN (SELECT "id" AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", ROW_NUMBER() OVER (PARTITION BY "production_year" ORDER BY "id") AS "RAN"
+FROM "IMDB"."aka_title") AS "t0" ON "t"."movie_id" = "t0"."MOVIE_ID"
+GROUP BY "t"."person_id", "t"."name"

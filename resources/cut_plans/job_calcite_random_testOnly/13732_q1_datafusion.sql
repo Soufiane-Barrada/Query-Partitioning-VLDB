@@ -1,0 +1,3 @@
+SELECT COALESCE("title"."id", "title"."id") AS "id", "title"."title", "title"."imdb_index", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum", "movie_info"."id" AS "id0", "movie_info"."movie_id", "movie_info"."info_type_id", "movie_info"."info", "movie_info"."note"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."movie_info" ON "title"."id" = "movie_info"."movie_id"

@@ -1,0 +1,8 @@
+SELECT COALESCE("t0"."s_suppkey", "t0"."s_suppkey") AS "S_SUPPKEY", "t0"."s_name" AS "S_NAME", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT", SUM("t0"."l_extendedprice" * (1 - "t0"."l_discount")) AS "TOTAL_REVENUE", AVG("t0"."l_quantity") AS "AVG_QUANTITY", SUM(CASE WHEN "t0"."l_discount" > 0.10 THEN "t0"."l_extendedprice" * "t0"."l_discount" ELSE 0.0000 END) AS "DISCOUNT_REVENUE"
+FROM (SELECT "t"."s_suppkey", "t"."s_name", "t"."s_address", "t"."s_nationkey", "t"."s_phone", "t"."s_acctbal", "t"."s_comment", "t"."ps_partkey", "t"."ps_suppkey", "t"."ps_availqty", "t"."ps_supplycost", "t"."ps_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN (SELECT "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment"
+FROM "TPCH"."partsupp"
+RIGHT JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey") AS "t" ON "lineitem"."l_partkey" = "t"."ps_partkey") AS "t0"
+LEFT JOIN "TPCH"."orders" ON "t0"."l_orderkey" = "orders"."o_orderkey"
+GROUP BY "t0"."s_suppkey", "t0"."s_name"

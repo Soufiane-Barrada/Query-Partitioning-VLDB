@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("Users"."Id"), ANY_VALUE("Users"."Id")) AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Posts"."Id") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "TOTALQUESTIONS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALANSWERS", SUM(CASE WHEN "Posts"."ViewCount" IS NOT NULL THEN CAST("Posts"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", SUM(CASE WHEN "Posts"."Score" IS NOT NULL THEN CAST("Posts"."Score" AS INTEGER) ELSE 0 END) AS "TOTALSCORE", COUNT("Posts"."Id") > 0 AS "FD_COL_7"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+GROUP BY "Users"."Id", "Users"."DisplayName"

@@ -1,0 +1,12 @@
+SELECT COALESCE("t3"."USERID", "t3"."USERID") AS "USERID", "t3"."DISPLAYNAME", "t3"."POSTCOUNT", "t3"."QUESTIONCOUNT", "t3"."ANSWERCOUNT", "t3"."TOTALBOUNTY", "t3"."TOTALUPVOTES", "t3"."TOTALDOWNVOTES", "t4"."UserId" AS "USERID0", "t4"."BADGECOUNT", "t4"."HIGHESTBADGECLASS"
+FROM (SELECT ANY_VALUE("t0"."Id") AS "USERID", "t0"."DisplayName" AS "DISPLAYNAME", COUNT("t0"."Id0") AS "POSTCOUNT", SUM(CASE WHEN CAST("t0"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONCOUNT", SUM(CASE WHEN CAST("t0"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERCOUNT", SUM("Votes"."BountyAmount") AS "TOTALBOUNTY", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t"."Id", "t"."Reputation", "t"."CreationDate", "t"."DisplayName", "t"."LastAccessDate", "t"."WebsiteUrl", "t"."Location", "t"."AboutMe", "t"."Views", "t"."UpVotes", "t"."DownVotes", "t"."ProfileImageUrl", "t"."AccountId", "Posts"."Id" AS "Id0", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate" AS "CreationDate0", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense"
+FROM "STACK"."Posts"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "Reputation" > 1000) AS "t" ON "Posts"."OwnerUserId" = "t"."Id") AS "t0" ON "Votes"."PostId" = "t0"."Id0"
+GROUP BY "t0"."Id", "t0"."DisplayName") AS "t3"
+LEFT JOIN (SELECT "UserId", COUNT(*) AS "BADGECOUNT", MAX("Class") AS "HIGHESTBADGECLASS"
+FROM "STACK"."Badges"
+GROUP BY "UserId") AS "t4" ON "t3"."USERID" = "t4"."UserId"

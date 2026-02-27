@@ -1,0 +1,8 @@
+SELECT COALESCE("Users0"."DisplayName", "Users0"."DisplayName") AS "DISPLAYNAME", "t1"."POSTCOUNT", "t1"."VOTECOUNT", "t1"."COMMENTCOUNT"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", COUNT(DISTINCT "Posts"."Id") AS "POSTCOUNT", COUNT(DISTINCT "Votes"."Id") AS "VOTECOUNT", COUNT(DISTINCT "Comments"."Id") AS "COMMENTCOUNT"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+GROUP BY "Users"."Id") AS "t1"
+INNER JOIN "STACK"."Users" AS "Users0" ON "t1"."USERID" = "Users0"."Id"

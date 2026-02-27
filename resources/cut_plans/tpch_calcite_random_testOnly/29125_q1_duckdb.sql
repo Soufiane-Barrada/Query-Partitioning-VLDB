@@ -1,0 +1,6 @@
+SELECT COALESCE(MAX("t"."TOTAL_PARTS"), MAX("t"."TOTAL_PARTS")) AS "FD_COL_0"
+FROM (SELECT "nation"."n_name", "supplier"."s_suppkey", "supplier"."s_name", ANY_VALUE("nation"."n_name") AS "NATION", COUNT(DISTINCT "part"."p_partkey") AS "TOTAL_PARTS", SUM("partsupp"."ps_supplycost") AS "TOTAL_SUPPLYCOST"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "nation"."n_name", "supplier"."s_suppkey", "supplier"."s_name") AS "t"

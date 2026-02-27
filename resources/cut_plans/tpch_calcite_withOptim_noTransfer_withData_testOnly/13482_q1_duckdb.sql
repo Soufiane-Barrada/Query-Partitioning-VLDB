@@ -1,0 +1,6 @@
+SELECT COALESCE("nation"."n_name", "nation"."n_name") AS "n_name", "region"."r_name", ANY_VALUE("nation"."n_name") AS "NATION", ANY_VALUE("region"."r_name") AS "REGION", COUNT(DISTINCT "supplier"."s_suppkey") AS "SUPPLIER_COUNT", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABILITY", AVG("partsupp"."ps_supplycost") AS "AVERAGE_SUPPLY_COST"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "region"."r_name", "nation"."n_name"

@@ -1,0 +1,6 @@
+SELECT COALESCE("NATION", "NATION") AS "NATION", "TOTAL_REVENUE"
+FROM (SELECT ANY_VALUE("n_name") AS "NATION", SUM("l_extendedprice" * (1 - "l_discount")) AS "TOTAL_REVENUE"
+FROM "s1"
+WHERE "o_orderdate" >= DATE '1995-01-01' AND "o_orderdate" < DATE '1996-01-01'
+GROUP BY "n_name"
+ORDER BY 2 DESC NULLS FIRST) AS "t4"

@@ -1,0 +1,5 @@
+SELECT COALESCE("nation"."n_name", "nation"."n_name") AS "n_name", ANY_VALUE("nation"."n_name") AS "NATION", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."lineitem" INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "lineitem"."l_partkey" = "part"."p_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "nation"."n_name"

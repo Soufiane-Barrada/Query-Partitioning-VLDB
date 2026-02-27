@@ -1,0 +1,12 @@
+SELECT COALESCE("t8"."POSTID", "t8"."POSTID") AS "POSTID", "t8"."TITLE", "t8"."POSTCREATIONDATE", "t8"."OWNERDISPLAYNAME", "t8"."OWNERREPUTATION", "t8"."UPVOTECOUNT", "t8"."DOWNVOTECOUNT", "t8"."COMMENTCOUNT", "t8"."USERBADGECOUNT"
+FROM (SELECT "t5"."Id" AS "POSTID", "t5"."Title" AS "TITLE", "t5"."CreationDate" AS "POSTCREATIONDATE", "t5"."DisplayName" AS "OWNERDISPLAYNAME", "t5"."Reputation" AS "OWNERREPUTATION", CASE WHEN "t5"."UPVOTES" IS NOT NULL THEN CAST("t5"."UPVOTES" AS INTEGER) ELSE 0 END AS "UPVOTECOUNT", CASE WHEN "t5"."DOWNVOTES" IS NOT NULL THEN CAST("t5"."DOWNVOTES" AS INTEGER) ELSE 0 END AS "DOWNVOTECOUNT", CASE WHEN "t5"."COMMENTCOUNT" IS NOT NULL THEN CAST("t5"."COMMENTCOUNT" AS BIGINT) ELSE 0 END AS "COMMENTCOUNT", CASE WHEN "t6"."BADGECOUNT" IS NOT NULL THEN CAST("t6"."BADGECOUNT" AS BIGINT) ELSE 0 END AS "USERBADGECOUNT"
+FROM (SELECT "s1"."Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "s1"."Id0", "s1"."Reputation", "s1"."CreationDate0", "s1"."DisplayName", "s1"."LastAccessDate", "s1"."WebsiteUrl", "s1"."Location", "s1"."AboutMe", "s1"."Views", "s1"."UpVotes", "s1"."DownVotes", "s1"."ProfileImageUrl", "s1"."AccountId", "s1"."POSTID", "s1"."UPVOTES_" AS "UPVOTES", "s1"."DOWNVOTES_" AS "DOWNVOTES", "t4"."PostId" AS "POSTID0", "t4"."COMMENTCOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t4"
+RIGHT JOIN "s1" ON "t4"."PostId" = "s1"."Id") AS "t5"
+LEFT JOIN (SELECT "UserId", COUNT(*) AS "BADGECOUNT"
+FROM "STACK"."Badges"
+GROUP BY "UserId") AS "t6" ON "t5"."Id0" = "t6"."UserId"
+ORDER BY "t5"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t8"

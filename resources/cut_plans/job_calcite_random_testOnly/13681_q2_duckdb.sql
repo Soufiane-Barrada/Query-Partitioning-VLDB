@@ -1,0 +1,6 @@
+SELECT COALESCE("t3"."ACTOR_NAME", "t3"."ACTOR_NAME") AS "ACTOR_NAME", "t3"."MOVIE_TITLE", "t3"."PRODUCTION_YEAR", "t3"."COMPANY_TYPE", "t3"."COMPANY_NAME", "t3"."NUMBER_OF_COMPANIES", "t3"."name"
+FROM (SELECT ANY_VALUE("s1"."name") AS "ACTOR_NAME", ANY_VALUE("s1"."title") AS "MOVIE_TITLE", "s1"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("company_type"."kind") AS "COMPANY_TYPE", ANY_VALUE("s1"."name0") AS "COMPANY_NAME", COUNT(DISTINCT "s1"."company_id") AS "NUMBER_OF_COMPANIES", "s1"."name"
+FROM "IMDB"."company_type"
+INNER JOIN "s1" ON "company_type"."id" = "s1"."company_type_id"
+GROUP BY "company_type"."kind", "s1"."name", "s1"."name0", "s1"."title", "s1"."production_year"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, "s1"."name") AS "t3"

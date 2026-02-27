@@ -1,0 +1,5 @@
+SELECT COALESCE("person_info"."id", "person_info"."id") AS "id", "person_info"."person_id", "person_info"."info_type_id", "person_info"."info", "person_info"."note", "t1"."$f0" AS "FD_COL_5"
+FROM (SELECT SINGLE_VALUE("id") AS "$f0"
+FROM "IMDB"."info_type"
+WHERE "info" = 'salary') AS "t1"
+INNER JOIN "IMDB"."person_info" ON "t1"."$f0" = "person_info"."info_type_id"

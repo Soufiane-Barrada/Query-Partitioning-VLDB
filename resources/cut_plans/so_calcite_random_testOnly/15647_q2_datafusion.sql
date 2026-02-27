@@ -1,0 +1,15 @@
+SELECT COALESCE("t8"."POSTID", "t8"."POSTID") AS "POSTID", "t8"."TITLE", "t8"."OWNERDISPLAYNAME", "t8"."CREATIONDATE", "t8"."SCORE", "t8"."VIEWCOUNT", "t8"."COMMENTCOUNT"
+FROM (SELECT "t1"."Id" AS "POSTID", "t1"."Title" AS "TITLE", "Users"."DisplayName" AS "OWNERDISPLAYNAME", "t1"."CreationDate" AS "CREATIONDATE", "t1"."Score" AS "SCORE", "t1"."ViewCount" AS "VIEWCOUNT", CASE WHEN "t5"."EXPR$0" IS NULL THEN 0 ELSE "t5"."EXPR$0" END AS "COMMENTCOUNT"
+FROM (SELECT *
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 1) AS "t1"
+INNER JOIN "STACK"."Users" ON "t1"."OwnerUserId" = "Users"."Id"
+LEFT JOIN (SELECT "t2"."Id" AS "PostId", CASE WHEN "t4"."EXPR$0" IS NOT NULL THEN "t4"."EXPR$0" ELSE 0 END AS "EXPR$0"
+FROM (SELECT "s1"."Id"
+FROM "s1"
+INNER JOIN "STACK"."Users" AS "Users0" ON "s1"."OwnerUserId" = "Users0"."Id") AS "t2"
+LEFT JOIN (SELECT "PostId", COUNT(*) AS "EXPR$0"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t4" ON "t2"."Id" IS NOT DISTINCT FROM "t4"."PostId") AS "t5" ON "t1"."Id" = "t5"."PostId"
+ORDER BY "t1"."CreationDate" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t8"

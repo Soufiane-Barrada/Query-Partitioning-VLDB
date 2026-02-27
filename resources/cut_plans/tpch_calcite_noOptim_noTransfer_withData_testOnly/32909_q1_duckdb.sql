@@ -1,0 +1,16 @@
+SELECT COALESCE("region"."r_name", "region"."r_name") AS "R_NAME", CASE WHEN SUM(CASE WHEN "lineitem"."l_returnflag" = 'R' THEN "lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount") ELSE NULL END) IS NOT NULL THEN CAST(SUM(CASE WHEN "lineitem"."l_returnflag" = 'R' THEN "lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount") ELSE NULL END) AS DECIMAL(19, 4)) ELSE 0.0000 END AS "TOTAL_RETURNED", COUNT(DISTINCT "customer"."c_custkey") AS "TOTAL_CUSTOMERS", AVG("t0"."AVG_ACCTBAL") AS "AVG_SUPPLIER_ACCT_BAL", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS", SUM("t2"."TOTAL_AVAIL_QTY") AS "TOTAL_QTY_AVAILABLE", MAX("t2"."AVG_SUPPLY_COST") AS "MAX_SUPPLY_COST"
+FROM "TPCH"."region"
+LEFT JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+LEFT JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+LEFT JOIN (SELECT "s_nationkey" AS "S_NATIONKEY", AVG("s_acctbal") AS "AVG_ACCTBAL", SUM(CASE WHEN "s_comment" LIKE '%urgent%' THEN 1 ELSE 0 END) AS "URGENT_COUNT"
+FROM "TPCH"."supplier"
+GROUP BY "s_nationkey") AS "t0" ON "supplier"."s_nationkey" = "t0"."S_NATIONKEY"
+LEFT JOIN "TPCH"."lineitem" ON "supplier"."s_suppkey" = "lineitem"."l_suppkey"
+LEFT JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+LEFT JOIN (SELECT "ps_partkey" AS "PS_PARTKEY", SUM("ps_availqty") AS "TOTAL_AVAIL_QTY", AVG("ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."partsupp"
+GROUP BY "ps_partkey") AS "t2" ON "lineitem"."l_partkey" = "t2"."PS_PARTKEY"
+LEFT JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+WHERE ("orders"."o_orderstatus" = 'F' OR "orders"."o_orderstatus" = 'P') AND "customer"."c_acctbal" IS NOT NULL AND "customer"."c_acctbal" > 100.00
+GROUP BY "region"."r_name"
+HAVING COUNT(DISTINCT "customer"."c_custkey") > 10

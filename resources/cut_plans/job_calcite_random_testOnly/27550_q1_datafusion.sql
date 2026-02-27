@@ -1,0 +1,7 @@
+SELECT COALESCE("t"."id", "t"."id") AS "id", "t"."movie_id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."note", "t"."md5sum", "t"."id0", "t"."movie_id0", "t"."keyword_id", "keyword"."id" AS "id1", "keyword"."keyword", "keyword"."phonetic_code" AS "phonetic_code0", "movie_companies"."id" AS "id2", "movie_companies"."movie_id" AS "movie_id1", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0", "company_name"."id" AS "id3", "company_name"."name", "company_name"."country_code", "company_name"."imdb_id", "company_name"."name_pcode_nf", "company_name"."name_pcode_sf", "company_name"."md5sum" AS "md5sum0"
+FROM (SELECT "aka_title"."id", "aka_title"."movie_id", "aka_title"."title", "aka_title"."imdb_index", "aka_title"."kind_id", "aka_title"."production_year", "aka_title"."phonetic_code", "aka_title"."episode_of_id", "aka_title"."season_nr", "aka_title"."episode_nr", "aka_title"."note", "aka_title"."md5sum", "movie_keyword"."id" AS "id0", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN "IMDB"."aka_title" ON "movie_keyword"."movie_id" = "aka_title"."id") AS "t"
+LEFT JOIN "IMDB"."keyword" ON "t"."keyword_id" = "keyword"."id"
+LEFT JOIN "IMDB"."movie_companies" ON "t"."id" = "movie_companies"."movie_id"
+LEFT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"

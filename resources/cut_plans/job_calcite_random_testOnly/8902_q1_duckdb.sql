@@ -1,0 +1,3 @@
+SELECT COALESCE("aka_name"."id", "aka_name"."id") AS "id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "name"."id" AS "id0", "name"."name" AS "name0", "name"."imdb_index" AS "imdb_index0", "name"."imdb_id", "name"."gender", "name"."name_pcode_cf" AS "name_pcode_cf0", "name"."name_pcode_nf" AS "name_pcode_nf0", "name"."surname_pcode" AS "surname_pcode0", "name"."md5sum" AS "md5sum0"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."name" ON "aka_name"."person_id" = "name"."imdb_id"

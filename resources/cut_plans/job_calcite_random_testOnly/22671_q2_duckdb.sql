@@ -1,0 +1,17 @@
+SELECT COALESCE("t8"."TITLE", "t8"."TITLE") AS "TITLE", "t8"."CAST_COUNT", "t8"."AVG_ORDER", "t8"."KEYWORD", "t8"."MOVIE_COUNT", "t11"."COMPANY_NAME", "t11"."MOVIES_PRODUCED"
+FROM (SELECT "t7"."TITLE", "t7"."CAST_COUNT", "t7"."AVG_ORDER", "t5"."keyword" AS "KEYWORD", "t5"."MOVIE_COUNT"
+FROM (SELECT "keyword"."keyword", COUNT("movie_keyword"."movie_id") AS "MOVIE_COUNT"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "keyword"."keyword"
+HAVING COUNT("movie_keyword"."movie_id") > 5) AS "t5",
+(SELECT "TITLE", "CAST_COUNT", "AVG_ORDER", "CAST_COUNT" > 10 AS "$f3"
+FROM "s1"
+WHERE "CAST_COUNT" > 10) AS "t7") AS "t8"
+LEFT JOIN (SELECT ANY_VALUE("company_name"."name") AS "COMPANY_NAME", COUNT("movie_companies"."movie_id") AS "MOVIES_PRODUCED"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+GROUP BY "company_name"."name"
+HAVING COUNT("movie_companies"."movie_id") > 10) AS "t11" ON "t8"."CAST_COUNT" < "t11"."MOVIES_PRODUCED"
+ORDER BY "t8"."CAST_COUNT" DESC NULLS FIRST, "t11"."MOVIES_PRODUCED"
+FETCH NEXT 50 ROWS ONLY

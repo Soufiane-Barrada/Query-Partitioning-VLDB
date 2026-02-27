@@ -1,0 +1,13 @@
+SELECT COALESCE("t2"."POSTTYPEID", "t2"."POSTTYPEID") AS "POSTTYPEID", "t2"."POSTCOUNT", "t2"."AVGSCORE", "t2"."TOTALVIEWS", "t2"."TOTALANSWERS", "t2"."TOTALCOMMENTS", "t2"."TOTALFAVORITES", "t2"."LASTPOSTDATE", SUM("t6"."TOTALPOSTS") AS "TOTALUSERPOSTS", AVG("t6"."REPUTATION") AS "AVGUSERREPUTATION", SUM("t6"."TOTALUPVOTES") AS "TOTALUSERUPVOTES", SUM("t6"."TOTALDOWNVOTES") AS "TOTALUSERDOWNVOTES"
+FROM (SELECT "PostTypeId" AS "POSTTYPEID", COUNT(*) AS "POSTCOUNT", AVG("Score") AS "AVGSCORE", SUM("ViewCount") AS "TOTALVIEWS", SUM("AnswerCount") AS "TOTALANSWERS", SUM("CommentCount") AS "TOTALCOMMENTS", SUM("FavoriteCount") AS "TOTALFAVORITES", MAX("CreationDate") AS "LASTPOSTDATE", COUNT(*) > 0 AS "$f8"
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)
+GROUP BY "PostTypeId"
+HAVING COUNT(*) > 0) AS "t2",
+(SELECT ANY_VALUE("t3"."Id") AS "USERID", "t3"."Reputation" AS "REPUTATION", COUNT(DISTINCT "t3"."Id0") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Posts0"."Id" AS "Id0", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate" AS "CreationDate0", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN "STACK"."Users" ON "Posts0"."OwnerUserId" = "Users"."Id") AS "t3" ON "Votes"."PostId" = "t3"."Id0"
+GROUP BY "t3"."Id", "t3"."Reputation") AS "t6"
+GROUP BY "t2"."POSTTYPEID", "t2"."POSTCOUNT", "t2"."AVGSCORE", "t2"."TOTALVIEWS", "t2"."TOTALANSWERS", "t2"."TOTALCOMMENTS", "t2"."TOTALFAVORITES", "t2"."LASTPOSTDATE"

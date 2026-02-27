@@ -1,0 +1,8 @@
+SELECT COALESCE("t"."id", "t"."id") AS "id", "t"."person_id", "t"."name", "t"."imdb_index", "t"."name_pcode_cf", "t"."name_pcode_nf", "t"."surname_pcode", "t"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "keyword"."id" AS "id1", "keyword"."keyword", "keyword"."phonetic_code", "movie_keyword"."id" AS "id00", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id", "t0"."id" AS "id10", "t0"."title", "t0"."imdb_index" AS "imdb_index0", "t0"."kind_id", "t0"."production_year", "t0"."imdb_id", "t0"."phonetic_code" AS "phonetic_code0", "t0"."episode_of_id", "t0"."season_nr", "t0"."episode_nr", "t0"."series_years", "t0"."md5sum" AS "md5sum0", "movie_companies"."id" AS "id000", "movie_companies"."movie_id" AS "movie_id00", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0"
+FROM (SELECT *
+FROM "IMDB"."aka_name"
+WHERE "name" LIKE '%Smith%') AS "t"
+INNER JOIN "IMDB"."cast_info" ON "t"."person_id" = "cast_info"."person_id"
+INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ((SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000) AS "t0" INNER JOIN "IMDB"."movie_companies" ON "t0"."id" = "movie_companies"."movie_id") ON "movie_keyword"."movie_id" = "t0"."id") ON "cast_info"."movie_id" = "t0"."id"

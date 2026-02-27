@@ -1,0 +1,12 @@
+SELECT COALESCE(ANY_VALUE("aka_name"."name"), ANY_VALUE("aka_name"."name")) AS "ACTOR_NAME", ANY_VALUE("title"."title") AS "MOVIE_TITLE", "title"."production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "comp_cast_type"."kind", ', ') AS "COMPANY_TYPES", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", "aka_name"."name"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."title" ON "cast_info"."movie_id" = "title"."id"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+INNER JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."comp_cast_type" ON "cast_info"."person_role_id" = "comp_cast_type"."id"
+WHERE "title"."production_year" >= 2000 AND "title"."production_year" <= 2020
+GROUP BY "aka_name"."name", "title"."title", "title"."production_year"

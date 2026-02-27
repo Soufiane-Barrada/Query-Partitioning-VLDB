@@ -1,0 +1,11 @@
+SELECT COALESCE("title"."title", "title"."title") AS "MOVIE_TITLE", "title"."production_year" AS "PRODUCTION_YEAR", "aka_name"."name" AS "ACTOR_NAME", "keyword"."keyword" AS "MOVIE_KEYWORD", ', ' AS "FD_COL_4", "person_info"."info" AS "PERSON_INFO"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+INNER JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+LEFT JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id"
+LEFT JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+WHERE "title"."production_year" > 2000 AND "company_type"."kind" = 'Distributor'

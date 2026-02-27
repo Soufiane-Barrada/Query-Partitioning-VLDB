@@ -1,0 +1,11 @@
+SELECT COALESCE("t10"."P_NAME", "t10"."P_NAME") AS "P_NAME", "t10"."TOTAL_REVENUE", "t10"."NATION", "t10"."R_NAME", "t10"."ORDER_COUNT", "t10"."p_name" AS "p_name_"
+FROM (SELECT "s1"."P_NAME", "s1"."TOTAL_REVENUE", "s1"."NATION", "s1"."R_NAME", "s1"."ORDER_COUNT", "s1"."P_NAME" AS "p_name"
+FROM (SELECT AVG("t7"."TOTAL_REVENUE") AS "EXPR$0"
+FROM (SELECT "orders0"."o_orderkey", SUM("t5"."l_extendedprice" * (1 - "t5"."l_discount")) AS "TOTAL_REVENUE"
+FROM (SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1997-01-01' AND "l_shipdate" < DATE '1997-12-31') AS "t5"
+INNER JOIN "TPCH"."orders" AS "orders0" ON "t5"."l_orderkey" = "orders0"."o_orderkey"
+GROUP BY "orders0"."o_orderkey") AS "t7") AS "t8"
+INNER JOIN "s1" ON "t8"."EXPR$0" < "s1"."TOTAL_REVENUE"
+ORDER BY "s1"."TOTAL_REVENUE" DESC NULLS FIRST, "s1"."P_NAME") AS "t10"

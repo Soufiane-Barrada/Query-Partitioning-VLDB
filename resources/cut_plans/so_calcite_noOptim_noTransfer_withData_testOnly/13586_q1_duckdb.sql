@@ -1,0 +1,5 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId" AS "POSTTYPEID", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE NULL END AS "FD_COL_5", CASE WHEN "Posts0"."Id" IS NOT NULL THEN 1 ELSE NULL END AS "FD_COL_6", "Votes"."Id" AS "Id2"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Posts" AS "Posts0" ON "Posts"."Id" = "Posts0"."ParentId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"

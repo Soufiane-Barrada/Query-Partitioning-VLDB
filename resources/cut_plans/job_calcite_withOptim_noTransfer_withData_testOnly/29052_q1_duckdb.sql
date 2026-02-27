@@ -1,0 +1,12 @@
+SELECT COALESCE("t3"."MOVIE_ID", "t3"."MOVIE_ID") AS "MOVIE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."AKA_NAMES", "t3"."CAST_COUNT", COUNT(DISTINCT "company_name"."id") AS "COMPANY_COUNT", LISTAGG(DISTINCT "company_name"."name", ', ') AS "COMPANIES"
+FROM "IMDB"."company_name"
+RIGHT JOIN (SELECT "t2"."MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."AKA_NAMES", "t2"."CAST_COUNT", "t2"."KEYWORDS", "movie_companies"."id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN (SELECT ANY_VALUE("t"."id") AS "MOVIE_ID", "t"."title" AS "TITLE", "t"."production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "AKA_NAMES", COUNT(DISTINCT "cast_info"."person_id") AS "CAST_COUNT", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN ((SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" >= 2000) AS "t" INNER JOIN "IMDB"."complete_cast" ON "t"."movie_id" = "complete_cast"."movie_id" INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id") ON "t"."movie_id" = "movie_keyword"."movie_id") ON "cast_info"."person_id" = "complete_cast"."subject_id"
+GROUP BY "t"."id", "t"."title", "t"."production_year") AS "t2" ON "movie_companies"."movie_id" = "t2"."MOVIE_ID") AS "t3" ON "company_name"."id" = "t3"."company_id"
+GROUP BY "t3"."MOVIE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."AKA_NAMES", "t3"."CAST_COUNT"

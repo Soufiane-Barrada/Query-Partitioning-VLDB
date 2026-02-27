@@ -1,0 +1,6 @@
+SELECT COALESCE("t3"."L_SHIPMODE", "t3"."L_SHIPMODE") AS "L_SHIPMODE", "t3"."ORDER_COUNT", "t3"."REVENUE"
+FROM (SELECT "s1"."l_shipmode" AS "L_SHIPMODE", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT", SUM("s1"."l_extendedprice" * (1 - "s1"."l_discount")) AS "REVENUE"
+FROM "TPCH"."orders"
+INNER JOIN "s1" ON "orders"."o_orderkey" = "s1"."l_orderkey"
+GROUP BY "s1"."l_shipmode"
+ORDER BY 3 DESC NULLS FIRST) AS "t3"

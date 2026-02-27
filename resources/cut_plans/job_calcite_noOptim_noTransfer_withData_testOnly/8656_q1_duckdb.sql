@@ -1,0 +1,5 @@
+SELECT COALESCE("aka_title"."id", "aka_title"."id") AS "id", "aka_title"."title" AS "TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", "aka_name"."id" AS "id1", "cast_info"."person_id" AS "person_id0"
+FROM "IMDB"."aka_title"
+LEFT JOIN "IMDB"."movie_keyword" ON "aka_title"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."aka_name" ON "movie_keyword"."keyword_id" = "aka_name"."id"
+LEFT JOIN "IMDB"."cast_info" ON "aka_title"."id" = "cast_info"."movie_id"

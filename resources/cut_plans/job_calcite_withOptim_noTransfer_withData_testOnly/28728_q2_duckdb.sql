@@ -1,0 +1,17 @@
+SELECT COALESCE("t8"."MOVIE_TITLE", "t8"."MOVIE_TITLE") AS "MOVIE_TITLE", "t8"."PRODUCTION_YEAR", "t8"."MOVIE_KEYWORD", "t8"."ACTOR_NAME", "t8"."ROLE_NAME", "t8"."CAST_TYPE", "t8"."COMPANY_NAME", "t8"."COMPANY_TYPE"
+FROM (SELECT "t6"."MOVIE_TITLE", "t6"."PRODUCTION_YEAR", "t6"."MOVIE_KEYWORD", "t2"."ACTOR_NAME", "t2"."ROLE_NAME", "t2"."CAST_TYPE", "t4"."COMPANY_NAME", "t4"."COMPANY_TYPE"
+FROM (SELECT "cast_info"."movie_id" AS "MOVIE_ID", "aka_name"."name" AS "ACTOR_NAME", "t1"."role" AS "ROLE_NAME", "comp_cast_type"."kind" AS "CAST_TYPE"
+FROM (SELECT *
+FROM "IMDB"."role_type"
+WHERE "role" LIKE '%Actor%') AS "t1"
+INNER JOIN ("IMDB"."comp_cast_type" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "comp_cast_type"."id" = "cast_info"."person_role_id") ON "t1"."id" = "cast_info"."role_id") AS "t2"
+INNER JOIN ((SELECT "movie_companies"."movie_id" AS "MOVIE_ID", "company_name"."name" AS "COMPANY_NAME", "t3"."kind" AS "COMPANY_TYPE"
+FROM (SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" LIKE '%Production%') AS "t3"
+INNER JOIN ("IMDB"."company_name" INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id") ON "t3"."id" = "movie_companies"."company_type_id") AS "t4" INNER JOIN (SELECT "t5"."id" AS "MOVIE_ID", "t5"."title" AS "MOVIE_TITLE", "t5"."production_year" AS "PRODUCTION_YEAR", "keyword"."keyword" AS "MOVIE_KEYWORD", "t5"."kind" AS "TITLE_KIND"
+FROM (SELECT "s1"."id", "s1"."title", "s1"."imdb_index", "s1"."kind_id", "s1"."production_year", "s1"."imdb_id", "s1"."phonetic_code", "s1"."episode_of_id", "s1"."season_nr", "s1"."episode_nr", "s1"."series_years", "s1"."md5sum", "kind_type"."id" AS "id0", "kind_type"."kind", "movie_keyword"."id" AS "id1", "movie_keyword"."movie_id", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN ("s1" LEFT JOIN "IMDB"."kind_type" ON "s1"."kind_id" = "kind_type"."id") ON "movie_keyword"."movie_id" = "s1"."id") AS "t5"
+LEFT JOIN "IMDB"."keyword" ON "t5"."keyword_id" = "keyword"."id") AS "t6" ON "t4"."MOVIE_ID" = "t6"."MOVIE_ID") ON "t2"."MOVIE_ID" = "t6"."MOVIE_ID"
+ORDER BY "t6"."PRODUCTION_YEAR" DESC NULLS FIRST, "t6"."MOVIE_TITLE") AS "t8"

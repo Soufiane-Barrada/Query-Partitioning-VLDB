@@ -1,0 +1,11 @@
+SELECT COALESCE("t9"."MOVIE_ID", "t9"."MOVIE_ID") AS "MOVIE_ID", "t9"."TITLE", "t9"."PRODUCTION_YEAR", "t9"."AKA_NAMES", "t9"."KEYWORDS", "t9"."CAST_COUNT", "t9"."COMPANY_NAMES", "t9"."COMPANY_TYPES"
+FROM (SELECT "t7"."MOVIE_ID", "t7"."TITLE", "t7"."PRODUCTION_YEAR", "t7"."AKA_NAMES", "t7"."KEYWORDS", "t7"."CAST_COUNT", "t3"."COMPANY_NAMES", "t3"."COMPANY_TYPES"
+FROM (SELECT "movie_companies"."movie_id" AS "MOVIE_ID", LISTAGG(DISTINCT "company_name"."name", ', ') AS "COMPANY_NAMES", LISTAGG(DISTINCT "company_type"."kind", ', ') AS "COMPANY_TYPES"
+FROM "IMDB"."company_type"
+INNER JOIN ("IMDB"."company_name" INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id") ON "company_type"."id" = "movie_companies"."company_type_id"
+GROUP BY "movie_companies"."movie_id") AS "t3"
+RIGHT JOIN (SELECT ANY_VALUE("id") AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "name", ', ') AS "AKA_NAMES", LISTAGG(DISTINCT "keyword", ', ') AS "KEYWORDS", COUNT("id3") AS "CAST_COUNT"
+FROM "s1"
+WHERE "production_year" >= 2000
+GROUP BY "id", "title", "production_year") AS "t7" ON "t3"."MOVIE_ID" = "t7"."MOVIE_ID"
+ORDER BY "t7"."PRODUCTION_YEAR" DESC NULLS FIRST, "t7"."CAST_COUNT" DESC NULLS FIRST) AS "t9"

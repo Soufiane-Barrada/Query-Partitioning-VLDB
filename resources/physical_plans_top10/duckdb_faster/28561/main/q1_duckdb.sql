@@ -1,0 +1,11 @@
+SELECT COALESCE(ANY_VALUE("supplier"."s_name"), ANY_VALUE("supplier"."s_name")) AS "SUPPLIER_NAME", ANY_VALUE("part"."p_name") AS "PART_NAME", ANY_VALUE(CONCAT('Supplier ', "supplier"."s_name", ' supplies ', "part"."p_name", ' with a price of ', CAST("partsupp"."ps_supplycost" AS VARCHAR), ' per unit.')) AS "DESCRIPTION", ANY_VALUE("region"."r_name") AS "REGION_NAME", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", SUM("lineitem"."l_extendedprice") AS "TOTAL_REVENUE", AVG(CASE WHEN "lineitem"."l_discount" > 0.00 THEN "lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount") ELSE CAST("lineitem"."l_extendedprice" AS DECIMAL(19, 4)) END) AS "AVG_PRICE_AFTER_DISCOUNT"
+FROM "supplier"
+INNER JOIN "partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+INNER JOIN "lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+INNER JOIN "nation" ON "customer"."c_nationkey" = "nation"."n_nationkey"
+INNER JOIN "region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+WHERE "region"."r_name" LIKE 'Europ%'
+GROUP BY "supplier"."s_name", "part"."p_name", "region"."r_name", "partsupp"."ps_supplycost"

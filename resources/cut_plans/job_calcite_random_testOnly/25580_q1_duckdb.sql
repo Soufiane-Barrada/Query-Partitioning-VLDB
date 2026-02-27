@@ -1,0 +1,12 @@
+SELECT COALESCE("t3"."TITLE_ID", "t3"."TITLE_ID") AS "TITLE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "movie_info0"."id", "movie_info0"."movie_id", "movie_info0"."info_type_id", "movie_info0"."info", "movie_info0"."note", "cast_info0"."id" AS "id0", "cast_info0"."person_id", "cast_info0"."movie_id" AS "movie_id0", "cast_info0"."person_role_id", "cast_info0"."note" AS "note0", "cast_info0"."nr_order", "cast_info0"."role_id"
+FROM (SELECT "t1"."TITLE_ID", "t1"."TITLE", "t1"."PRODUCTION_YEAR"
+FROM (SELECT ANY_VALUE("title"."id") AS "TITLE_ID", "title"."title" AS "TITLE", "title"."production_year" AS "PRODUCTION_YEAR"
+FROM "IMDB"."cast_info"
+INNER JOIN ("IMDB"."title" INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id") ON "cast_info"."movie_id" = "title"."id"
+GROUP BY "title"."id", "title"."title", "title"."production_year"
+HAVING COUNT(*) > 5) AS "t1"
+INNER JOIN (SELECT *
+FROM "IMDB"."movie_info"
+WHERE "info" ILIKE '%award%') AS "t2" ON "t1"."TITLE_ID" = "t2"."movie_id") AS "t3"
+INNER JOIN "IMDB"."movie_info" AS "movie_info0" ON "t3"."TITLE_ID" = "movie_info0"."movie_id"
+INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "t3"."TITLE_ID" = "cast_info0"."movie_id"

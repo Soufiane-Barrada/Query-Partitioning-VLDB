@@ -1,0 +1,10 @@
+SELECT COALESCE("t2"."O_ORDERKEY", "t2"."O_ORDERKEY") AS "O_ORDERKEY", "t2"."TOTAL_ITEMS", "t2"."TOTAL_DISCOUNTED_PRICE", "t2"."TOTAL_QUANTITY", "t2"."AVG_SUPPLY_COST", "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "customer0"."c_custkey", "customer0"."c_name", "customer0"."c_address", "customer0"."c_nationkey", "customer0"."c_phone", "customer0"."c_acctbal", "customer0"."c_mktsegment", "customer0"."c_comment"
+FROM (SELECT "t"."o_orderkey" AS "O_ORDERKEY", COUNT(*) AS "TOTAL_ITEMS", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_DISCOUNTED_PRICE", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", AVG("partsupp"."ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN ("TPCH"."customer" INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01' AND "o_orderdate" <= DATE '1997-12-31') AS "t" ON "customer"."c_custkey" = "t"."o_custkey" INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey") ON "t"."o_orderkey" = "lineitem"."l_orderkey") ON "partsupp"."ps_partkey" = "lineitem"."l_partkey" AND "partsupp"."ps_suppkey" = "lineitem"."l_suppkey"
+GROUP BY "t"."o_orderkey"
+HAVING SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) > 10000.0000) AS "t2"
+INNER JOIN ("TPCH"."region" INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey" INNER JOIN "TPCH"."customer" AS "customer0" ON "nation"."n_nationkey" = "customer0"."c_nationkey") ON "t2"."O_ORDERKEY" = "customer0"."c_custkey"

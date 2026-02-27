@@ -1,0 +1,5 @@
+SELECT COALESCE("part"."p_name", "part"."p_name") AS "P_NAME", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", AVG("lineitem"."l_extendedprice") AS "AVG_PRICE", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+GROUP BY "part"."p_name"

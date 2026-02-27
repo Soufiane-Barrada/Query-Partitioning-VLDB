@@ -1,0 +1,8 @@
+SELECT COALESCE(ANY_VALUE("t0"."Id"), ANY_VALUE("t0"."Id")) AS "POSTID", "t0"."Title" AS "TITLE", "t0"."CreationDate" AS "CREATIONDATE", "t0"."ViewCount" AS "VIEWCOUNT", "t0"."Score" AS "SCORE", CASE WHEN SUM("t0"."Score0") IS NOT NULL THEN CAST(SUM("t0"."Score0") AS INTEGER) ELSE 0 END AS "TOTALCOMMENTSCORE", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", ROW_NUMBER() OVER (ORDER BY "t0"."Score" DESC NULLS FIRST, "t0"."ViewCount" DESC NULLS FIRST) AS "RAN"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "t"."Id", "t"."PostTypeId", "t"."AcceptedAnswerId", "t"."ParentId", "t"."CreationDate", "t"."Score", "t"."ViewCount", "t"."Body", "t"."OwnerUserId", "t"."OwnerDisplayName", "t"."LastEditorUserId", "t"."LastEditorDisplayName", "t"."LastEditDate", "t"."LastActivityDate", "t"."Title", "t"."Tags", "t"."AnswerCount", "t"."CommentCount", "t"."FavoriteCount", "t"."ClosedDate", "t"."CommunityOwnedDate", "t"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= CAST((DATE '2024-10-01' - INTERVAL '30' DAY) AS TIMESTAMP(0))) AS "t" ON "Comments"."PostId" = "t"."Id") AS "t0" ON "Votes"."PostId" = "t0"."Id"
+GROUP BY "t0"."Id", "t0"."Title", "t0"."CreationDate", "t0"."ViewCount", "t0"."Score"

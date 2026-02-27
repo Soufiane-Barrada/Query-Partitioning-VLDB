@@ -1,0 +1,6 @@
+SELECT COALESCE("t3"."ACTOR_NAME", "t3"."ACTOR_NAME") AS "ACTOR_NAME", "t3"."MOVIE_TITLE", "t3"."COMPANY_TYPE", "t3"."KEYWORD_COUNT", "t3"."PERSONAL_INFO_COUNT"
+FROM (SELECT "aka_name"."name", "s1"."title", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("s1"."title") AS "MOVIE_TITLE", ANY_VALUE("s1"."kind") AS "COMPANY_TYPE", COUNT(DISTINCT "s1"."keyword") AS "KEYWORD_COUNT", COUNT(DISTINCT "person_info"."info") AS "PERSONAL_INFO_COUNT"
+FROM "IMDB"."person_info"
+RIGHT JOIN ("IMDB"."cast_info" INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id" INNER JOIN "s1" ON "cast_info"."movie_id" = "s1"."id00") ON "person_info"."person_id" = "aka_name"."person_id"
+GROUP BY "aka_name"."name", "s1"."title"
+ORDER BY 6 DESC NULLS FIRST, 7 DESC NULLS FIRST) AS "t3"

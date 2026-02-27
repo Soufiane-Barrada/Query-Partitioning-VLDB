@@ -1,0 +1,5 @@
+SELECT COALESCE("movie_info"."id", "movie_info"."id") AS "id", "movie_info"."movie_id", "movie_info"."info_type_id", "movie_info"."info", "movie_info"."note", "title"."id" AS "id0", "title"."title", "title"."imdb_index", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum", "movie_companies"."id" AS "id00", "movie_companies"."movie_id" AS "movie_id0", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0", "t"."id" AS "id000", "t"."name", "t"."country_code", "t"."imdb_id" AS "imdb_id0", "t"."name_pcode_nf", "t"."name_pcode_sf", "t"."md5sum" AS "md5sum0"
+FROM "IMDB"."movie_info"
+RIGHT JOIN ("IMDB"."title" INNER JOIN ("IMDB"."movie_companies" INNER JOIN (SELECT *
+FROM "IMDB"."company_name"
+WHERE "country_code" = 'USA') AS "t" ON "movie_companies"."company_id" = "t"."id") ON "title"."id" = "movie_companies"."movie_id") ON "movie_info"."movie_id" = "title"."id"

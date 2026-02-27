@@ -1,0 +1,12 @@
+SELECT COALESCE("t0"."id", "t0"."id") AS "id", "t0"."title" AS "TITLE", "t0"."production_year" AS "PRODUCTION_YEAR", "aka_name"."name", ', ' AS "FD_COL_4", "t0"."keyword", "company_name"."name" AS "name0", CONCAT("role_type"."role", ' as ', "name"."name") AS "FD_COL_7"
+FROM (SELECT "t"."id", "t"."movie_id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."note", "t"."md5sum", "t"."id0", "t"."movie_id0", "t"."keyword_id", "keyword"."id" AS "id1", "keyword"."keyword", "keyword"."phonetic_code" AS "phonetic_code0", "complete_cast"."id" AS "id2", "complete_cast"."movie_id" AS "movie_id1", "complete_cast"."subject_id", "complete_cast"."status_id", "cast_info"."id" AS "id3", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id2", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."cast_info"
+RIGHT JOIN ((SELECT "aka_title"."id", "aka_title"."movie_id", "aka_title"."title", "aka_title"."imdb_index", "aka_title"."kind_id", "aka_title"."production_year", "aka_title"."phonetic_code", "aka_title"."episode_of_id", "aka_title"."season_nr", "aka_title"."episode_nr", "aka_title"."note", "aka_title"."md5sum", "movie_keyword"."id" AS "id0", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN "IMDB"."aka_title" ON "movie_keyword"."movie_id" = "aka_title"."id") AS "t" LEFT JOIN "IMDB"."keyword" ON "t"."keyword_id" = "keyword"."id" LEFT JOIN "IMDB"."complete_cast" ON "t"."id" = "complete_cast"."movie_id") ON "cast_info"."id" = "complete_cast"."subject_id") AS "t0"
+LEFT JOIN "IMDB"."aka_name" ON "t0"."person_id" = "aka_name"."person_id"
+LEFT JOIN "IMDB"."movie_companies" ON "t0"."id" = "movie_companies"."movie_id"
+LEFT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+LEFT JOIN "IMDB"."role_type" ON "t0"."role_id" = "role_type"."id"
+LEFT JOIN "IMDB"."name" ON "aka_name"."person_id" = "name"."imdb_id"
+WHERE "t0"."production_year" > 2000

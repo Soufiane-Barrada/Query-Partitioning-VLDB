@@ -1,0 +1,2606 @@
+{
+  "queryId" : "32768",
+  "originalSql" : "WITH RecursivePostHistory AS (\n    SELECT \n        PH.PostId,\n        PH.PostHistoryTypeId,\n        PH.CreationDate,\n        CAST(NULL AS VARCHAR(400)) AS PreviousAction,\n        ROW_NUMBER() OVER (PARTITION BY PH.PostId ORDER BY PH.CreationDate DESC) AS RowNum\n    FROM \n        PostHistory PH\n    WHERE \n        PH.PostHistoryTypeId IN (10, 11, 12)  \n), \nUserActivity AS (\n    SELECT \n        U.Id AS UserId,\n        U.DisplayName,\n        COUNT(P.Id) AS PostsCreated,\n        SUM(CASE WHEN P.Score IS NOT NULL THEN P.Score ELSE 0 END) AS TotalScore,\n        AVG(COALESCE(P.ViewCount, 0)) AS AvgViewCount\n    FROM \n        Users U\n    LEFT JOIN \n        Posts P ON U.Id = P.OwnerUserId\n    GROUP BY \n        U.Id, U.DisplayName\n), \nTagStats AS (\n    SELECT \n        T.TagName,\n        COUNT(P.Id) AS PostCount,\n        SUM(COALESCE(P.ViewCount, 0)) AS TotalViews\n    FROM \n        Tags T\n    LEFT JOIN \n        Posts P ON P.Tags LIKE '%' || T.TagName || '%'\n    GROUP BY \n        T.TagName\n)\nSELECT \n    U.DisplayName AS UserName,\n    U.PostsCreated,\n    U.TotalScore,\n    U.AvgViewCount,\n    P.Title AS PostTitle,\n    PH.PostHistoryTypeId,\n    PH.CreationDate AS ActionDate,\n    CASE \n        WHEN PH.PostHistoryTypeId = 10 THEN 'Closed'\n        WHEN PH.PostHistoryTypeId = 11 THEN 'Reopened'\n        WHEN PH.PostHistoryTypeId = 12 THEN 'Deleted'\n        ELSE 'Other Action'\n    END AS ActionType,\n    T.TagName AS PostTag,\n    TS.PostCount AS TagPostCount,\n    TS.TotalViews AS TagTotalViews\nFROM \n    UserActivity U\nINNER JOIN \n    RecursivePostHistory PH ON U.UserId = PH.PostId\nINNER JOIN \n    Posts P ON P.Id = PH.PostId\nLEFT JOIN \n    Tags T ON P.Tags LIKE '%' || T.TagName || '%'\nLEFT JOIN \n    TagStats TS ON T.TagName = TS.TagName\nWHERE \n    U.TotalScore > 0\nORDER BY \n    U.TotalScore DESC, PH.CreationDate DESC",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 56453,
+    "q1Engine" : "datafusion",
+    "q2Engine" : "duckdb",
+    "costAllDuckdb" : 798365.5222768722,
+    "costAllDatafusion" : 2523679.192602202,
+    "chosenCost" : -1.0
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "random",
+      "doOptimize" : true,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+      "cutPolicy" : "RANDOM",
+      "randomSeed" : 1,
+      "schemaName" : "STACK"
+    },
+    "planStats" : {
+      "totalNodes" : 24,
+      "maxDepth" : 12,
+      "operatorKindCounts" : {
+        "FILTER" : 2,
+        "OTHER" : 10,
+        "JOIN" : 6,
+        "SORT" : 1,
+        "AGGREGATE" : 2
+      },
+      "rootOutputRows" : 3951.0,
+      "rootRowSizeOutBytes" : 2006.0384764748273
+    },
+    "cut" : {
+      "cutDepth" : 7,
+      "cutNodeOperatorKind" : "FILTER",
+      "cutOutputRows" : 1.0,
+      "cutRowSizeOutBytes" : 48.0,
+      "cutOutputBytes" : 48.0,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 7,
+        "maxDepth" : 6,
+        "operatorKindCounts" : {
+          "FILTER" : 1,
+          "OTHER" : 4,
+          "JOIN" : 1,
+          "AGGREGATE" : 1
+        }
+      },
+      "q2Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 14,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "OTHER" : 6,
+          "FILTER" : 1,
+          "JOIN" : 5,
+          "SORT" : 1,
+          "AGGREGATE" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(MIN(\"Users\".\"Id\"), MIN(\"Users\".\"Id\")) AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\"\nRIGHT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END) > 0",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "USERID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "DISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "POSTSCREATED",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTALSCORE",
+        "type" : "INTEGER"
+      }, {
+        "name" : "AVGVIEWCOUNT",
+        "type" : "INTEGER"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"s1\".\"USERID\", \"s1\".\"DISPLAYNAME\", \"s1\".\"POSTSCREATED\", \"s1\".\"TOTALSCORE\", \"s1\".\"AVGVIEWCOUNT\", \"t5\".\"POSTID\", \"t5\".\"POSTHISTORYTYPEID\", \"t5\".\"CREATIONDATE\", \"t5\".\"PREVIOUSACTION\", \"t5\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t5\" INNER JOIN \"s1\" ON \"t5\".\"POSTID\" = \"s1\".\"USERID\") ON \"Posts0\".\"Id\" = \"t5\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "USERNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "POSTSCREATED",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTALSCORE",
+        "type" : "INTEGER"
+      }, {
+        "name" : "AVGVIEWCOUNT",
+        "type" : "INTEGER"
+      }, {
+        "name" : "POSTTITLE",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "POSTHISTORYTYPEID",
+        "type" : "SMALLINT"
+      }, {
+        "name" : "ACTIONDATE",
+        "type" : "TIMESTAMP"
+      }, {
+        "name" : "ACTIONTYPE",
+        "type" : "CHAR"
+      }, {
+        "name" : "POSTTAG",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "TAGPOSTCOUNT",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TAGTOTALVIEWS",
+        "type" : "INTEGER"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_56523",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56523,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 0,
+        "cutNodeOperatorKind" : "SORT",
+        "cutOutputRows" : 3951.0,
+        "cutRowSizeOutBytes" : 2006.0384764748273,
+        "cutOutputBytes" : 7925858.020552043,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 10,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 0,
+          "maxDepth" : 1,
+          "operatorKindCounts" : { }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t9\".\"USERNAME\", \"t9\".\"USERNAME\") AS \"USERNAME\", \"t9\".\"POSTSCREATED\", \"t9\".\"TOTALSCORE\", \"t9\".\"AVGVIEWCOUNT\", \"t9\".\"POSTTITLE\", \"t9\".\"POSTHISTORYTYPEID\", \"t9\".\"ACTIONDATE\", \"t9\".\"ACTIONTYPE\", \"t9\".\"POSTTAG\", \"t9\".\"TAGPOSTCOUNT\", \"t9\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"DISPLAYNAME\" AS \"USERNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t5\".\"Title\" AS \"POSTTITLE\", \"t5\".\"POSTHISTORYTYPEID\", \"t5\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t5\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t5\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t5\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t5\".\"TagName\" AS \"POSTTAG\", \"t7\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t7\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t4\".\"USERID\", \"t4\".\"DISPLAYNAME\", \"t4\".\"POSTSCREATED\", \"t4\".\"TOTALSCORE\", \"t4\".\"AVGVIEWCOUNT\", \"t0\".\"POSTID\", \"t0\".\"POSTHISTORYTYPEID\", \"t0\".\"CREATIONDATE\", \"t0\".\"PREVIOUSACTION\", \"t0\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t0\" INNER JOIN (SELECT MIN(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t4\" ON \"t0\".\"POSTID\" = \"t4\".\"USERID\") ON \"Posts\".\"Id\" = \"t0\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t5\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t7\" ON \"t5\".\"TagName\" = \"t7\".\"TAGNAME\"\nORDER BY \"t5\".\"TOTALSCORE\" DESC NULLS FIRST, \"t5\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t9\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"USERNAME\", \"USERNAME\") AS \"USERNAME\", \"POSTSCREATED\", \"TOTALSCORE\", \"AVGVIEWCOUNT\", \"POSTTITLE\", \"POSTHISTORYTYPEID\", \"ACTIONDATE\", \"ACTIONTYPE\", \"POSTTAG\", \"TAGPOSTCOUNT\", \"TAGTOTALVIEWS\"\nFROM \"s1\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56514",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56514,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 2,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 3951.0,
+        "cutRowSizeOutBytes" : 2006.0384764748273,
+        "cutOutputBytes" : 7925858.020552043,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "AGGREGATE" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "SORT" : 1,
+            "OTHER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t5\".\"USERID\", \"t5\".\"USERID\") AS \"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t5\".\"POSTID\", \"t5\".\"POSTHISTORYTYPEID\", \"t5\".\"CREATIONDATE\", \"t5\".\"PREVIOUSACTION\", \"t5\".\"ROWNUM\", \"t5\".\"Id\", \"t5\".\"PostTypeId\", \"t5\".\"AcceptedAnswerId\", \"t5\".\"ParentId\", \"t5\".\"CreationDate\" AS \"CreationDate_\", \"t5\".\"Score\", \"t5\".\"ViewCount\", \"t5\".\"Body\", \"t5\".\"OwnerUserId\", \"t5\".\"OwnerDisplayName\", \"t5\".\"LastEditorUserId\", \"t5\".\"LastEditorDisplayName\", \"t5\".\"LastEditDate\", \"t5\".\"LastActivityDate\", \"t5\".\"Title\", \"t5\".\"Tags\", \"t5\".\"AnswerCount\", \"t5\".\"CommentCount\", \"t5\".\"FavoriteCount\", \"t5\".\"ClosedDate\", \"t5\".\"CommunityOwnedDate\", \"t5\".\"ContentLicense\", \"t5\".\"Id0\", \"t5\".\"TagName\", \"t5\".\"Count\", \"t5\".\"ExcerptPostId\", \"t5\".\"WikiPostId\", \"t5\".\"IsModeratorOnly\", \"t5\".\"IsRequired\", \"t7\".\"TAGNAME\" AS \"TAGNAME_\", \"t7\".\"POSTCOUNT\", \"t7\".\"TOTALVIEWS\"\nFROM (SELECT \"t4\".\"USERID\", \"t4\".\"DISPLAYNAME\", \"t4\".\"POSTSCREATED\", \"t4\".\"TOTALSCORE\", \"t4\".\"AVGVIEWCOUNT\", \"t0\".\"POSTID\", \"t0\".\"POSTHISTORYTYPEID\", \"t0\".\"CREATIONDATE\", \"t0\".\"PREVIOUSACTION\", \"t0\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t0\" INNER JOIN (SELECT MIN(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t4\" ON \"t0\".\"POSTID\" = \"t4\".\"USERID\") ON \"Posts\".\"Id\" = \"t0\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t5\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t7\" ON \"t5\".\"TagName\" = \"t7\".\"TAGNAME\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "PREVIOUSACTION",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROWNUM",
+          "type" : "BIGINT"
+        }, {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate_",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TagName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Count",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ExcerptPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "WikiPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "IsModeratorOnly",
+          "type" : "BOOLEAN"
+        }, {
+          "name" : "IsRequired",
+          "type" : "BOOLEAN"
+        }, {
+          "name" : "TAGNAME_",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"USERNAME\", \"USERNAME\") AS \"USERNAME\", \"POSTSCREATED\", \"TOTALSCORE\", \"AVGVIEWCOUNT\", \"POSTTITLE\", \"POSTHISTORYTYPEID\", \"ACTIONDATE\", \"ACTIONTYPE\", \"POSTTAG\", \"TAGPOSTCOUNT\", \"TAGTOTALVIEWS\"\nFROM (SELECT \"DISPLAYNAME\" AS \"USERNAME\", \"POSTSCREATED\", \"TOTALSCORE\", \"AVGVIEWCOUNT\", \"Title\" AS \"POSTTITLE\", \"POSTHISTORYTYPEID\", \"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"TagName\" AS \"POSTTAG\", \"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM \"s1\"\nORDER BY \"TOTALSCORE\" DESC NULLS FIRST, \"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56512",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56512,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1976.0,
+        "cutRowSizeOutBytes" : 1982.0384764748273,
+        "cutOutputBytes" : 3916508.0295142587,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 15,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "FILTER" : 2,
+            "JOIN" : 4,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "JOIN" : 2,
+            "OTHER" : 2,
+            "SORT" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"USERID\", \"t4\".\"USERID\") AS \"USERID\", \"t4\".\"DISPLAYNAME\", \"t4\".\"POSTSCREATED\", \"t4\".\"TOTALSCORE\", \"t4\".\"AVGVIEWCOUNT\", \"t0\".\"POSTID\", \"t0\".\"POSTHISTORYTYPEID\", \"t0\".\"CREATIONDATE\", \"t0\".\"PREVIOUSACTION\", \"t0\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\" AS \"CreationDate_\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t0\" INNER JOIN (SELECT MIN(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t4\" ON \"t0\".\"POSTID\" = \"t4\".\"USERID\") ON \"Posts\".\"Id\" = \"t0\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%'",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "PREVIOUSACTION",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROWNUM",
+          "type" : "BIGINT"
+        }, {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate_",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TagName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Count",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ExcerptPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "WikiPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "IsModeratorOnly",
+          "type" : "BOOLEAN"
+        }, {
+          "name" : "IsRequired",
+          "type" : "BOOLEAN"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"s1\".\"DISPLAYNAME\" AS \"USERNAME\", \"s1\".\"POSTSCREATED\", \"s1\".\"TOTALSCORE\", \"s1\".\"AVGVIEWCOUNT\", \"s1\".\"Title\" AS \"POSTTITLE\", \"s1\".\"POSTHISTORYTYPEID\", \"s1\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"s1\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"s1\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"s1\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"s1\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"s1\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"s1\".\"TOTALSCORE\" DESC NULLS FIRST, \"s1\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56366",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56366,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1976.0,
+        "cutRowSizeOutBytes" : 51.715587044534416,
+        "cutOutputBytes" : 102190.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 20,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"TagName\", \"Count\", \"ExcerptPostId\", \"WikiPostId\", \"IsModeratorOnly\", \"IsRequired\"\nFROM \"Tags\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TagName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Count",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ExcerptPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "WikiPostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "IsModeratorOnly",
+          "type" : "BOOLEAN"
+        }, {
+          "name" : "IsRequired",
+          "type" : "BOOLEAN"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t1\".\"POSTID\", \"t1\".\"POSTHISTORYTYPEID\", \"t1\".\"CREATIONDATE\", \"t1\".\"PREVIOUSACTION\", \"t1\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"s1\".\"Id\" AS \"Id0\", \"s1\".\"TagName\", \"s1\".\"Count\", \"s1\".\"ExcerptPostId\", \"s1\".\"WikiPostId\", \"s1\".\"IsModeratorOnly\", \"s1\".\"IsRequired\"\nFROM \"s1\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t1\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t5\" ON \"t1\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts\".\"Id\" = \"t1\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"s1\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"s10\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"s1\" AS \"s10\" ON \"Posts1\".\"Tags\" LIKE '%' || \"s10\".\"TagName\" || '%'\nGROUP BY \"s10\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56508",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56508,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 5,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1.0,
+        "cutRowSizeOutBytes" : 1930.322889430293,
+        "cutOutputBytes" : 1930.322889430293,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 12,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "FILTER" : 2,
+            "JOIN" : 3,
+            "OTHER" : 6,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 9,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 3,
+            "SORT" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Posts\".\"Id\", \"Posts\".\"Id\") AS \"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"t0\".\"POSTID\", \"t0\".\"POSTHISTORYTYPEID\", \"t0\".\"CREATIONDATE\" AS \"CREATIONDATE_\", \"t0\".\"PREVIOUSACTION\", \"t0\".\"ROWNUM\", \"t4\".\"USERID\", \"t4\".\"DISPLAYNAME\", \"t4\".\"POSTSCREATED\", \"t4\".\"TOTALSCORE\", \"t4\".\"AVGVIEWCOUNT\"\nFROM \"Posts\"\nINNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t0\" INNER JOIN (SELECT MIN(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t4\" ON \"t0\".\"POSTID\" = \"t4\".\"USERID\") ON \"Posts\".\"Id\" = \"t0\".\"POSTID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "CREATIONDATE_",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "PREVIOUSACTION",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROWNUM",
+          "type" : "BIGINT"
+        }, {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"s1\".\"USERID\", \"s1\".\"DISPLAYNAME\", \"s1\".\"POSTSCREATED\", \"s1\".\"TOTALSCORE\", \"s1\".\"AVGVIEWCOUNT\", \"s1\".\"POSTID\", \"s1\".\"POSTHISTORYTYPEID\", \"s1\".\"CREATIONDATE_\" AS \"CREATIONDATE\", \"s1\".\"PREVIOUSACTION\", \"s1\".\"ROWNUM\", \"s1\".\"Id\", \"s1\".\"PostTypeId\", \"s1\".\"AcceptedAnswerId\", \"s1\".\"ParentId\", \"s1\".\"CreationDate\", \"s1\".\"Score\", \"s1\".\"ViewCount\", \"s1\".\"Body\", \"s1\".\"OwnerUserId\", \"s1\".\"OwnerDisplayName\", \"s1\".\"LastEditorUserId\", \"s1\".\"LastEditorDisplayName\", \"s1\".\"LastEditDate\", \"s1\".\"LastActivityDate\", \"s1\".\"Title\", \"s1\".\"Tags\", \"s1\".\"AnswerCount\", \"s1\".\"CommentCount\", \"s1\".\"FavoriteCount\", \"s1\".\"ClosedDate\", \"s1\".\"CommunityOwnedDate\", \"s1\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN \"s1\" ON \"s1\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_25",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 25,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 20,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostTypeId\", \"AcceptedAnswerId\", \"ParentId\", \"CreationDate\", \"Score\", \"ViewCount\", \"Body\", \"OwnerUserId\", \"OwnerDisplayName\", \"LastEditorUserId\", \"LastEditorDisplayName\", \"LastEditDate\", \"LastActivityDate\", \"Title\", \"Tags\", \"AnswerCount\", \"CommentCount\", \"FavoriteCount\", \"ClosedDate\", \"CommunityOwnedDate\", \"ContentLicense\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t1\".\"POSTID\", \"t1\".\"POSTHISTORYTYPEID\", \"t1\".\"CREATIONDATE\", \"t1\".\"PREVIOUSACTION\", \"t1\".\"ROWNUM\", \"s1\".\"Id\", \"s1\".\"PostTypeId\", \"s1\".\"AcceptedAnswerId\", \"s1\".\"ParentId\", \"s1\".\"CreationDate\", \"s1\".\"Score\", \"s1\".\"ViewCount\", \"s1\".\"Body\", \"s1\".\"OwnerUserId\", \"s1\".\"OwnerDisplayName\", \"s1\".\"LastEditorUserId\", \"s1\".\"LastEditorDisplayName\", \"s1\".\"LastEditDate\", \"s1\".\"LastActivityDate\", \"s1\".\"Title\", \"s1\".\"Tags\", \"s1\".\"AnswerCount\", \"s1\".\"CommentCount\", \"s1\".\"FavoriteCount\", \"s1\".\"ClosedDate\", \"s1\".\"CommunityOwnedDate\", \"s1\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"s1\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t1\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"s10\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"s10\".\"Score\" IS NOT NULL THEN CAST(\"s10\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"s10\".\"ViewCount\" IS NOT NULL THEN CAST(\"s10\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"s1\" AS \"s10\"\nRIGHT JOIN \"Users\" ON \"s10\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"s10\".\"Score\" IS NOT NULL THEN CAST(\"s10\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t5\" ON \"t1\".\"POSTID\" = \"t5\".\"USERID\") ON \"s1\".\"Id\" = \"t1\".\"POSTID\") ON \"s1\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"s11\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"s11\".\"ViewCount\" IS NOT NULL THEN CAST(\"s11\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"s1\" AS \"s11\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"s11\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56483",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56483,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1.0,
+        "cutRowSizeOutBytes" : 719.6410975050622,
+        "cutOutputBytes" : 719.6410975050622,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 11,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "FILTER" : 2,
+            "JOIN" : 2,
+            "OTHER" : 6,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 10,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 4,
+            "SORT" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t0\".\"POSTID\", \"t0\".\"POSTID\") AS \"POSTID\", \"t0\".\"POSTHISTORYTYPEID\", \"t0\".\"CREATIONDATE\", \"t0\".\"PREVIOUSACTION\", \"t0\".\"ROWNUM\", \"t4\".\"USERID\", \"t4\".\"DISPLAYNAME\", \"t4\".\"POSTSCREATED\", \"t4\".\"TOTALSCORE\", \"t4\".\"AVGVIEWCOUNT\"\nFROM (SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t0\"\nINNER JOIN (SELECT MIN(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\"\nRIGHT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t4\" ON \"t0\".\"POSTID\" = \"t4\".\"USERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "PREVIOUSACTION",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROWNUM",
+          "type" : "BIGINT"
+        }, {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"s1\".\"USERID\", \"s1\".\"DISPLAYNAME\", \"s1\".\"POSTSCREATED\", \"s1\".\"TOTALSCORE\", \"s1\".\"AVGVIEWCOUNT\", \"s1\".\"POSTID\", \"s1\".\"POSTHISTORYTYPEID\", \"s1\".\"CREATIONDATE\", \"s1\".\"PREVIOUSACTION\", \"s1\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN \"s1\" ON \"Posts0\".\"Id\" = \"s1\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56387",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56387,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 1105049.3774629913,
+        "cutRowSizeOutBytes" : 671.6410975050622,
+        "cutOutputBytes" : 7.421965766765293E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "FILTER" : 1,
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 18,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 8,
+            "JOIN" : 6,
+            "FILTER" : 1,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"PostId\", \"PostId\") AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "POSTID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "CREATIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "PREVIOUSACTION",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROWNUM",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"s1\".\"POSTID\", \"s1\".\"POSTHISTORYTYPEID\", \"s1\".\"CREATIONDATE\", \"s1\".\"PREVIOUSACTION\", \"s1\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN (\"s1\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t5\" ON \"s1\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts\".\"Id\" = \"s1\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56040",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56040,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.1795244E7,
+        "cutRowSizeOutBytes" : 671.6410975050622,
+        "cutOutputBytes" : 7.9221706255E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 20,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostHistoryTypeId\", \"PostId\", \"RevisionGUID\", \"CreationDate\", \"UserId\", \"UserDisplayName\", \"Comment\", \"Text\", \"ContentLicense\"\nFROM \"PostHistory\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostHistoryTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "PostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RevisionGUID",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "UserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UserDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Text",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t1\".\"POSTID\", \"t1\".\"POSTHISTORYTYPEID\", \"t1\".\"CREATIONDATE\", \"t1\".\"PREVIOUSACTION\", \"t1\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"s1\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t1\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"Users\" ON \"Posts0\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t5\" ON \"t1\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts\".\"Id\" = \"t1\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56381",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56381,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 1037849.3266716519,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 4.981676768023929E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 5,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 16,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "FILTER" : 2,
+            "JOIN" : 5,
+            "SORT" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"Id\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", MIN(\"Users\".\"Id\") AS \"USERID\", COUNT(\"Posts\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\"\nRIGHT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t3\".\"POSTID\", \"t3\".\"POSTHISTORYTYPEID\", \"t3\".\"CREATIONDATE\", \"t3\".\"PREVIOUSACTION\", \"t3\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t3\" INNER JOIN (SELECT \"USERID\", \"DISPLAYNAME\", \"POSTSCREATED\", \"TOTALSCORE\", \"AVGVIEWCOUNT\"\nFROM \"s1\"\nWHERE \"TOTALSCORE\" > 0) AS \"t5\" ON \"t3\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts0\".\"Id\" = \"t3\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56516",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56516,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 10,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 5110825.0,
+        "cutRowSizeOutBytes" : 1358.8196475779976,
+        "cutOutputBytes" : 6.944689425332819E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 17,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "FILTER" : 2,
+            "JOIN" : 5,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Users\".\"Id\", \"Users\".\"Id\") AS \"Id\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", \"Posts\".\"Id\" AS \"Id0\", CASE WHEN \"Posts\".\"Score\" IS NOT NULL THEN CAST(\"Posts\".\"Score\" AS INTEGER) ELSE 0 END AS \"FD_COL_3\", CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END AS \"FD_COL_4\"\nFROM \"Posts\"\nRIGHT JOIN \"Users\" ON \"Posts\".\"OwnerUserId\" = \"Users\".\"Id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_3",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_4",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t2\".\"POSTID\", \"t2\".\"POSTHISTORYTYPEID\", \"t2\".\"CREATIONDATE\", \"t2\".\"PREVIOUSACTION\", \"t2\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t2\" INNER JOIN (SELECT ANY_VALUE(\"Id\") AS \"USERID\", \"DISPLAYNAME\", COUNT(\"Id0\") AS \"POSTSCREATED\", SUM(\"FD_COL_3\") AS \"TOTALSCORE\", AVG(\"FD_COL_4\") AS \"AVGVIEWCOUNT\"\nFROM \"s1\"\nGROUP BY \"Id\", \"DISPLAYNAME\"\nHAVING SUM(\"FD_COL_3\") > 0) AS \"t5\" ON \"t2\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts0\".\"Id\" = \"t2\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_52355",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 52355,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 12,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1260710.0,
+        "cutRowSizeOutBytes" : 148.1378556527671,
+        "cutOutputBytes" : 1.86758876E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 20,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "FILTER" : 2,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"Reputation\", \"CreationDate\", \"DisplayName\", \"LastAccessDate\", \"WebsiteUrl\", \"Location\", \"AboutMe\", \"Views\", \"UpVotes\", \"DownVotes\", \"ProfileImageUrl\", \"AccountId\"\nFROM \"Users\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Reputation",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "DisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastAccessDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "WebsiteUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Location",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AboutMe",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Views",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UpVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DownVotes",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ProfileImageUrl",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AccountId",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"DISPLAYNAME\" AS \"USERNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t6\".\"Title\" AS \"POSTTITLE\", \"t6\".\"POSTHISTORYTYPEID\", \"t6\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t6\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t6\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t5\".\"USERID\", \"t5\".\"DISPLAYNAME\", \"t5\".\"POSTSCREATED\", \"t5\".\"TOTALSCORE\", \"t5\".\"AVGVIEWCOUNT\", \"t1\".\"POSTID\", \"t1\".\"POSTHISTORYTYPEID\", \"t1\".\"CREATIONDATE\", \"t1\".\"PREVIOUSACTION\", \"t1\".\"ROWNUM\", \"Posts\".\"Id\", \"Posts\".\"PostTypeId\", \"Posts\".\"AcceptedAnswerId\", \"Posts\".\"ParentId\", \"Posts\".\"CreationDate\", \"Posts\".\"Score\", \"Posts\".\"ViewCount\", \"Posts\".\"Body\", \"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerDisplayName\", \"Posts\".\"LastEditorUserId\", \"Posts\".\"LastEditorDisplayName\", \"Posts\".\"LastEditDate\", \"Posts\".\"LastActivityDate\", \"Posts\".\"Title\", \"Posts\".\"Tags\", \"Posts\".\"AnswerCount\", \"Posts\".\"CommentCount\", \"Posts\".\"FavoriteCount\", \"Posts\".\"ClosedDate\", \"Posts\".\"CommunityOwnedDate\", \"Posts\".\"ContentLicense\", \"Tags\".\"Id\" AS \"Id0\", \"Tags\".\"TagName\", \"Tags\".\"Count\", \"Tags\".\"ExcerptPostId\", \"Tags\".\"WikiPostId\", \"Tags\".\"IsModeratorOnly\", \"Tags\".\"IsRequired\"\nFROM \"Tags\"\nRIGHT JOIN (\"Posts\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t1\" INNER JOIN (SELECT ANY_VALUE(\"s1\".\"Id\") AS \"USERID\", \"s1\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts0\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts0\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts0\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts0\"\nRIGHT JOIN \"s1\" ON \"Posts0\".\"OwnerUserId\" = \"s1\".\"Id\"\nGROUP BY \"s1\".\"Id\", \"s1\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts0\".\"Score\" IS NOT NULL THEN CAST(\"Posts0\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t5\" ON \"t1\".\"POSTID\" = \"t5\".\"USERID\") ON \"Posts\".\"Id\" = \"t1\".\"POSTID\") ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%') AS \"t6\"\nLEFT JOIN (SELECT \"Tags0\".\"TagName\" AS \"TAGNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Tags\" AS \"Tags0\" ON \"Posts1\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%'\nGROUP BY \"Tags0\".\"TagName\") AS \"t8\" ON \"t6\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t6\".\"TOTALSCORE\" DESC NULLS FIRST, \"t6\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56400",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56400,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 1976.0,
+        "cutRowSizeOutBytes" : 24.0,
+        "cutOutputBytes" : 47424.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 5,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "OTHER" : 3,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 16,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "FILTER" : 2,
+            "JOIN" : 5,
+            "SORT" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Tags\".\"TagName\", \"Tags\".\"TagName\") AS \"TAGNAME\", COUNT(\"Posts\".\"Id\") AS \"POSTCOUNT\", SUM(CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"TOTALVIEWS\"\nFROM \"Posts\"\nRIGHT JOIN \"Tags\" ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%'\nGROUP BY \"Tags\".\"TagName\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "TAGNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t8\".\"DISPLAYNAME\" AS \"USERNAME\", \"t8\".\"POSTSCREATED\", \"t8\".\"TOTALSCORE\", \"t8\".\"AVGVIEWCOUNT\", \"t8\".\"Title\" AS \"POSTTITLE\", \"t8\".\"POSTHISTORYTYPEID\", \"t8\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t8\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t8\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t8\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t8\".\"TagName\" AS \"POSTTAG\", \"s1\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"s1\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t7\".\"USERID\", \"t7\".\"DISPLAYNAME\", \"t7\".\"POSTSCREATED\", \"t7\".\"TOTALSCORE\", \"t7\".\"AVGVIEWCOUNT\", \"t3\".\"POSTID\", \"t3\".\"POSTHISTORYTYPEID\", \"t3\".\"CREATIONDATE\", \"t3\".\"PREVIOUSACTION\", \"t3\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags0\".\"Id\" AS \"Id0\", \"Tags0\".\"TagName\", \"Tags0\".\"Count\", \"Tags0\".\"ExcerptPostId\", \"Tags0\".\"WikiPostId\", \"Tags0\".\"IsModeratorOnly\", \"Tags0\".\"IsRequired\"\nFROM \"Tags\" AS \"Tags0\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t3\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts1\".\"Score\" IS NOT NULL THEN CAST(\"Posts1\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Users\" ON \"Posts1\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts1\".\"Score\" IS NOT NULL THEN CAST(\"Posts1\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t7\" ON \"t3\".\"POSTID\" = \"t7\".\"USERID\") ON \"Posts0\".\"Id\" = \"t3\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%') AS \"t8\"\nLEFT JOIN \"s1\" ON \"t8\".\"TagName\" = \"s1\".\"TAGNAME\"\nORDER BY \"t8\".\"TOTALSCORE\" DESC NULLS FIRST, \"t8\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_56518",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 56518,
+      "q1Engine" : "datafusion",
+      "q2Engine" : "duckdb",
+      "costAllDuckdb" : 798365.5222768722,
+      "costAllDatafusion" : 2523679.192602202,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "random",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "fb1a097e02c50c309ab60a0f3ebc66441efdbf197c71d262634474292cc93415",
+        "cutPolicy" : "RANDOM",
+        "randomSeed" : 1,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 24,
+        "maxDepth" : 12,
+        "operatorKindCounts" : {
+          "FILTER" : 2,
+          "OTHER" : 10,
+          "JOIN" : 6,
+          "SORT" : 1,
+          "AGGREGATE" : 2
+        },
+        "rootOutputRows" : 3951.0,
+        "rootRowSizeOutBytes" : 2006.0384764748273
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 7.607829216E9,
+        "cutRowSizeOutBytes" : 1262.397378969765,
+        "cutOutputBytes" : 9.604103661928002E12,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 17,
+          "maxDepth" : 13,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "FILTER" : 2,
+            "JOIN" : 5,
+            "SORT" : 1,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"Tags\".\"TagName\", \"Tags\".\"TagName\") AS \"TAGNAME\", \"Posts\".\"Id\" AS \"Id0\", CASE WHEN \"Posts\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts\".\"ViewCount\" AS INTEGER) ELSE 0 END AS \"FD_COL_2\"\nFROM \"Posts\"\nRIGHT JOIN \"Tags\" ON \"Posts\".\"Tags\" LIKE '%' || \"Tags\".\"TagName\" || '%'",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "TAGNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_2",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t10\".\"USERNAME\", \"t10\".\"USERNAME\") AS \"USERNAME\", \"t10\".\"POSTSCREATED\", \"t10\".\"TOTALSCORE\", \"t10\".\"AVGVIEWCOUNT\", \"t10\".\"POSTTITLE\", \"t10\".\"POSTHISTORYTYPEID\", \"t10\".\"ACTIONDATE\", \"t10\".\"ACTIONTYPE\", \"t10\".\"POSTTAG\", \"t10\".\"TAGPOSTCOUNT\", \"t10\".\"TAGTOTALVIEWS\"\nFROM (SELECT \"t7\".\"DISPLAYNAME\" AS \"USERNAME\", \"t7\".\"POSTSCREATED\", \"t7\".\"TOTALSCORE\", \"t7\".\"AVGVIEWCOUNT\", \"t7\".\"Title\" AS \"POSTTITLE\", \"t7\".\"POSTHISTORYTYPEID\", \"t7\".\"CREATIONDATE\" AS \"ACTIONDATE\", CASE WHEN CAST(\"t7\".\"POSTHISTORYTYPEID\" AS INTEGER) = 10 THEN 'Closed      ' WHEN CAST(\"t7\".\"POSTHISTORYTYPEID\" AS INTEGER) = 11 THEN 'Reopened    ' WHEN CAST(\"t7\".\"POSTHISTORYTYPEID\" AS INTEGER) = 12 THEN 'Deleted     ' ELSE 'Other Action' END AS \"ACTIONTYPE\", \"t7\".\"TagName\" AS \"POSTTAG\", \"t8\".\"POSTCOUNT\" AS \"TAGPOSTCOUNT\", \"t8\".\"TOTALVIEWS\" AS \"TAGTOTALVIEWS\"\nFROM (SELECT \"t6\".\"USERID\", \"t6\".\"DISPLAYNAME\", \"t6\".\"POSTSCREATED\", \"t6\".\"TOTALSCORE\", \"t6\".\"AVGVIEWCOUNT\", \"t2\".\"POSTID\", \"t2\".\"POSTHISTORYTYPEID\", \"t2\".\"CREATIONDATE\", \"t2\".\"PREVIOUSACTION\", \"t2\".\"ROWNUM\", \"Posts0\".\"Id\", \"Posts0\".\"PostTypeId\", \"Posts0\".\"AcceptedAnswerId\", \"Posts0\".\"ParentId\", \"Posts0\".\"CreationDate\", \"Posts0\".\"Score\", \"Posts0\".\"ViewCount\", \"Posts0\".\"Body\", \"Posts0\".\"OwnerUserId\", \"Posts0\".\"OwnerDisplayName\", \"Posts0\".\"LastEditorUserId\", \"Posts0\".\"LastEditorDisplayName\", \"Posts0\".\"LastEditDate\", \"Posts0\".\"LastActivityDate\", \"Posts0\".\"Title\", \"Posts0\".\"Tags\", \"Posts0\".\"AnswerCount\", \"Posts0\".\"CommentCount\", \"Posts0\".\"FavoriteCount\", \"Posts0\".\"ClosedDate\", \"Posts0\".\"CommunityOwnedDate\", \"Posts0\".\"ContentLicense\", \"Tags0\".\"Id\" AS \"Id0\", \"Tags0\".\"TagName\", \"Tags0\".\"Count\", \"Tags0\".\"ExcerptPostId\", \"Tags0\".\"WikiPostId\", \"Tags0\".\"IsModeratorOnly\", \"Tags0\".\"IsRequired\"\nFROM \"Tags\" AS \"Tags0\"\nRIGHT JOIN (\"Posts\" AS \"Posts0\" INNER JOIN ((SELECT \"PostId\" AS \"POSTID\", \"PostHistoryTypeId\" AS \"POSTHISTORYTYPEID\", \"CreationDate\" AS \"CREATIONDATE\", CAST(NULL AS VARCHAR(400)) AS \"PREVIOUSACTION\", ROW_NUMBER() OVER (PARTITION BY \"PostId\" ORDER BY \"CreationDate\" DESC NULLS FIRST) AS \"ROWNUM\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) IN (10, 11, 12)) AS \"t2\" INNER JOIN (SELECT ANY_VALUE(\"Users\".\"Id\") AS \"USERID\", \"Users\".\"DisplayName\" AS \"DISPLAYNAME\", COUNT(\"Posts1\".\"Id\") AS \"POSTSCREATED\", SUM(CASE WHEN \"Posts1\".\"Score\" IS NOT NULL THEN CAST(\"Posts1\".\"Score\" AS INTEGER) ELSE 0 END) AS \"TOTALSCORE\", AVG(CASE WHEN \"Posts1\".\"ViewCount\" IS NOT NULL THEN CAST(\"Posts1\".\"ViewCount\" AS INTEGER) ELSE 0 END) AS \"AVGVIEWCOUNT\"\nFROM \"Posts\" AS \"Posts1\"\nRIGHT JOIN \"Users\" ON \"Posts1\".\"OwnerUserId\" = \"Users\".\"Id\"\nGROUP BY \"Users\".\"Id\", \"Users\".\"DisplayName\"\nHAVING SUM(CASE WHEN \"Posts1\".\"Score\" IS NOT NULL THEN CAST(\"Posts1\".\"Score\" AS INTEGER) ELSE 0 END) > 0) AS \"t6\" ON \"t2\".\"POSTID\" = \"t6\".\"USERID\") ON \"Posts0\".\"Id\" = \"t2\".\"POSTID\") ON \"Posts0\".\"Tags\" LIKE '%' || \"Tags0\".\"TagName\" || '%') AS \"t7\"\nLEFT JOIN (SELECT \"TAGNAME\", COUNT(\"Id0\") AS \"POSTCOUNT\", SUM(\"FD_COL_2\") AS \"TOTALVIEWS\"\nFROM \"s1\"\nGROUP BY \"TAGNAME\") AS \"t8\" ON \"t7\".\"TagName\" = \"t8\".\"TAGNAME\"\nORDER BY \"t7\".\"TOTALSCORE\" DESC NULLS FIRST, \"t7\".\"CREATIONDATE\" DESC NULLS FIRST) AS \"t10\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "USERNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTSCREATED",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALSCORE",
+          "type" : "INTEGER"
+        }, {
+          "name" : "AVGVIEWCOUNT",
+          "type" : "INTEGER"
+        }, {
+          "name" : "POSTTITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "POSTHISTORYTYPEID",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "ACTIONDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ACTIONTYPE",
+          "type" : "CHAR"
+        }, {
+          "name" : "POSTTAG",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "TAGPOSTCOUNT",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TAGTOTALVIEWS",
+          "type" : "INTEGER"
+        } ]
+      } ]
+    }
+  } ]
+}

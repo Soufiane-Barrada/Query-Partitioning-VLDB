@@ -1,0 +1,11 @@
+SELECT COALESCE("t3"."USERID", "t3"."USERID") AS "USERID", "t3"."DISPLAYNAME", "t3"."TOTALPOSTS", "t3"."TOTALQUESTIONS", "t3"."TOTALANSWERS", "t3"."TOTALSCORE", "t3"."AVGVIEWS", "t6"."TOTALCOMMENTS", "t6"."LASTCOMMENTDATE", "t3"."LASTPOSTDATE"
+FROM (SELECT *
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "Posts"."Id") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "TOTALQUESTIONS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALANSWERS", SUM("Posts"."Score") AS "TOTALSCORE", AVG("Posts"."ViewCount") AS "AVGVIEWS", MAX("Posts"."CreationDate") AS "LASTPOSTDATE"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+WHERE "t1"."TOTALPOSTS" > 5 AND "t1"."TOTALSCORE" > 100) AS "t3"
+LEFT JOIN (SELECT ANY_VALUE("Users0"."Id") AS "USERID", "Users0"."DisplayName" AS "DISPLAYNAME", COUNT("Comments"."Id") AS "TOTALCOMMENTS", MAX("Comments"."CreationDate") AS "LASTCOMMENTDATE"
+FROM "STACK"."Users" AS "Users0"
+LEFT JOIN "STACK"."Comments" ON "Users0"."Id" = "Comments"."UserId"
+GROUP BY "Users0"."Id", "Users0"."DisplayName") AS "t6" ON "t3"."USERID" = "t6"."USERID"

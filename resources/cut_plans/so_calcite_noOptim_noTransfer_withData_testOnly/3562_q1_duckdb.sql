@@ -1,0 +1,10 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "Id", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "t1"."USERID", "t1"."DISPLAYNAME", "t1"."REPUTATION", "t1"."UPVOTESRECEIVED", "t1"."DOWNVOTESRECEIVED", "t4"."POSTID", "t4"."CLOSECOUNT"
+FROM "STACK"."Posts"
+LEFT JOIN (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", "Users"."Reputation" AS "REPUTATION", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTESRECEIVED", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTESRECEIVED"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Votes" ON "Users"."Id" = "Votes"."UserId"
+GROUP BY "Users"."Id", "Users"."DisplayName", "Users"."Reputation") AS "t1" ON "Posts"."OwnerUserId" = "t1"."USERID"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "CLOSECOUNT"
+FROM "STACK"."PostHistory"
+WHERE CAST("PostHistoryTypeId" AS INTEGER) = 10
+GROUP BY "PostId") AS "t4" ON "Posts"."Id" = "t4"."POSTID"

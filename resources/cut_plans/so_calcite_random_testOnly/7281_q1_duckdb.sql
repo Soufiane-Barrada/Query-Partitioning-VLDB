@@ -1,0 +1,3 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."DisplayName" AS "DISPLAYNAME", "Users"."Reputation" AS "REPUTATION", "Posts"."Id" AS "Id0", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END AS "FD_COL_4", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END AS "FD_COL_5", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 AND "Posts"."AcceptedAnswerId" IS NOT NULL THEN 1 ELSE 0 END AS "FD_COL_6", CASE WHEN "Posts"."ViewCount" > 100 THEN 1 ELSE 0 END AS "FD_COL_7"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"

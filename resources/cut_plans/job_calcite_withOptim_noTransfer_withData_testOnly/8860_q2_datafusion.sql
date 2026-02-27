@@ -1,0 +1,5 @@
+SELECT COALESCE("ACTOR_NAME", "ACTOR_NAME") AS "ACTOR_NAME", "MOVIE_TITLE", "COMPANY_TYPE", "MOVIE_KEYWORD", "ACTOR_INFO", "production_year"
+FROM (SELECT "name" AS "ACTOR_NAME", "title" AS "MOVIE_TITLE", "kind" AS "COMPANY_TYPE", "keyword" AS "MOVIE_KEYWORD", "info" AS "ACTOR_INFO", "production_year"
+FROM "s1"
+ORDER BY "production_year" DESC NULLS FIRST, "name"
+FETCH NEXT 50 ROWS ONLY) AS "t3"

@@ -1,0 +1,6 @@
+SELECT COALESCE("t2"."POSTTYPE", "t2"."POSTTYPE") AS "POSTTYPE", "t2"."TOTALPOSTS", "t2"."TOTALVIEWS", "t2"."TOTALSCORE", "t2"."AVERAGEANSWERS", "t2"."AVERAGECOMMENTS", "t2"."AVERAGEFAVORITES", "t2"."USERREPUTATION", "t2"."ACTIVEUSERS"
+FROM (SELECT "PostTypes"."Name", "Users"."Reputation", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", SUM("s1"."ViewCount") AS "TOTALVIEWS", SUM("s1"."Score") AS "TOTALSCORE", AVG("s1"."AnswerCount") AS "AVERAGEANSWERS", AVG("s1"."CommentCount") AS "AVERAGECOMMENTS", AVG("s1"."FavoriteCount") AS "AVERAGEFAVORITES", ANY_VALUE("Users"."Reputation") AS "USERREPUTATION", COUNT(DISTINCT "Users"."Id") AS "ACTIVEUSERS"
+FROM "STACK"."PostTypes"
+INNER JOIN ("STACK"."Users" INNER JOIN "s1" ON "Users"."Id" = "s1"."OwnerUserId") ON "PostTypes"."Id" = "s1"."PostTypeId"
+GROUP BY "PostTypes"."Name", "Users"."Reputation"
+ORDER BY 4 DESC NULLS FIRST) AS "t2"

@@ -1,0 +1,4 @@
+SELECT COALESCE("movie_companies"."id", "movie_companies"."id") AS "id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note", "aka_title"."id" AS "id0", "aka_title"."movie_id" AS "movie_id0", "aka_title"."title", "aka_title"."imdb_index", "aka_title"."kind_id", "aka_title"."production_year", "aka_title"."phonetic_code", "aka_title"."episode_of_id", "aka_title"."season_nr", "aka_title"."episode_nr", "aka_title"."note" AS "note0", "aka_title"."md5sum", "company_type"."id" AS "id1", "company_type"."kind"
+FROM "IMDB"."movie_companies"
+INNER JOIN "IMDB"."aka_title" ON "movie_companies"."movie_id" = "aka_title"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"

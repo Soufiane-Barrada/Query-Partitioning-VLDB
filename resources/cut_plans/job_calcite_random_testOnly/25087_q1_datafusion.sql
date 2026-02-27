@@ -1,0 +1,3 @@
+SELECT COALESCE("complete_cast"."id", "complete_cast"."id") AS "id", "complete_cast"."movie_id", "complete_cast"."subject_id", "complete_cast"."status_id", "aka_name"."id" AS "id0", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id00", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id"
+FROM "IMDB"."complete_cast"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "complete_cast"."subject_id" = "cast_info"."person_id"

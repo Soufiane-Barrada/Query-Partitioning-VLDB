@@ -1,0 +1,3 @@
+SELECT COALESCE("customer"."c_custkey", "customer"."c_custkey") AS "c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment", "orders"."o_orderkey", "orders"."o_custkey", "orders"."o_orderstatus", "orders"."o_totalprice", "orders"."o_orderdate", "orders"."o_orderpriority", "orders"."o_clerk", "orders"."o_shippriority", "orders"."o_comment"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"

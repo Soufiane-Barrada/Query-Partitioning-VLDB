@@ -1,0 +1,22 @@
+SELECT COALESCE("t7"."MOVIE_TITLE", "t7"."MOVIE_TITLE") AS "MOVIE_TITLE", "t7"."PRODUCTION_YEAR", "t7"."ACTOR_NAME", "t7"."ROLE_NAME", COUNT(DISTINCT "t7"."MOVIE_ID0") AS "ACTOR_MOVIE_COUNT", LISTAGG(DISTINCT "keyword0"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."keyword" AS "keyword0"
+RIGHT JOIN (SELECT "t6"."MOVIE_ID", "t6"."MOVIE_TITLE", "t6"."PRODUCTION_YEAR", "t6"."MOVIE_ID0", "t6"."ACTOR_NAME", "t6"."ROLE_NAME", "movie_keyword0"."id", "movie_keyword0"."movie_id", "movie_keyword0"."keyword_id"
+FROM "IMDB"."movie_keyword" AS "movie_keyword0"
+RIGHT JOIN (SELECT "t5"."MOVIE_ID", "t5"."MOVIE_TITLE", "t5"."PRODUCTION_YEAR", "t0"."MOVIE_ID" AS "MOVIE_ID0", "t0"."ACTOR_NAME", "t0"."ROLE_NAME"
+FROM (SELECT "cast_info"."movie_id" AS "MOVIE_ID", "aka_name"."name" AS "ACTOR_NAME", "role_type"."role" AS "ROLE_NAME"
+FROM "IMDB"."role_type"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "role_type"."id" = "cast_info"."role_id") AS "t0"
+RIGHT JOIN (SELECT "t4"."MOVIE_ID", "t4"."MOVIE_TITLE", "t4"."PRODUCTION_YEAR"
+FROM (SELECT *
+FROM "IMDB"."info_type"
+WHERE "info" ILIKE '%award%') AS "t1"
+INNER JOIN ((SELECT "aka_title"."id" AS "MOVIE_ID", "aka_title"."title" AS "MOVIE_TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", "s1"."keyword" AS "MOVIE_KEYWORD", ROW_NUMBER() OVER (PARTITION BY "aka_title"."production_year" ORDER BY "aka_title"."production_year" DESC NULLS FIRST) AS "RN"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."kind_type"
+WHERE "kind" = 'movie') AS "t3"
+INNER JOIN "IMDB"."aka_title" ON "t3"."ID" = "aka_title"."kind_id"
+INNER JOIN "s1" ON "aka_title"."id" = "s1"."movie_id") AS "t4" INNER JOIN "IMDB"."movie_info" ON "t4"."MOVIE_ID" = "movie_info"."movie_id") ON "t1"."id" = "movie_info"."info_type_id"
+GROUP BY "t4"."MOVIE_ID", "t4"."MOVIE_TITLE", "t4"."PRODUCTION_YEAR") AS "t5" ON "t0"."MOVIE_ID" = "t5"."MOVIE_ID") AS "t6" ON "movie_keyword0"."movie_id" = "t6"."MOVIE_ID") AS "t7" ON "keyword0"."id" = "t7"."keyword_id"
+GROUP BY "t7"."MOVIE_TITLE", "t7"."PRODUCTION_YEAR", "t7"."ACTOR_NAME", "t7"."ROLE_NAME"
+HAVING COUNT(DISTINCT "t7"."MOVIE_ID0") > 1
+FETCH NEXT 50 ROWS ONLY

@@ -1,0 +1,5 @@
+SELECT COALESCE("PostTypes"."Name", "PostTypes"."Name") AS "Name", "Votes"."UserId", "Users"."Id" AS "Id2"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"

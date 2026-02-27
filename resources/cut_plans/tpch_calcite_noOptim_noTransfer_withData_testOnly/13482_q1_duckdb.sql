@@ -1,0 +1,5 @@
+SELECT COALESCE("nation"."n_name", "nation"."n_name") AS "n_name", "region"."r_name", "supplier"."s_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"

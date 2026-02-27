@@ -1,0 +1,18 @@
+SELECT COALESCE("t4"."USERID", "t4"."USERID") AS "USERID", CASE WHEN "t4"."TOTALUPVOTES" > "t4"."TOTALDOWNVOTES" THEN 1 ELSE 0 END AS "FD_COL_1", CASE WHEN "t4"."TOTALDOWNVOTES" > "t4"."TOTALUPVOTES" THEN 1 ELSE 0 END AS "FD_COL_2", "t9"."POSTID", "t9"."TITLE", '; ' AS "FD_COL_5"
+FROM (SELECT ANY_VALUE("t"."Id") AS "USERID", "t"."DisplayName" AS "DISPLAYNAME", "t"."Reputation" AS "REPUTATION", "t"."CreationDate" AS "CREATIONDATE", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("t"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES", COUNT(DISTINCT "Posts"."Id") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Votes"."Id" AS "Id0", "Votes"."PostId", "Votes"."VoteTypeId", "Votes"."UserId", "Votes"."CreationDate" AS "CreationDate0", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" ON "Votes"."UserId" = "Users"."Id") AS "t"
+LEFT JOIN "STACK"."Posts" ON "t"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Badges" ON "t"."Id" = "Badges"."UserId"
+WHERE "t"."Reputation" > 100
+GROUP BY "t"."Id", "t"."DisplayName", "t"."Reputation", "t"."CreationDate"
+HAVING SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) + SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) + SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) >= 1) AS "t4"
+LEFT JOIN (SELECT ANY_VALUE("t6"."Id") AS "POSTID", "t6"."Title" AS "TITLE", "t6"."CreationDate" AS "CREATIONDATE", "t6"."ViewCount" AS "VIEWCOUNT", "t6"."Score" AS "SCORE", COUNT(CASE WHEN "t6"."Id0" IS NOT NULL THEN 1 ELSE NULL END) AS "TOTALCOMMENTS", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 10 THEN 1 ELSE 0 END) AS "TOTALCLOSEVOTES", RANK() OVER (ORDER BY "t6"."Score" DESC NULLS FIRST, "t6"."ViewCount" DESC NULLS FIRST) AS "POSTRANK"
+FROM "STACK"."PostHistory"
+RIGHT JOIN (SELECT "t5"."Id", "t5"."PostTypeId", "t5"."AcceptedAnswerId", "t5"."ParentId", "t5"."CreationDate", "t5"."Score", "t5"."ViewCount", "t5"."Body", "t5"."OwnerUserId", "t5"."OwnerDisplayName", "t5"."LastEditorUserId", "t5"."LastEditorDisplayName", "t5"."LastEditDate", "t5"."LastActivityDate", "t5"."Title", "t5"."Tags", "t5"."AnswerCount", "t5"."CommentCount", "t5"."FavoriteCount", "t5"."ClosedDate", "t5"."CommunityOwnedDate", "t5"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= CAST((CURRENT_DATE - INTERVAL '1' YEAR) AS TIMESTAMP(0))) AS "t5" ON "Comments"."PostId" = "t5"."Id") AS "t6" ON "PostHistory"."PostId" = "t6"."Id"
+GROUP BY "t6"."Id", "t6"."Title", "t6"."CreationDate", "t6"."ViewCount", "t6"."Score") AS "t9" ON "t4"."USERID" = "t9"."POSTID"

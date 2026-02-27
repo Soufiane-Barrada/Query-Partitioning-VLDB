@@ -1,0 +1,21 @@
+SELECT COALESCE("t12"."R_NAME", "t12"."R_NAME") AS "R_NAME", CASE WHEN "t12"."$f1" IS NOT NULL THEN CAST("t12"."$f1" AS DECIMAL(19, 4)) ELSE 0.0000 END AS "TOTAL_RETURNED", "t12"."TOTAL_CUSTOMERS", "t12"."AVG_SUPPLIER_ACCT_BAL", "t12"."TOTAL_ORDERS", "t12"."TOTAL_QTY_AVAILABLE", "t12"."MAX_SUPPLY_COST"
+FROM (SELECT "t7"."r_name" AS "R_NAME", SUM(CASE WHEN "t7"."l_returnflag" = 'R' THEN "t7"."l_extendedprice" * (1 - "t7"."l_discount") ELSE NULL END) AS "$f1", COUNT(DISTINCT CAST("t1"."c_custkey" AS BIGINT)) AS "TOTAL_CUSTOMERS", AVG("t7"."AVG_ACCTBAL") AS "AVG_SUPPLIER_ACCT_BAL", COUNT(DISTINCT "t7"."o_orderkey") AS "TOTAL_ORDERS", SUM("t8"."TOTAL_AVAIL_QTY") AS "TOTAL_QTY_AVAILABLE", MAX("t8"."AVG_SUPPLY_COST") AS "MAX_SUPPLY_COST"
+FROM (SELECT *
+FROM "TPCH"."customer"
+WHERE "c_acctbal" > 100.00) AS "t1"
+INNER JOIN ((SELECT "t6"."r_regionkey", "t6"."r_name", "t6"."r_comment", "t6"."n_nationkey", "t6"."n_name", "t6"."n_regionkey", "t6"."n_comment", "t6"."s_suppkey", "t6"."s_name", "t6"."s_address", "t6"."s_nationkey", "t6"."s_phone", "t6"."s_acctbal", "t6"."s_comment", "t6"."S_NATIONKEY", "t6"."AVG_ACCTBAL", "t6"."URGENT_COUNT", "t6"."l_orderkey", "t6"."l_partkey", "t6"."l_suppkey", "t6"."l_linenumber", "t6"."l_quantity", "t6"."l_extendedprice", "t6"."l_discount", "t6"."l_tax", "t6"."l_returnflag", "t6"."l_linestatus", "t6"."l_shipdate", "t6"."l_commitdate", "t6"."l_receiptdate", "t6"."l_shipinstruct", "t6"."l_shipmode", "t6"."l_comment", CAST("t2"."o_orderkey" AS BIGINT) AS "o_orderkey", CAST("t2"."o_custkey" AS BIGINT) AS "o_custkey", CAST("t2"."o_orderstatus" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "o_orderstatus", CAST("t2"."o_totalprice" AS DECIMAL(15, 2)) AS "o_totalprice", CAST("t2"."o_orderdate" AS DATE) AS "o_orderdate", CAST("t2"."o_orderpriority" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "o_orderpriority", CAST("t2"."o_clerk" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "o_clerk", CAST("t2"."o_shippriority" AS INTEGER) AS "o_shippriority", CAST("t2"."o_comment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "o_comment"
+FROM (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderstatus" IN ('F', 'P')) AS "t2"
+INNER JOIN (SELECT "t3"."r_regionkey", "t3"."r_name", "t3"."r_comment", "t3"."n_nationkey", "t3"."n_name", "t3"."n_regionkey", "t3"."n_comment", "t3"."s_suppkey", "t3"."s_name", "t3"."s_address", "t3"."s_nationkey", "t3"."s_phone", "t3"."s_acctbal", "t3"."s_comment", "t5"."S_NATIONKEY", "t5"."AVG_ACCTBAL", "t5"."URGENT_COUNT", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN ((SELECT "s1"."r_regionkey", "s1"."r_name", "s1"."r_comment", "s1"."n_nationkey", "s1"."n_name", "s1"."n_regionkey", "s1"."n_comment", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment"
+FROM "TPCH"."supplier"
+RIGHT JOIN "s1" ON "supplier"."s_nationkey" = "s1"."n_nationkey") AS "t3" LEFT JOIN (SELECT "s_nationkey" AS "S_NATIONKEY", AVG("s_acctbal") AS "AVG_ACCTBAL", SUM(CASE WHEN "s_comment" LIKE '%urgent%' THEN 1 ELSE 0 END) AS "URGENT_COUNT"
+FROM "TPCH"."supplier"
+GROUP BY "s_nationkey") AS "t5" ON "t3"."s_nationkey" = "t5"."S_NATIONKEY") ON "lineitem"."l_suppkey" = "t3"."s_suppkey") AS "t6" ON "t2"."o_orderkey" = "t6"."l_orderkey") AS "t7" LEFT JOIN (SELECT "ps_partkey", SUM("ps_availqty") AS "TOTAL_AVAIL_QTY", AVG("ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."partsupp"
+GROUP BY "ps_partkey") AS "t8" ON "t7"."l_partkey" = "t8"."ps_partkey") ON "t1"."c_custkey" = "t7"."o_custkey"
+GROUP BY "t7"."r_name"
+HAVING COUNT(DISTINCT CAST("t1"."c_custkey" AS BIGINT)) > 10
+ORDER BY 5 DESC NULLS FIRST) AS "t12"

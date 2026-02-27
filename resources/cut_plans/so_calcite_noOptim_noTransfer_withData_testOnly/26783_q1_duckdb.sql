@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."DISPLAYNAME", "t1"."TOTALBADGES", "t1"."GOLDBADGES", "t1"."SILVERBADGES", "t1"."BRONZEBADGES", "t4"."OWNERUSERID", "t4"."TITLE", "t4"."CREATIONDATE", "t4"."COMMENTCOUNT", "t4"."VOTECOUNT"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "TOTALBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+LEFT JOIN (SELECT "Posts"."OwnerUserId" AS "OWNERUSERID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", COUNT("Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN "Votes"."CreationDate" IS NOT NULL THEN 1 ELSE 0 END) AS "VOTECOUNT"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+WHERE "Posts"."CreationDate" >= (CAST('2024-10-01 12:34:56' AS TIMESTAMP(0)) - INTERVAL '30' DAY)
+GROUP BY "Posts"."OwnerUserId", "Posts"."Title", "Posts"."CreationDate") AS "t4" ON "t1"."USERID" = "t4"."OWNERUSERID"

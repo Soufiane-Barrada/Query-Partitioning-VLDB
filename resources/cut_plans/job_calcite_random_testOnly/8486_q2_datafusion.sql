@@ -1,0 +1,8 @@
+SELECT COALESCE("t6"."ACTOR_NAME", "t6"."ACTOR_NAME") AS "ACTOR_NAME", "t6"."MOVIE_TITLE", "t6"."PRODUCTION_YEAR", "t6"."KEYWORDS", "t6"."COMPANIES", "t6"."CAST_COUNT", "t6"."ROLE_TYPE", "t6"."PRODUCTION_YEAR" AS "production_year_"
+FROM (SELECT "s1"."name", "s1"."title", "s1"."production_year" AS "PRODUCTION_YEAR", "role_type"."role", ANY_VALUE("s1"."name") AS "ACTOR_NAME", ANY_VALUE("s1"."title") AS "MOVIE_TITLE", LISTAGG(DISTINCT "keyword"."keyword", ',') AS "KEYWORDS", LISTAGG(DISTINCT "company_name"."name", ',') AS "COMPANIES", COUNT(DISTINCT "s1"."id0") AS "CAST_COUNT", ANY_VALUE("role_type"."role") AS "ROLE_TYPE"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."kind_type"
+WHERE "kind" = 'feature') AS "t3"
+INNER JOIN ("s1" LEFT JOIN "IMDB"."keyword" ON "s1"."keyword_id" = "keyword"."id" LEFT JOIN "IMDB"."movie_companies" ON "s1"."id1" = "movie_companies"."movie_id" LEFT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id" LEFT JOIN "IMDB"."role_type" ON "s1"."role_id" = "role_type"."id") ON "t3"."ID" = "s1"."kind_id"
+GROUP BY "s1"."name", "s1"."title", "s1"."production_year", "role_type"."role"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, 5) AS "t6"

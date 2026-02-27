@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."l_orderkey", "t"."l_orderkey") AS "l_orderkey", "t"."l_partkey", "t"."l_suppkey", "t"."l_linenumber", "t"."l_quantity", "t"."l_extendedprice", "t"."l_discount", "t"."l_tax", "t"."l_returnflag", "t"."l_linestatus", "t"."l_shipdate", "t"."l_commitdate", "t"."l_receiptdate", "t"."l_shipinstruct", "t"."l_shipmode", "t"."l_comment", "part"."p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment"
+FROM (SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1996-01-01' AND "l_shipdate" < DATE '1997-01-01') AS "t"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "t"."l_partkey" = "part"."p_partkey"

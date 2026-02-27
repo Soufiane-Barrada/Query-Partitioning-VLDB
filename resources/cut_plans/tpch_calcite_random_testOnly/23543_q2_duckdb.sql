@@ -1,0 +1,9 @@
+SELECT COALESCE("t8"."REGION_NAME", "t8"."REGION_NAME") AS "REGION_NAME", "t8"."NATION_NAME", "t8"."SUPPLIER_NAME", "t8"."TOTAL_REVENUE", "t8"."REVENUE_CATEGORY"
+FROM (SELECT "region"."r_name" AS "REGION_NAME", "nation"."n_name" AS "NATION_NAME", "t5"."S_NAME" AS "SUPPLIER_NAME", "t5"."TOTAL_REVENUE", CASE WHEN "t5"."TOTAL_REVENUE" IS NULL THEN 'No Revenue    ' WHEN "t5"."TOTAL_REVENUE" < 10000.0000 THEN 'Low Revenue   ' WHEN "t5"."TOTAL_REVENUE" >= 10000.0000 AND "t5"."TOTAL_REVENUE" <= 50000.0000 THEN 'Medium Revenue' ELSE 'High Revenue  ' END AS "REVENUE_CATEGORY"
+FROM "TPCH"."region"
+RIGHT JOIN ("TPCH"."nation" INNER JOIN ("TPCH"."supplier" AS "supplier0" INNER JOIN (SELECT "S_SUPPKEY", "S_NAME", "TOTAL_REVENUE", RANK() OVER (ORDER BY "TOTAL_REVENUE" DESC NULLS FIRST) AS "REVENUE_RANK"
+FROM "s1"
+WHERE "ORDER_COUNT" > 5) AS "t5" ON "supplier0"."s_suppkey" = "t5"."S_SUPPKEY") ON "nation"."n_nationkey" = "supplier0"."s_nationkey") ON "region"."r_regionkey" = "nation"."n_regionkey"
+WHERE "region"."r_name" IS NOT NULL OR "t5"."TOTAL_REVENUE" IS NOT NULL
+ORDER BY 5, "t5"."TOTAL_REVENUE" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t8"

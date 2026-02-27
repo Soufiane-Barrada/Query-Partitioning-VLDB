@@ -1,0 +1,16 @@
+SELECT COALESCE("t4"."POSTID", "t4"."POSTID") AS "POSTID", "t4"."TITLE", "t4"."CREATIONDATE", "t4"."COMMENTCOUNT", "t4"."VOTECOUNT", "t4"."UPVOTECOUNT", "t4"."DOWNVOTECOUNT", "t9"."USERID", "t9"."DISPLAYNAME", "t9"."POSTSCOUNT", "t9"."BADGESCOUNT", "t9"."TOTALUPVOTES", "t9"."TOTALDOWNVOTES"
+FROM (SELECT ANY_VALUE("t1"."Id") AS "POSTID", "t1"."Title" AS "TITLE", "t1"."CreationDate" AS "CREATIONDATE", COUNT(DISTINCT "t1"."Id0") AS "COMMENTCOUNT", COUNT(DISTINCT "Votes"."Id") AS "VOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "s1"."Id", "s1"."PostTypeId", "s1"."AcceptedAnswerId", "s1"."ParentId", "s1"."CreationDate", "s1"."Score", "s1"."ViewCount", "s1"."Body", "s1"."OwnerUserId", "s1"."OwnerDisplayName", "s1"."LastEditorUserId", "s1"."LastEditorDisplayName", "s1"."LastEditDate", "s1"."LastActivityDate", "s1"."Title", "s1"."Tags", "s1"."AnswerCount", "s1"."CommentCount", "s1"."FavoriteCount", "s1"."ClosedDate", "s1"."CommunityOwnedDate", "s1"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN "s1" ON "Comments"."PostId" = "s1"."Id") AS "t1" ON "Votes"."PostId" = "t1"."Id"
+GROUP BY "t1"."Id", "t1"."Title", "t1"."CreationDate") AS "t4"
+INNER JOIN (SELECT ANY_VALUE("t6"."Id") AS "USERID", "t6"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "t6"."Id0") AS "POSTSCOUNT", COUNT(DISTINCT "Badges"."Id") AS "BADGESCOUNT", SUM(CASE WHEN CAST("Votes0"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes0"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Votes" AS "Votes0"
+RIGHT JOIN ((SELECT "t5"."Id", "t5"."Reputation", "t5"."CreationDate", "t5"."DisplayName", "t5"."LastAccessDate", "t5"."WebsiteUrl", "t5"."Location", "t5"."AboutMe", "t5"."Views", "t5"."UpVotes", "t5"."DownVotes", "t5"."ProfileImageUrl", "t5"."AccountId", "Posts0"."Id" AS "Id0", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate" AS "CreationDate0", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "CreationDate" >= CAST((CURRENT_DATE - INTERVAL '1' YEAR) AS TIMESTAMP(0))) AS "t5" ON "Posts0"."OwnerUserId" = "t5"."Id") AS "t6" LEFT JOIN "STACK"."Badges" ON "t6"."Id" = "Badges"."UserId") ON "Votes0"."PostId" = "t6"."Id0"
+GROUP BY "t6"."Id", "t6"."DisplayName") AS "t9" ON "t4"."POSTID" = "t9"."USERID"
+ORDER BY "t4"."CREATIONDATE" DESC NULLS FIRST

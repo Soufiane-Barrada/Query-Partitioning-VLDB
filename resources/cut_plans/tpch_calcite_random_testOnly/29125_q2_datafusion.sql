@@ -1,0 +1,17 @@
+SELECT COALESCE("t9"."SUPPLIER_NAME", "t9"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t9"."SUPPLIER_NATION", "t9"."PARTS_SUPPLIED", "t9"."TOTAL_SUPPLY_COST", "t9"."CUSTOMER_NAME", "t9"."TOTAL_ORDERS_PLACED", "t9"."TOTAL_SPENT_BY_CUSTOMER"
+FROM (SELECT "t5"."S_NAME" AS "SUPPLIER_NAME", "t5"."NATION" AS "SUPPLIER_NATION", "t5"."TOTAL_PARTS" AS "PARTS_SUPPLIED", "t5"."TOTAL_SUPPLYCOST" AS "TOTAL_SUPPLY_COST", "t7"."C_NAME" AS "CUSTOMER_NAME", "t7"."TOTAL_ORDERS" AS "TOTAL_ORDERS_PLACED", "t7"."TOTAL_SPENT" AS "TOTAL_SPENT_BY_CUSTOMER"
+FROM (SELECT "S_SUPPKEY", "S_NAME", "NATION", "TOTAL_PARTS", "TOTAL_SUPPLYCOST"
+FROM (SELECT "supplier0"."s_suppkey", "supplier0"."s_name", "nation0"."n_name", ANY_VALUE("nation0"."n_name") AS "NATION", COUNT(DISTINCT "part0"."p_partkey") AS "TOTAL_PARTS", SUM("partsupp0"."ps_supplycost") AS "TOTAL_SUPPLYCOST"
+FROM "TPCH"."nation" AS "nation0"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "nation0"."n_nationkey" = "supplier0"."s_nationkey"
+INNER JOIN ("TPCH"."part" AS "part0" INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "part0"."p_partkey" = "partsupp0"."ps_partkey") ON "supplier0"."s_suppkey" = "partsupp0"."ps_suppkey"
+GROUP BY "nation0"."n_name", "supplier0"."s_suppkey", "supplier0"."s_name") AS "t3"
+WHERE "t3"."TOTAL_SUPPLYCOST" > 10000.00) AS "t5"
+INNER JOIN (SELECT "t6"."c_custkey" AS "C_CUSTKEY", "t6"."c_name" AS "C_NAME", "t6"."TOTAL_ORDERS", "t6"."TOTAL_SPENT", "s1"."FD_COL_0" AS "EXPR$0"
+FROM "s1",
+(SELECT "customer"."c_custkey", "customer"."c_name", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS", SUM("orders"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t6") AS "t7" ON "t5"."TOTAL_PARTS" = "t7"."EXPR$0"
+ORDER BY "t7"."TOTAL_SPENT" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t9"

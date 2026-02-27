@@ -1,0 +1,6 @@
+SELECT COALESCE("Title", "Title") AS "TITLE", "CreationDate" AS "CREATIONDATE", ANY_VALUE("DisplayName") AS "OWNERDISPLAYNAME", "ViewCount" AS "VIEWCOUNT", "Score" AS "SCORE", COUNT("Id1") AS "COMMENTCOUNT", COUNT("Id2") AS "VOTECOUNT", MAX("CreationDate3") AS "LASTEDITDATE"
+FROM "s1"
+WHERE CAST("PostTypeId" AS INTEGER) = 1
+GROUP BY "Title", "CreationDate", "DisplayName", "ViewCount", "Score"
+ORDER BY "Score" DESC NULLS FIRST, "CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY

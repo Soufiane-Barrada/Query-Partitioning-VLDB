@@ -1,0 +1,21 @@
+SELECT COALESCE("t2"."r_name", "t2"."r_name") AS "r_name", ANY_VALUE("t2"."r_name") AS "REGION", COUNT(DISTINCT "t2"."c_custkey") AS "CUSTOMER_COUNT", SUM("t2"."s_acctbal") AS "TOTAL_SUPPLIER_BALANCE", AVG("t7"."O_TOTALPRICE") AS "AVERAGE_ORDER_VALUE"
+FROM (SELECT "t1"."r_regionkey", "t1"."r_name", "t1"."r_comment", "t1"."n_nationkey", "t1"."n_name", "t1"."n_regionkey", "t1"."n_comment", "t1"."s_suppkey", "t1"."s_name", "t1"."s_address", "t1"."s_nationkey", "t1"."s_phone", "t1"."s_acctbal", "t1"."s_comment", CAST("customer"."c_custkey" AS BIGINT) AS "c_custkey", CAST("customer"."c_name" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "c_name", CAST("customer"."c_address" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "c_address", CAST("customer"."c_nationkey" AS INTEGER) AS "c_nationkey", CAST("customer"."c_phone" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "c_phone", CAST("customer"."c_acctbal" AS DECIMAL(15, 2)) AS "c_acctbal", CAST("customer"."c_mktsegment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "c_mktsegment", CAST("customer"."c_comment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "c_comment"
+FROM "TPCH"."customer"
+INNER JOIN (SELECT "t"."r_regionkey", "t"."r_name", "t"."r_comment", "t"."n_nationkey", "t"."n_name", "t"."n_regionkey", "t"."n_comment", CAST("t0"."s_suppkey" AS BIGINT) AS "s_suppkey", CAST("t0"."s_name" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_name", CAST("t0"."s_address" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_address", CAST("t0"."s_nationkey" AS INTEGER) AS "s_nationkey", CAST("t0"."s_phone" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_phone", CAST("t0"."s_acctbal" AS DECIMAL(15, 2)) AS "s_acctbal", CAST("t0"."s_comment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_comment"
+FROM (SELECT "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment"
+FROM "TPCH"."nation"
+RIGHT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") AS "t"
+INNER JOIN (SELECT *
+FROM "TPCH"."supplier"
+WHERE "s_acctbal" > 1000.00) AS "t0" ON "t"."n_nationkey" = "t0"."s_nationkey") AS "t1" ON "customer"."c_nationkey" = "t1"."n_nationkey") AS "t2"
+LEFT JOIN (SELECT "t6"."o_orderkey" AS "O_ORDERKEY", "t6"."o_totalprice" AS "O_TOTALPRICE", "t6"."o_orderstatus" AS "O_ORDERSTATUS", "t5"."TOTAL_REVENUE", "t5"."PART_COUNT", ROW_NUMBER() OVER (PARTITION BY "t6"."o_orderstatus" ORDER BY "t5"."TOTAL_REVENUE" DESC NULLS FIRST) AS "RN"
+FROM (SELECT "t3"."o_orderkey" AS "O_ORDERKEY", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", COUNT(DISTINCT "lineitem"."l_partkey") AS "PART_COUNT"
+FROM (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1995-01-01' AND "o_orderdate" <= DATE '1995-12-31') AS "t3"
+INNER JOIN "TPCH"."lineitem" ON "t3"."o_orderkey" = "lineitem"."l_orderkey"
+GROUP BY "t3"."o_orderkey") AS "t5"
+INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_totalprice" > 10000.00) AS "t6" ON "t5"."O_ORDERKEY" = "t6"."o_orderkey") AS "t7" ON "t2"."c_custkey" = "t7"."O_ORDERKEY"
+GROUP BY "t2"."r_name"

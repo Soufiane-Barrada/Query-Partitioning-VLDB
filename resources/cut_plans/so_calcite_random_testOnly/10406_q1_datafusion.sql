@@ -1,0 +1,3 @@
+SELECT COALESCE("Posts"."Id", "Posts"."Id") AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."Score" AS "SCORE", "Posts"."AnswerCount" AS "ANSWERCOUNT", "Posts"."CommentCount" AS "COMMENTCOUNT", "Users"."DisplayName" AS "OWNERDISPLAYNAME", "Users"."Reputation" AS "OWNERREPUTATION"
+FROM "STACK"."Users"
+INNER JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"

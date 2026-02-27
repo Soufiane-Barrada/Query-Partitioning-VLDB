@@ -1,0 +1,8 @@
+SELECT COALESCE("t"."Id", "t"."Id") AS "USERID", "t"."DisplayName" AS "USERDISPLAYNAME", COUNT("t"."Id0") AS "TOTALPOSTS", SUM("t"."Score") AS "TOTALPOSTSCORE", SUM("t"."ViewCount") AS "TOTALPOSTVIEWS", SUM(CASE WHEN "t0"."VOTECOUNT" IS NOT NULL THEN CAST("t0"."VOTECOUNT" AS BIGINT) ELSE 0 END) AS "TOTALVOTES", MAX("t"."CreationDate0") AS "LASTPOSTDATE"
+FROM (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Posts"."Id" AS "Id0", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate" AS "CreationDate0", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id") AS "t"
+LEFT JOIN (SELECT "PostId", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t0" ON "t"."Id0" = "t0"."PostId"
+GROUP BY "t"."Id", "t"."DisplayName"

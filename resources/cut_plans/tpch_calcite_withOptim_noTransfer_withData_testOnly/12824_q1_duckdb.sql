@@ -1,0 +1,5 @@
+SELECT COALESCE("nation"."n_name", "nation"."n_name") AS "N_NAME", "lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount") AS "FD_COL_1"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN "TPCH"."lineitem" ON "supplier"."s_suppkey" = "lineitem"."l_suppkey"
+INNER JOIN ("TPCH"."customer" INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey") ON "lineitem"."l_orderkey" = "orders"."o_orderkey"

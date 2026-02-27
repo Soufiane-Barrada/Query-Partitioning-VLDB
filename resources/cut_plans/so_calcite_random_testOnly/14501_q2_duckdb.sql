@@ -1,0 +1,11 @@
+SELECT COALESCE("t9"."POSTID", "t9"."POSTID") AS "POSTID", "t9"."TITLE", "t9"."CREATIONDATE", "t9"."VIEWCOUNT", "t9"."SCORE", "t9"."COMMENTCOUNT", "t9"."VOTECOUNT", "t9"."UPVOTES", "t9"."DOWNVOTES", "t9"."USERID", "t9"."AUTHORNAME", "t9"."AUTHORREPUTATION", "t9"."TOTALPOSTS", "t9"."TOTALBADGES"
+FROM (SELECT "s1"."POSTID", "s1"."TITLE", "s1"."CREATIONDATE", "s1"."VIEWCOUNT", "s1"."SCORE", "s1"."COMMENTCOUNT", "s1"."VOTECOUNT", "s1"."UPVOTES", "s1"."DOWNVOTES", "t7"."USERID", "t7"."DISPLAYNAME" AS "AUTHORNAME", "t7"."REPUTATION" AS "AUTHORREPUTATION", "t7"."POSTSCREATED" AS "TOTALPOSTS", "t7"."BADGESCOUNT" AS "TOTALBADGES"
+FROM "s1"
+INNER JOIN ("STACK"."Users" INNER JOIN (SELECT ANY_VALUE("t4"."Id") AS "USERID", "t4"."DisplayName" AS "DISPLAYNAME", "t4"."Reputation" AS "REPUTATION", COUNT(DISTINCT "t4"."Id0") AS "POSTSCREATED", COUNT(DISTINCT "Badges"."Id") AS "BADGESCOUNT"
+FROM (SELECT "Users0"."Id", "Users0"."Reputation", "Users0"."CreationDate", "Users0"."DisplayName", "Users0"."LastAccessDate", "Users0"."WebsiteUrl", "Users0"."Location", "Users0"."AboutMe", "Users0"."Views", "Users0"."UpVotes", "Users0"."DownVotes", "Users0"."ProfileImageUrl", "Users0"."AccountId", "Posts0"."Id" AS "Id0", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate" AS "CreationDate0", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Posts0"."OwnerUserId" = "Users0"."Id") AS "t4"
+LEFT JOIN "STACK"."Badges" ON "t4"."Id" = "Badges"."UserId"
+GROUP BY "t4"."Id", "t4"."Reputation", "t4"."DisplayName") AS "t7" ON "Users"."Id" = "t7"."USERID") ON "s1"."POSTID" = "Users"."Id"
+ORDER BY "s1"."CREATIONDATE" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t9"

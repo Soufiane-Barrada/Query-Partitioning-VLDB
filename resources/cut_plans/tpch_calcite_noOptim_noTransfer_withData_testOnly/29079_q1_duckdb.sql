@@ -1,0 +1,11 @@
+SELECT COALESCE("t0"."P_PARTKEY", "t0"."P_PARTKEY") AS "P_PARTKEY", "t0"."P_NAME", "t0"."SUPPLIER_NAME", "t0"."COMBINED_STRING", "t0"."STRING_LENGTH", "t0"."COMMENT_SNIPPET", "t3"."AVG_STRING_LENGTH", "t3"."MAX_STRING_LENGTH", "t3"."TOTAL_ENTRIES", "t3"."UNIQUE_COMMENTS"
+FROM (SELECT "part"."p_partkey" AS "P_PARTKEY", "part"."p_name" AS "P_NAME", "supplier"."s_name" AS "SUPPLIER_NAME", CONCAT("part"."p_name", ' - ', "supplier"."s_name") AS "COMBINED_STRING", LENGTH(CONCAT("part"."p_name", ' - ', "supplier"."s_name")) AS "STRING_LENGTH", SUBSTRING("part"."p_comment", 1, 10) AS "COMMENT_SNIPPET", REGEXP_REPLACE("part"."p_comment", '[^a-zA-Z0-9]', '') AS "CLEANED_COMMENT"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+WHERE "part"."p_size" >= 10 AND "part"."p_size" <= 20) AS "t0",
+(SELECT AVG(LENGTH(CONCAT("part0"."p_name", ' - ', "supplier0"."s_name"))) AS "AVG_STRING_LENGTH", MAX(LENGTH(CONCAT("part0"."p_name", ' - ', "supplier0"."s_name"))) AS "MAX_STRING_LENGTH", COUNT(*) AS "TOTAL_ENTRIES", COUNT(DISTINCT REGEXP_REPLACE("part0"."p_comment", '[^a-zA-Z0-9]', '')) AS "UNIQUE_COMMENTS"
+FROM "TPCH"."part" AS "part0"
+INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "part0"."p_partkey" = "partsupp0"."ps_partkey"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "partsupp0"."ps_suppkey" = "supplier0"."s_suppkey"
+WHERE "part0"."p_size" >= 10 AND "part0"."p_size" <= 20) AS "t3"

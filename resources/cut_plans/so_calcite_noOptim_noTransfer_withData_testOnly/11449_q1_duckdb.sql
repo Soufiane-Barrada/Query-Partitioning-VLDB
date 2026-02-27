@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."DISPLAYNAME", "t1"."DISPLAYNAME") AS "DISPLAYNAME", "t1"."TOTALPOSTS", "t1"."QUESTIONS", "t1"."ANSWERS", "t1"."UPVOTEDPOSTS", "t4"."POSTID", "t4"."TITLE", "t4"."COMMENTCOUNT", "t4"."UPVOTES", "t4"."DOWNVOTES"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Posts"."Id") AS "TOTALPOSTS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONS", SUM(CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERS", SUM(CASE WHEN "Posts"."Score" > 0 THEN 1 ELSE 0 END) AS "UPVOTEDPOSTS"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+INNER JOIN (SELECT ANY_VALUE("Posts0"."Id") AS "POSTID", "Posts0"."Title" AS "TITLE", COUNT("Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Posts" AS "Posts0"
+LEFT JOIN "STACK"."Comments" ON "Posts0"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts0"."Id" = "Votes"."PostId"
+GROUP BY "Posts0"."Id", "Posts0"."Title") AS "t4" ON "t1"."USERID" = "t4"."POSTID"
+WHERE "t1"."TOTALPOSTS" > 0

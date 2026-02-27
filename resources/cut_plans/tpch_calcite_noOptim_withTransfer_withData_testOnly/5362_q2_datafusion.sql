@@ -1,0 +1,7 @@
+SELECT COALESCE("t8"."C_CUSTKEY", "t8"."C_CUSTKEY") AS "C_CUSTKEY", "t8"."C_NAME", "t8"."CUSTOMER_TOTAL_SPENT", "t8"."TOTAL_ORDERS", "t8"."AVG_LINEITEM_PRICE", "t8"."LAST_ORDER_DATE"
+FROM (SELECT "s1"."C_CUSTKEY", "s1"."C_NAME", SUM("lineitem0"."l_extendedprice" * (1 - "lineitem0"."l_discount")) AS "CUSTOMER_TOTAL_SPENT", COUNT(DISTINCT "orders1"."o_orderkey") AS "TOTAL_ORDERS", AVG("lineitem0"."l_extendedprice") AS "AVG_LINEITEM_PRICE", MAX("lineitem0"."l_shipdate") AS "LAST_ORDER_DATE"
+FROM "s1"
+INNER JOIN "TPCH"."orders" AS "orders1" ON "s1"."C_CUSTKEY" = "orders1"."o_custkey"
+INNER JOIN "TPCH"."lineitem" AS "lineitem0" ON "orders1"."o_orderkey" = "lineitem0"."l_orderkey"
+GROUP BY "s1"."C_CUSTKEY", "s1"."C_NAME"
+ORDER BY 3 DESC NULLS FIRST) AS "t8"

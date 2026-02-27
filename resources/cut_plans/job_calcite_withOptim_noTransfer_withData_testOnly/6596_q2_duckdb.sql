@@ -1,0 +1,11 @@
+SELECT COALESCE("t5"."ACTOR_NAME", "t5"."ACTOR_NAME") AS "ACTOR_NAME", "t5"."MOVIE_TITLE", "t5"."COMPANY_TYPE", "t5"."KEYWORDS", "t5"."NUM_PERSONAL_INFOS"
+FROM (SELECT "t2"."name", "t2"."title", "t2"."kind", ANY_VALUE("t2"."name") AS "ACTOR_NAME", ANY_VALUE("t2"."title") AS "MOVIE_TITLE", ANY_VALUE("t2"."kind") AS "COMPANY_TYPE", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", COUNT(DISTINCT "person_info"."info") AS "NUM_PERSONAL_INFOS"
+FROM (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "s1"."id" AS "id1", "s1"."title", "s1"."imdb_index" AS "imdb_index0", "s1"."kind_id", "s1"."production_year", "s1"."imdb_id", "s1"."phonetic_code", "s1"."episode_of_id", "s1"."season_nr", "s1"."episode_nr", "s1"."series_years", "s1"."md5sum" AS "md5sum0", "movie_companies"."id" AS "id2", "movie_companies"."movie_id" AS "movie_id0", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0", "t1"."id" AS "id3", "t1"."kind", "movie_keyword"."id" AS "id4", "movie_keyword"."movie_id" AS "movie_id1", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN ("IMDB"."cast_info" INNER JOIN ("IMDB"."movie_companies" INNER JOIN "s1" ON "movie_companies"."movie_id" = "s1"."id" INNER JOIN (SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" LIKE '%Production%') AS "t1" ON "movie_companies"."company_type_id" = "t1"."id") ON "cast_info"."movie_id" = "s1"."id" INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id") ON "movie_keyword"."movie_id" = "s1"."id") AS "t2"
+LEFT JOIN "IMDB"."keyword" ON "t2"."keyword_id" = "keyword"."id"
+LEFT JOIN "IMDB"."person_info" ON "t2"."person_id" = "person_info"."person_id"
+GROUP BY "t2"."name", "t2"."title", "t2"."kind"
+ORDER BY 4, 5) AS "t5"

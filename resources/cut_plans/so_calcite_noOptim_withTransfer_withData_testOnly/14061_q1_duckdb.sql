@@ -1,0 +1,8 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", "Posts"."Title" AS "TITLE", ANY_VALUE("Posts"."CreationDate") AS "POSTCREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", ANY_VALUE("Users"."Reputation") AS "OWNERREPUTATION", COUNT("Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", ANY_VALUE("Tags"."TagName") AS "POSTTAG", ANY_VALUE("PostTypes"."Name") AS "POSTTYPENAME", "Posts"."CreationDate"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Tags" ON "Posts"."Id" = "Tags"."ExcerptPostId"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+GROUP BY "Posts"."Id", "Posts"."Title", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Users"."DisplayName", "Users"."Reputation", "Tags"."TagName", "PostTypes"."Name"

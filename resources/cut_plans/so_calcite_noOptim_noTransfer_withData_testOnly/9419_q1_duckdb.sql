@@ -1,0 +1,17 @@
+SELECT COALESCE("t2"."POSTID", "t2"."POSTID") AS "POSTID", "t2"."TITLE", "t2"."CREATIONDATE", "t2"."SCORE", "t2"."VIEWCOUNT", "t2"."OWNERDISPLAYNAME", "t2"."COMMENTCOUNT", "t2"."UPVOTES", "t2"."DOWNVOTES", "t4"."EDITCOUNT", "t4"."MOSTRECENTEDIT", "t8"."DISPLAYNAME" AS "TOPUSERNAME", "t8"."TOTALSCORE" AS "TOPUSERSCORE"
+FROM (SELECT ANY_VALUE("Posts"."Id") AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", COUNT("Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+WHERE "Posts"."CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)
+GROUP BY "Posts"."Id", "Posts"."Title", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Users"."DisplayName") AS "t2"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "EDITCOUNT", MAX("CreationDate") AS "MOSTRECENTEDIT"
+FROM "STACK"."PostHistory"
+GROUP BY "PostId") AS "t4" ON "t2"."POSTID" = "t4"."POSTID"
+CROSS JOIN (SELECT ANY_VALUE("Users0"."Id") AS "USERID", "Users0"."DisplayName" AS "DISPLAYNAME", SUM("Posts0"."Score") AS "TOTALSCORE", COUNT(DISTINCT "Posts0"."Id") AS "POSTCOUNT"
+FROM "STACK"."Users" AS "Users0"
+INNER JOIN "STACK"."Posts" AS "Posts0" ON "Users0"."Id" = "Posts0"."OwnerUserId"
+GROUP BY "Users0"."Id", "Users0"."DisplayName"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t8"

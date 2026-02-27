@@ -1,0 +1,6 @@
+SELECT COALESCE("p_name", "p_name") AS "P_NAME", "TOTAL_QUANTITY", "AVG_PRICE", CONCAT('Total Quantity: ', CAST("TOTAL_QUANTITY" AS CHAR(1) CHARACTER SET "ISO-8859-1"), ', Avg Price: ', CAST(CAST("AVG_PRICE" AS DECIMAL(10, 2)) AS VARCHAR CHARACTER SET "ISO-8859-1")) AS "SUMMARY", "REGION_NAME", "NATION_NAME", "SUPPLIER_NAME", "CUSTOMER_NAME"
+FROM (SELECT "p_name", "r_name", "n_name", "s_name", "c_name", SUM("l_quantity") AS "TOTAL_QUANTITY", AVG("l_extendedprice") AS "AVG_PRICE", ANY_VALUE("r_name") AS "REGION_NAME", ANY_VALUE("n_name") AS "NATION_NAME", ANY_VALUE("s_name") AS "SUPPLIER_NAME", ANY_VALUE("c_name") AS "CUSTOMER_NAME"
+FROM "s1"
+GROUP BY "c_name", "r_name", "n_name", "s_name", "p_name"
+ORDER BY 6 DESC NULLS FIRST, 7
+FETCH NEXT 10 ROWS ONLY) AS "t4"

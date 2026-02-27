@@ -1,0 +1,13 @@
+SELECT COALESCE("t2"."ACTOR_NAME", "t2"."ACTOR_NAME") AS "ACTOR_NAME", "t2"."MOVIE_COUNT", "t5"."ACTOR_NAME" AS "ACTOR_NAME0", "t5"."MOVIE_TITLE", "t5"."PRODUCTION_YEAR", "t5"."ROLES"
+FROM (SELECT "t0"."ACTOR_NAME", COUNT(*) AS "MOVIE_COUNT"
+FROM (SELECT "aka_name"."name", "aka_title"."title", "aka_title"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("aka_title"."title") AS "MOVIE_TITLE", LISTAGG(DISTINCT "role_type"."role", ', ') AS "ROLES"
+FROM "IMDB"."role_type"
+INNER JOIN ("IMDB"."aka_title" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "aka_title"."movie_id" = "cast_info"."movie_id") ON "role_type"."id" = "cast_info"."role_id"
+GROUP BY "aka_name"."name", "aka_title"."title", "aka_title"."production_year") AS "t0"
+GROUP BY "t0"."ACTOR_NAME"
+ORDER BY 2 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"
+INNER JOIN (SELECT ANY_VALUE("aka_name0"."name") AS "ACTOR_NAME", ANY_VALUE("aka_title0"."title") AS "MOVIE_TITLE", "aka_title0"."production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "role_type0"."role", ', ') AS "ROLES"
+FROM "IMDB"."role_type" AS "role_type0"
+INNER JOIN ("IMDB"."aka_title" AS "aka_title0" INNER JOIN ("IMDB"."aka_name" AS "aka_name0" INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "aka_name0"."person_id" = "cast_info0"."person_id") ON "aka_title0"."movie_id" = "cast_info0"."movie_id") ON "role_type0"."id" = "cast_info0"."role_id"
+GROUP BY "aka_name0"."name", "aka_title0"."title", "aka_title0"."production_year") AS "t5" ON "t2"."ACTOR_NAME" = "t5"."ACTOR_NAME"

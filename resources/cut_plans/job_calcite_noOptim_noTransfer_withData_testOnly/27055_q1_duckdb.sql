@@ -1,0 +1,10 @@
+SELECT COALESCE("t2"."PRODUCTION_YEAR", "t2"."PRODUCTION_YEAR") AS "PRODUCTION_YEAR", "t2"."TITLE_COUNT", "t2"."AVG_TITLE_LENGTH", "company_type"."kind", "t2"."company_id"
+FROM (SELECT "t1"."PRODUCTION_YEAR", "t1"."TITLE_COUNT", "t1"."AVG_TITLE_LENGTH", "t1"."MAX_RANK", "movie_companies"."id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM (SELECT "aka_title"."production_year" AS "PRODUCTION_YEAR", COUNT(*) AS "TITLE_COUNT", AVG(LENGTH("aka_title"."title")) AS "AVG_TITLE_LENGTH", MAX(ROW_NUMBER() OVER (PARTITION BY "aka_title"."production_year" ORDER BY LENGTH("aka_title"."title") DESC NULLS FIRST)) AS "MAX_RANK", COUNT(*) > 0 AS "$f4"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."aka_title" ON "cast_info"."movie_id" = "aka_title"."movie_id"
+GROUP BY "aka_title"."production_year") AS "t1"
+INNER JOIN "IMDB"."movie_companies" ON "t1"."$f4") AS "t2"
+INNER JOIN "IMDB"."company_type" ON "t2"."company_type_id" = "company_type"."id"
+WHERE "t2"."PRODUCTION_YEAR" >= 2000 AND "t2"."PRODUCTION_YEAR" <= 2020

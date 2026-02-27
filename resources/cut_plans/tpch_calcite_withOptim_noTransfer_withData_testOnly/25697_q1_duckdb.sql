@@ -1,0 +1,11 @@
+SELECT COALESCE("t0"."p_partkey", "t0"."p_partkey") AS "P_PARTKEY", "t0"."p_name", "t0"."p_brand", "t0"."p_type", "t0"."p_comment", "supplier"."s_name", "region"."r_name", UPPER("t0"."p_name") AS "FD_COL_7", CONCAT("t0"."p_brand", ' - ', "t0"."p_type") AS "FD_COL_8", REPLACE(SUBSTRING("t0"."p_comment", 1, 15), ' ', '-') AS "FD_COL_9", "t0"."ps_supplycost" * "t0"."ps_availqty" AS "FD_COL_10", "orders"."o_orderkey"
+FROM (SELECT "t"."p_partkey", "t"."p_name", "t"."p_mfgr", "t"."p_brand", "t"."p_type", "t"."p_size", "t"."p_container", "t"."p_retailprice", "t"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment"
+FROM "TPCH"."partsupp"
+RIGHT JOIN (SELECT *
+FROM "TPCH"."part"
+WHERE "p_retailprice" > 50.00) AS "t" ON "partsupp"."ps_partkey" = "t"."p_partkey") AS "t0"
+LEFT JOIN "TPCH"."supplier" ON "t0"."ps_suppkey" = "supplier"."s_suppkey"
+LEFT JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+LEFT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+LEFT JOIN "TPCH"."lineitem" ON "t0"."p_partkey" = "lineitem"."l_partkey"
+LEFT JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"

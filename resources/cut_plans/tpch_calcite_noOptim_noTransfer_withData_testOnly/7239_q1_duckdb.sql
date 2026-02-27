@@ -1,0 +1,12 @@
+SELECT COALESCE("region"."r_name", "region"."r_name") AS "r_name", "lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount") AS "FD_COL_1", "orders"."o_orderkey", "customer"."c_custkey", "t1"."S_SUPPKEY"
+FROM "TPCH"."lineitem"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+INNER JOIN "TPCH"."nation" ON "customer"."c_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+INNER JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", COUNT(*) AS "TOTALSUPPLIED", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTALSUPPLYCOST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name"
+HAVING COUNT(*) > 5) AS "t1" ON "lineitem"."l_suppkey" = "t1"."S_SUPPKEY"
+WHERE "lineitem"."l_shipdate" >= DATE '1997-04-01' AND "lineitem"."l_shipdate" < DATE '1997-10-01'

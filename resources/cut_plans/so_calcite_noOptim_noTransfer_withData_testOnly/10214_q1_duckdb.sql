@@ -1,0 +1,12 @@
+SELECT COALESCE("t2"."POSTID", "t2"."POSTID") AS "POSTID", "t2"."TITLE", "t2"."OWNERDISPLAYNAME", "t2"."CREATIONDATE", "t2"."SCORE", "t2"."VIEWCOUNT", "t2"."COMMENTCOUNT", "t2"."ANSWERCOUNT", "t2"."UPVOTES", "t2"."DOWNVOTES", "t4"."EDITCOUNT", "t4"."CLOSECOUNT", "t4"."REOPENCOUNT", "t4"."DELETECOUNT"
+FROM (SELECT ANY_VALUE("Posts"."Id") AS "POSTID", "Posts"."Title" AS "TITLE", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", COUNT(CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE NULL END) AS "COMMENTCOUNT", COUNT("Posts0"."Id") AS "ANSWERCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Posts" AS "Posts0" ON "Posts"."Id" = "Posts0"."ParentId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+WHERE CAST("Posts"."PostTypeId" AS INTEGER) = 1
+GROUP BY "Posts"."Id", "Posts"."Title", "Users"."DisplayName", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount") AS "t2"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "EDITCOUNT", COUNT(CASE WHEN CAST("PostHistoryTypeId" AS INTEGER) = 10 THEN 1 ELSE NULL END) AS "CLOSECOUNT", COUNT(CASE WHEN CAST("PostHistoryTypeId" AS INTEGER) = 11 THEN 1 ELSE NULL END) AS "REOPENCOUNT", COUNT(CASE WHEN CAST("PostHistoryTypeId" AS INTEGER) = 12 THEN 1 ELSE NULL END) AS "DELETECOUNT"
+FROM "STACK"."PostHistory"
+GROUP BY "PostId") AS "t4" ON "t2"."POSTID" = "t4"."POSTID"

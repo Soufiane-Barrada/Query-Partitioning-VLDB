@@ -1,0 +1,11 @@
+SELECT COALESCE("t"."S_NAME", "t"."S_NAME") AS "SUPPLIER_NAME", "t0"."P_NAME" AS "PART_NAME", "t2"."TOTAL_LINEITEMS", "t2"."TOTAL_QUANTITY", "t2"."TOTAL_EXTENDED_PRICE", "t0"."NON_SPACE_COMMENT_LENGTH", "t"."ADJUSTED_COMMENT"
+FROM (SELECT "s_suppkey" AS "S_SUPPKEY", "s_name" AS "S_NAME", "s_address" AS "S_ADDRESS", "s_phone" AS "S_PHONE", CASE WHEN CASE WHEN LOWER("s_comment") = '' THEN NULL ELSE LOWER("s_comment") END IS NOT NULL THEN CAST(CASE WHEN LOWER("s_comment") = '' THEN NULL ELSE LOWER("s_comment") END AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'No Comment' END AS "ADJUSTED_COMMENT"
+FROM "TPCH"."supplier") AS "t"
+INNER JOIN "TPCH"."partsupp" ON "t"."S_SUPPKEY" = "partsupp"."ps_suppkey"
+INNER JOIN (SELECT "p_partkey" AS "P_PARTKEY", "p_name" AS "P_NAME", "p_brand" AS "P_BRAND", "p_retailprice" AS "P_RETAILPRICE", LENGTH(REPLACE(LOWER("p_comment"), ' ', '')) AS "NON_SPACE_COMMENT_LENGTH"
+FROM "TPCH"."part") AS "t0" ON "partsupp"."ps_partkey" = "t0"."P_PARTKEY"
+INNER JOIN (SELECT "orders"."o_orderkey" AS "O_ORDERKEY", "orders"."o_totalprice" AS "O_TOTALPRICE", COUNT(*) AS "TOTAL_LINEITEMS", SUM("lineitem"."l_quantity") AS "TOTAL_QUANTITY", SUM("lineitem"."l_extendedprice") AS "TOTAL_EXTENDED_PRICE"
+FROM "TPCH"."orders"
+INNER JOIN "TPCH"."lineitem" ON "orders"."o_orderkey" = "lineitem"."l_orderkey"
+GROUP BY "orders"."o_orderkey", "orders"."o_totalprice") AS "t2" ON "partsupp"."ps_partkey" = "t2"."O_ORDERKEY"
+WHERE "t0"."P_RETAILPRICE" > 100.00

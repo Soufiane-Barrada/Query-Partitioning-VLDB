@@ -1,0 +1,9 @@
+SELECT COALESCE("keyword"."id", "keyword"."id") AS "id", "keyword"."keyword", "keyword"."phonetic_code", "t0"."ID" AS "ID_", "aka_name"."id" AS "id0", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "person_info"."id" AS "id00", "person_info"."person_id" AS "person_id0", "person_info"."info_type_id", "person_info"."info", "person_info"."note", "t1"."id" AS "id1", "t1"."kind", "cast_info"."id" AS "id000", "cast_info"."person_id" AS "person_id1", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id", "t2"."id" AS "id10", "t2"."title", "t2"."imdb_index" AS "imdb_index0", "t2"."kind_id", "t2"."production_year", "t2"."imdb_id", "t2"."phonetic_code" AS "phonetic_code0", "t2"."episode_of_id", "t2"."season_nr", "t2"."episode_nr", "t2"."series_years", "t2"."md5sum" AS "md5sum0", "movie_keyword"."id" AS "id0000", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id"
+FROM "IMDB"."keyword"
+INNER JOIN ((SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" = 'Biography') AS "t0" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id") ON "t0"."ID" = "person_info"."info_type_id" INNER JOIN ((SELECT *
+FROM "IMDB"."comp_cast_type"
+WHERE "kind" LIKE 'Actor%') AS "t1" INNER JOIN "IMDB"."cast_info" ON "t1"."id" = "cast_info"."person_role_id" INNER JOIN ((SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" > 2000) AS "t2" INNER JOIN "IMDB"."movie_keyword" ON "t2"."id" = "movie_keyword"."movie_id") ON "cast_info"."movie_id" = "t2"."id") ON "aka_name"."person_id" = "cast_info"."person_id") ON "keyword"."id" = "movie_keyword"."keyword_id"

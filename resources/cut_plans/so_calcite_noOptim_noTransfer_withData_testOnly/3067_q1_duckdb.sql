@@ -1,0 +1,18 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."DISPLAYNAME", "t1"."TOTALUPVOTES", "t1"."TOTALDOWNVOTES", "Posts"."Id", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "t6"."POSTID", "t6"."TITLE" AS "TITLE_", "t6"."VIEWCOUNT" AS "VIEWCOUNT_", "t6"."TOTALANSWERS", "t6"."TOTALCOMMENTS", "t9"."POSTID" AS "POSTID0", "t9"."CLOSECOUNT", "t9"."LASTCLOSEDDATE"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "TOTALUPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "TOTALDOWNVOTES"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Votes" ON "Users"."Id" = "Votes"."UserId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+INNER JOIN "STACK"."Posts" ON "t1"."USERID" = "Posts"."OwnerUserId"
+INNER JOIN (SELECT "Posts0"."Id" AS "POSTID", "Posts0"."Title" AS "TITLE", "Posts0"."ViewCount" AS "VIEWCOUNT", CASE WHEN "t4"."TOTALANSWERS" IS NOT NULL THEN CAST("t4"."TOTALANSWERS" AS BIGINT) ELSE 0 END AS "TOTALANSWERS", CASE WHEN "t4"."TOTALCOMMENTS" IS NOT NULL THEN CAST("t4"."TOTALCOMMENTS" AS BIGINT) ELSE 0 END AS "TOTALCOMMENTS"
+FROM "STACK"."Posts" AS "Posts0"
+LEFT JOIN (SELECT "Posts1"."ParentId" AS "PARENTID", COUNT(*) AS "TOTALANSWERS", COUNT(DISTINCT "Comments"."Id") AS "TOTALCOMMENTS"
+FROM "STACK"."Posts" AS "Posts1"
+LEFT JOIN "STACK"."Comments" ON "Posts1"."Id" = "Comments"."PostId"
+WHERE CAST("Posts1"."PostTypeId" AS INTEGER) = 2
+GROUP BY "Posts1"."ParentId") AS "t4" ON "Posts0"."Id" = "t4"."PARENTID"
+WHERE CAST("Posts0"."PostTypeId" AS INTEGER) = 1) AS "t6" ON "Posts"."Id" = "t6"."POSTID"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "CLOSECOUNT", MAX("CreationDate") AS "LASTCLOSEDDATE"
+FROM "STACK"."PostHistory"
+WHERE CAST("PostHistoryTypeId" AS INTEGER) = 10
+GROUP BY "PostId") AS "t9" ON "t6"."POSTID" = "t9"."POSTID"

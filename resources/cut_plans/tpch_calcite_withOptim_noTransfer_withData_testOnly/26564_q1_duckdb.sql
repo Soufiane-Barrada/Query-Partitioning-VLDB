@@ -1,0 +1,13 @@
+SELECT COALESCE("t1"."r_name", "t1"."r_name") AS "r_name", "t1"."n_name", "t1"."S_NAME", "t1"."TOTAL_AVAILABLE_QUANTITY", "t1"."AVERAGE_SUPPLY_COST", "t2"."c_name" AS "C_NAME", "t2"."TOTAL_ORDERS", "t2"."TOTAL_SPENT", ANY_VALUE("t1"."r_name") AS "REGION_NAME", ANY_VALUE("t1"."n_name") AS "NATION_NAME", ANY_VALUE("t1"."S_NAME") AS "SUPPLIER_NAME", ANY_VALUE("t2"."c_name") AS "CUSTOMER_NAME", LISTAGG(DISTINCT "t1"."PART_NAMES", '; ') AS "ALL_PART_NAMES"
+FROM (SELECT "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "t0"."S_SUPPKEY", "t0"."S_NAME", "t0"."S_NATIONKEY", "t0"."TOTAL_AVAILABLE_QUANTITY", "t0"."AVERAGE_SUPPLY_COST", "t0"."PART_NAMES", CAST("t0"."S_NATIONKEY" AS BIGINT) AS "S_NATIONKEY0"
+FROM "TPCH"."region"
+INNER JOIN ("TPCH"."nation" INNER JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", "supplier"."s_nationkey" AS "S_NATIONKEY", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", AVG("partsupp"."ps_supplycost") AS "AVERAGE_SUPPLY_COST", LISTAGG(DISTINCT "part"."p_name", ', ') AS "PART_NAMES"
+FROM "TPCH"."supplier"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_nationkey") AS "t0" ON "nation"."n_nationkey" = "t0"."S_NATIONKEY") ON "region"."r_regionkey" = "nation"."n_regionkey") AS "t1"
+INNER JOIN (SELECT "customer"."c_custkey", "customer"."c_name", COUNT("orders"."o_orderkey") AS "TOTAL_ORDERS", SUM("orders"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."orders"
+RIGHT JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t2" ON "t1"."S_NATIONKEY0" = "t2"."c_custkey"
+WHERE "t2"."TOTAL_SPENT" > 1000.00
+GROUP BY "t1"."r_name", "t1"."n_name", "t1"."S_NAME", "t1"."TOTAL_AVAILABLE_QUANTITY", "t1"."AVERAGE_SUPPLY_COST", "t2"."c_name", "t2"."TOTAL_ORDERS", "t2"."TOTAL_SPENT"

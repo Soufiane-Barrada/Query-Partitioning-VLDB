@@ -1,0 +1,6 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."DisplayName" AS "DISPLAYNAME", "Posts"."Id" AS "Id0", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END AS "FD_COL_3", CASE WHEN CAST("Posts"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END AS "FD_COL_4", "Comments"."Id" AS "Id1", "Badges"."Id" AS "Id2", "Votes"."BountyAmount"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId" AND "Users"."Id" = "Votes"."UserId"

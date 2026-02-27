@@ -1,0 +1,13 @@
+SELECT COALESCE("t2"."MOVIE_ID", "t2"."MOVIE_ID") AS "MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."TOTAL_COMPANIES", "t2"."TOTAL_KEYWORDS", CASE WHEN "t4"."TOTAL_ACTORS" IS NOT NULL THEN CAST("t4"."TOTAL_ACTORS" AS BIGINT) ELSE 0 END AS "TOTAL_ACTORS", CASE WHEN "t2"."PRODUCTION_YEAR" >= 2000 THEN 'Modern ' ELSE 'Classic' END AS "MOVIE_ERA"
+FROM (SELECT "t"."MOVIE_ID", "t"."TITLE", "t"."PRODUCTION_YEAR", CASE WHEN SUM("movie_companies"."company_id") IS NOT NULL THEN CAST(SUM("movie_companies"."company_id") AS INTEGER) ELSE 0 END AS "TOTAL_COMPANIES", COUNT(DISTINCT "keyword"."keyword") AS "TOTAL_KEYWORDS"
+FROM (SELECT "id" AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", ROW_NUMBER() OVER (PARTITION BY "production_year" ORDER BY "title") AS "RANK_IN_YEAR"
+FROM "IMDB"."aka_title") AS "t"
+LEFT JOIN "IMDB"."movie_companies" ON "t"."MOVIE_ID" = "movie_companies"."movie_id"
+LEFT JOIN "IMDB"."movie_keyword" ON "t"."MOVIE_ID" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "t"."MOVIE_ID", "t"."TITLE", "t"."PRODUCTION_YEAR") AS "t2"
+LEFT JOIN (SELECT "cast_info"."movie_id" AS "MOVIE_ID", COUNT(DISTINCT "aka_name"."id") AS "TOTAL_ACTORS"
+FROM "IMDB"."cast_info"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+GROUP BY "cast_info"."movie_id") AS "t4" ON "t2"."MOVIE_ID" = "t4"."MOVIE_ID"
+WHERE "t2"."TOTAL_COMPANIES" > 0

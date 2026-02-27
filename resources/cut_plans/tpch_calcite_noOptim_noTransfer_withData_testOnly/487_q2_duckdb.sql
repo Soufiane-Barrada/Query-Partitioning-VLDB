@@ -1,0 +1,23 @@
+SELECT COALESCE("t15"."C_NAME", "t15"."C_NAME") AS "C_NAME", "t15"."REGION_NAME", "t15"."NATION_NAME", "t15"."TOTAL_SUPPLY_COST", "t15"."TOTAL_AVAILABLE_QUANTITY", "t15"."CUSTOMER_SEGMENT"
+FROM (SELECT "t5"."C_NAME", "t8"."REGION_NAME", "t8"."NATION_NAME", SUM("t9"."PS_SUPPLYCOST") AS "TOTAL_SUPPLY_COST", SUM(CASE WHEN "s1"."TOTAL_AVAILABLE_QUANTITY" IS NOT NULL THEN CAST("s1"."TOTAL_AVAILABLE_QUANTITY" AS BIGINT) ELSE 0 END) AS "TOTAL_AVAILABLE_QUANTITY", "t5"."CUSTOMER_SEGMENT"
+FROM (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", CASE WHEN "t4"."TOTAL_SPENT" IS NOT NULL THEN CAST("t4"."TOTAL_SPENT" AS DECIMAL(19, 2)) ELSE 0.00 END AS "TOTAL_SPENT", CASE WHEN "t4"."ORDER_COUNT" IS NOT NULL THEN CAST("t4"."ORDER_COUNT" AS BIGINT) ELSE 0 END AS "ORDER_COUNT", CASE WHEN CASE WHEN "t4"."TOTAL_SPENT" IS NOT NULL THEN CAST("t4"."TOTAL_SPENT" AS DECIMAL(19, 2)) ELSE 0.00 END > 10000.00 THEN 'High Value  ' WHEN CASE WHEN "t4"."TOTAL_SPENT" IS NOT NULL THEN CAST("t4"."TOTAL_SPENT" AS DECIMAL(19, 2)) ELSE 0.00 END >= 5000.00 AND CASE WHEN "t4"."TOTAL_SPENT" IS NOT NULL THEN CAST("t4"."TOTAL_SPENT" AS DECIMAL(19, 2)) ELSE 0.00 END <= 10000.00 THEN 'Medium Value' ELSE 'Low Value   ' END AS "CUSTOMER_SEGMENT"
+FROM "TPCH"."customer"
+LEFT JOIN (SELECT "o_custkey" AS "O_CUSTKEY", SUM("o_totalprice") AS "TOTAL_SPENT", COUNT(*) AS "ORDER_COUNT"
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1997-01-01'
+GROUP BY "o_custkey") AS "t4" ON "customer"."c_custkey" = "t4"."O_CUSTKEY") AS "t5"
+INNER JOIN (SELECT "region"."r_regionkey" AS "R_REGIONKEY", ANY_VALUE("region"."r_name") AS "REGION_NAME", ANY_VALUE("nation"."n_name") AS "NATION_NAME", COUNT(DISTINCT "supplier"."s_suppkey") AS "SUPPLIER_COUNT"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+LEFT JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "region"."r_regionkey", "region"."r_name", "nation"."n_name") AS "t8" ON "t5"."C_CUSTKEY" = "t8"."SUPPLIER_COUNT"
+LEFT JOIN "s1" ON "t5"."C_CUSTKEY" = "s1"."PS_PARTKEY"
+LEFT JOIN (SELECT "partsupp0"."ps_partkey" AS "PS_PARTKEY", "nation0"."n_name" AS "NATION_NAME", "region0"."r_name" AS "REGION_NAME", "partsupp0"."ps_supplycost" AS "PS_SUPPLYCOST"
+FROM "TPCH"."partsupp" AS "partsupp0"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "partsupp0"."ps_suppkey" = "supplier0"."s_suppkey"
+INNER JOIN "TPCH"."nation" AS "nation0" ON "supplier0"."s_nationkey" = "nation0"."n_nationkey"
+INNER JOIN "TPCH"."region" AS "region0" ON "nation0"."n_regionkey" = "region0"."r_regionkey") AS "t9" ON "t5"."C_CUSTKEY" = "t9"."PS_PARTKEY"
+WHERE "t5"."ORDER_COUNT" > 1 AND "t8"."SUPPLIER_COUNT" > 0
+GROUP BY "t5"."C_NAME", "t8"."REGION_NAME", "t8"."NATION_NAME", "t5"."CUSTOMER_SEGMENT"
+HAVING SUM("t9"."PS_SUPPLYCOST") > 5000.00
+ORDER BY 4 DESC NULLS FIRST, "t5"."C_NAME") AS "t15"

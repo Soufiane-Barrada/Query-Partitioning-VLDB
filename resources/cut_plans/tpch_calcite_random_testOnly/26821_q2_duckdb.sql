@@ -1,0 +1,17 @@
+SELECT COALESCE("t12"."NATION_NAME", "t12"."NATION_NAME") AS "NATION_NAME", "t12"."SUPPLIER_COUNT", "t12"."SUPPLIER_NAMES", "t12"."PART_NAME", "t12"."P_RETAILPRICE", "t12"."AVAILABLE_SUPPLIERS", "t12"."CUSTOMER_NAME", "t12"."TOTAL_VALUE"
+FROM (SELECT "t10"."NATION_NAME", "t10"."SUPPLIER_COUNT", "t10"."SUPPLIER_NAMES", "t10"."PART_NAME", "t10"."P_RETAILPRICE", "t10"."AVAILABLE_SUPPLIERS", "t2"."CUSTOMER_NAME", "t2"."TOTAL_VALUE"
+FROM (SELECT "O_ORDERKEY", ANY_VALUE("c_name") AS "CUSTOMER_NAME", SUM("FD_COL_2") AS "TOTAL_VALUE"
+FROM "s1"
+GROUP BY "O_ORDERKEY", "c_name") AS "t2",
+(SELECT "t6"."NATION_NAME", "t6"."SUPPLIER_COUNT", "t6"."SUPPLIER_NAMES", "t9"."PART_NAME", "t9"."P_RETAILPRICE", "t9"."AVAILABLE_SUPPLIERS", "t9"."AVAILABLE_SUPPLIERS" > 5 AS "$f6"
+FROM (SELECT ANY_VALUE("nation"."n_name") AS "NATION_NAME", COUNT(DISTINCT "supplier"."s_suppkey") AS "SUPPLIER_COUNT", LISTAGG(DISTINCT "supplier"."s_name", ', ') AS "SUPPLIER_NAMES", ANY_VALUE("nation"."n_name") LIKE '%United%' AS "$f3"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "nation"."n_name"
+HAVING ANY_VALUE("nation"."n_name") LIKE '%United%') AS "t6",
+(SELECT ANY_VALUE("part"."p_name") AS "PART_NAME", "part"."p_retailprice" AS "P_RETAILPRICE", COUNT("partsupp"."ps_suppkey") AS "AVAILABLE_SUPPLIERS"
+FROM "TPCH"."partsupp"
+RIGHT JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+GROUP BY "part"."p_name", "part"."p_retailprice"
+HAVING COUNT("partsupp"."ps_suppkey") > 5) AS "t9") AS "t10"
+ORDER BY "t10"."SUPPLIER_COUNT" DESC NULLS FIRST, "t10"."P_RETAILPRICE") AS "t12"

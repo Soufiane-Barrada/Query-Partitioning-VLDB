@@ -1,0 +1,6 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t1"."USERID", "t1"."DISPLAYNAME" AS "DISPLAYNAME_", "t1"."BADGECOUNT", "t1"."GOLDBADGES", "t1"."SILVERBADGES", "t1"."BRONZEBADGES"
+FROM "STACK"."Users"
+INNER JOIN (SELECT ANY_VALUE("Users0"."Id") AS "USERID", "Users0"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "BADGECOUNT", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" AS "Users0" ON "Badges"."UserId" = "Users0"."Id"
+GROUP BY "Users0"."Id", "Users0"."DisplayName") AS "t1" ON "Users"."Id" = "t1"."USERID"

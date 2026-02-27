@@ -1,0 +1,10 @@
+SELECT COALESCE(ANY_VALUE(CONCAT('Supplier: ', "supplier"."s_name")), ANY_VALUE(CONCAT('Supplier: ', "supplier"."s_name"))) AS "SUPPLIER_INFO", ANY_VALUE(LEFT("part"."p_name", 20)) AS "PART_NAME", ANY_VALUE(REPLACE("part"."p_comment", 'obsolete', 'legacy')) AS "UPDATED_COMMENT", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "TOTAL_REVENUE", ANY_VALUE("region"."r_name") AS "REGION_NAME"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+INNER JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+WHERE "orders"."o_orderstatus" = 'O' AND "lineitem"."l_shipdate" >= '1997-01-01' AND "lineitem"."l_shipdate" <= '1997-12-31'
+GROUP BY CONCAT('Supplier: ', "supplier"."s_name"), LEFT("part"."p_name", 20), REPLACE("part"."p_comment", 'obsolete', 'legacy'), "region"."r_name"

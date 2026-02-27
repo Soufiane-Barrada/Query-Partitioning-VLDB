@@ -1,0 +1,13 @@
+SELECT COALESCE("t3"."r_name", "t3"."r_name") AS "R_NAME", "t3"."c_custkey", CASE WHEN "t4"."TOTAL_AVAILABLE" IS NOT NULL THEN CAST("t4"."TOTAL_AVAILABLE" AS BIGINT) ELSE 0 END AS "FD_COL_2", CASE WHEN "t1"."REVENUE" IS NOT NULL THEN CAST("t1"."REVENUE" AS DECIMAL(19, 4)) ELSE 0.0000 END AS "FD_COL_3"
+FROM (SELECT "l_orderkey" AS "L_ORDERKEY", SUM("l_extendedprice" * (1 - "l_discount")) AS "REVENUE"
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1995-01-01' AND "l_shipdate" < DATE '1996-01-01'
+GROUP BY "l_orderkey") AS "t1"
+RIGHT JOIN ((SELECT "t2"."r_regionkey", "t2"."r_name", "t2"."r_comment", "t2"."n_nationkey", "t2"."n_name", "t2"."n_regionkey", "t2"."n_comment", "customer"."c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment"
+FROM "TPCH"."customer"
+RIGHT JOIN (SELECT "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment"
+FROM "TPCH"."nation"
+RIGHT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") AS "t2" ON "customer"."c_nationkey" = "t2"."n_nationkey") AS "t3" LEFT JOIN (SELECT "supplier"."s_suppkey", "supplier"."s_name", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE", AVG("partsupp"."ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name") AS "t4" ON "t3"."c_custkey" = "t4"."s_suppkey") ON "t1"."L_ORDERKEY" = "t3"."c_custkey"

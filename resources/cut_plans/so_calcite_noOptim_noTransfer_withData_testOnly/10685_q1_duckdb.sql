@@ -1,0 +1,7 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT("Comments"."Id") AS "COMMENTCOUNT", COUNT("Votes"."Id") AS "VOTECOUNT"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+GROUP BY "Posts"."Id", "Posts"."Title", "Posts"."CreationDate", "Users"."DisplayName", "PostTypes"."Name"

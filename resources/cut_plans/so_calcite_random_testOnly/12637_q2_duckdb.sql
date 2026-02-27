@@ -1,0 +1,15 @@
+SELECT COALESCE("t11"."USERID", "t11"."USERID") AS "USERID", "t11"."DISPLAYNAME", "t11"."POSTCOUNT", "t11"."TOTALVIEWS", "t11"."TOTALSCORE", "t11"."TOTALCOMMENTS", "t11"."POSTTYPEID", "t11"."POSTTYPENAME", "t11"."TYPEPOSTCOUNT", "t11"."TYPETOTALVIEWS", "t11"."TYPETOTALSCORE"
+FROM (SELECT "t9"."USERID", "t9"."DISPLAYNAME", "t9"."POSTCOUNT", "t9"."TOTALVIEWS", "t9"."TOTALSCORE", "t9"."TOTALCOMMENTS", "s1"."POSTTYPEID", "s1"."POSTTYPENAME", "s1"."POSTCOUNT" AS "TYPEPOSTCOUNT", "s1"."TOTALVIEWS" AS "TYPETOTALVIEWS", "s1"."TOTALSCORE" AS "TYPETOTALSCORE"
+FROM "s1",
+(SELECT ANY_VALUE("t5"."Id") AS "USERID", "t5"."DisplayName" AS "DISPLAYNAME", COUNT("t5"."Id0") AS "POSTCOUNT", SUM(CASE WHEN "t5"."ViewCount" IS NOT NULL THEN CAST("t5"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", SUM(CASE WHEN "t5"."Score" IS NOT NULL THEN CAST("t5"."Score" AS INTEGER) ELSE 0 END) AS "TOTALSCORE", SUM(CASE WHEN "t3"."COMMENTCOUNT" IS NOT NULL THEN CAST("t3"."COMMENTCOUNT" AS BIGINT) ELSE 0 END) AS "TOTALCOMMENTS", COUNT("t5"."Id0") > 0 AS "$f6"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t3"
+RIGHT JOIN (SELECT "t4"."Id", "t4"."Reputation", "t4"."CreationDate", "t4"."DisplayName", "t4"."LastAccessDate", "t4"."WebsiteUrl", "t4"."Location", "t4"."AboutMe", "t4"."Views", "t4"."UpVotes", "t4"."DownVotes", "t4"."ProfileImageUrl", "t4"."AccountId", "Posts0"."Id" AS "Id0", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate" AS "CreationDate0", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "CreationDate" >= TIMESTAMP '2020-01-01 00:00:00') AS "t4" ON "Posts0"."OwnerUserId" = "t4"."Id") AS "t5" ON "t3"."PostId" = "t5"."Id0"
+GROUP BY "t5"."Id", "t5"."DisplayName"
+HAVING COUNT("t5"."Id0") > 0) AS "t9"
+ORDER BY "t9"."TOTALSCORE" DESC NULLS FIRST, "s1"."TOTALVIEWS" DESC NULLS FIRST) AS "t11"

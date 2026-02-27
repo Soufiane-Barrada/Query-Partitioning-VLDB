@@ -1,0 +1,8 @@
+SELECT COALESCE("t3"."POSTTYPE", "t3"."POSTTYPE") AS "POSTTYPE", "t3"."TOTALPOSTS", "t3"."TOTALUSERS", "t3"."TOTALCOMMENTS", "t3"."TOTALVOTES", "t3"."Id"
+FROM (SELECT ANY_VALUE("s1"."Name") AS "POSTTYPE", COUNT(DISTINCT "s1"."Id0") AS "TOTALPOSTS", COUNT(DISTINCT "Users"."Id") AS "TOTALUSERS", COUNT(DISTINCT "Comments"."Id") AS "TOTALCOMMENTS", COUNT(DISTINCT "Votes"."Id") AS "TOTALVOTES", "s1"."Id"
+FROM "s1"
+LEFT JOIN "STACK"."Users" ON "s1"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "s1"."Id0" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "s1"."Id0" = "Votes"."PostId"
+GROUP BY "s1"."Id", "s1"."Name"
+ORDER BY "s1"."Id") AS "t3"

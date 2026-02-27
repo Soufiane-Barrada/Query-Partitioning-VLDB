@@ -1,0 +1,6 @@
+SELECT COALESCE("p_name", "p_name") AS "p_name", "TOTAL_QUANTITY", "TOTAL_REVENUE"
+FROM (SELECT "p_name", SUM("l_quantity") AS "TOTAL_QUANTITY", SUM("l_extendedprice") AS "TOTAL_REVENUE"
+FROM "s1"
+GROUP BY "p_name"
+ORDER BY 2 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"

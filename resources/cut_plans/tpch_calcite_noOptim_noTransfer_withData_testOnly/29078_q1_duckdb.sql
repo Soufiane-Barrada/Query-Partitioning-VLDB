@@ -1,0 +1,11 @@
+SELECT COALESCE("P_PARTKEY", "P_PARTKEY") AS "P_PARTKEY", "P_NAME", "P_RETAILPRICE", "COMMENT_LENGTH", "TOTAL_AVAILABLE_QTY", "SUPPLIER_COUNT", "C_CUSTKEY", "C_NAME", "TOTAL_ORDER_VALUE", "ORDER_COUNT", "COMBINED_INFO"
+FROM (SELECT "t1"."P_PARTKEY", "t1"."P_NAME", "t1"."P_RETAILPRICE", "t1"."COMMENT_LENGTH", "t1"."TOTAL_AVAILABLE_QTY", "t1"."SUPPLIER_COUNT", "t3"."C_CUSTKEY", "t3"."C_NAME", "t3"."TOTAL_ORDER_VALUE", "t3"."ORDER_COUNT", CONCAT('Part: ', "t1"."P_NAME", ' | Customer: ', "t3"."C_NAME") AS "COMBINED_INFO"
+FROM (SELECT "part"."p_partkey" AS "P_PARTKEY", "part"."p_name" AS "P_NAME", "part"."p_retailprice" AS "P_RETAILPRICE", ANY_VALUE(LENGTH("part"."p_comment")) AS "COMMENT_LENGTH", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE_QTY", COUNT(DISTINCT "partsupp"."ps_suppkey") AS "SUPPLIER_COUNT", COUNT(DISTINCT "partsupp"."ps_suppkey") > 0 AS "$f6"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+GROUP BY "part"."p_partkey", "part"."p_name", "part"."p_retailprice", LENGTH("part"."p_comment")) AS "t1"
+INNER JOIN (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", SUM("orders"."o_totalprice") AS "TOTAL_ORDER_VALUE", COUNT(*) AS "ORDER_COUNT"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t3" ON "t1"."$f6") AS "t4"
+WHERE LENGTH("t4"."COMBINED_INFO") > 50

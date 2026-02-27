@@ -1,0 +1,11 @@
+SELECT COALESCE("t2"."MOVIE_ID", "t2"."MOVIE_ID") AS "MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t2"."CAST_COUNT", "t2"."id", "t2"."movie_id" AS "movie_id_", "t2"."company_id", "t2"."company_type_id", "t2"."note", "company_name"."id" AS "id0", "company_name"."name", "company_name"."country_code", "company_name"."imdb_id", "company_name"."name_pcode_nf", "company_name"."name_pcode_sf", "company_name"."md5sum"
+FROM "IMDB"."company_name"
+RIGHT JOIN (SELECT "t1"."MOVIE_ID", "t1"."TITLE", "t1"."PRODUCTION_YEAR", "t1"."CAST_COUNT", "movie_companies"."id", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN (SELECT "t0"."MOVIE_ID", "t0"."title" AS "TITLE", "t0"."production_year" AS "PRODUCTION_YEAR", "t0"."CAST_COUNT"
+FROM (SELECT "title"."id" AS "id00", "title"."title", "title"."production_year", ANY_VALUE("title"."id") AS "MOVIE_ID", COUNT(DISTINCT "cast_info"."person_id") AS "CAST_COUNT"
+FROM "IMDB"."cast_info"
+INNER JOIN ("IMDB"."complete_cast" INNER JOIN "IMDB"."title" ON "complete_cast"."movie_id" = "title"."id") ON "cast_info"."id" = "complete_cast"."subject_id"
+GROUP BY "title"."id", "title"."title", "title"."production_year"
+ORDER BY 5 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t0") AS "t1" ON "movie_companies"."movie_id" = "t1"."MOVIE_ID") AS "t2" ON "company_name"."id" = "t2"."company_id"

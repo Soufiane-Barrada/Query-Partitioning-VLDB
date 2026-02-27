@@ -1,0 +1,10 @@
+SELECT COALESCE(ANY_VALUE("t1"."Id"), ANY_VALUE("t1"."Id")) AS "USERID", "t1"."DisplayName" AS "DISPLAYNAME", COUNT(DISTINCT "t1"."Id0") AS "POSTCOUNT", SUM("t1"."VOTE_COUNT") AS "TOTALVOTES", SUM(CASE WHEN CAST("t1"."PostTypeId" AS INTEGER) = 1 THEN "t1"."AnswerCount" ELSE 0 END) AS "QUESTIONSANSWERED", SUM(CASE WHEN CAST("t1"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERSGIVEN", COUNT(DISTINCT "PostHistory"."Id") AS "POSTEDITS"
+FROM "STACK"."PostHistory"
+RIGHT JOIN (SELECT "t0"."Id", "t0"."Reputation", "t0"."CreationDate", "t0"."DisplayName", "t0"."LastAccessDate", "t0"."WebsiteUrl", "t0"."Location", "t0"."AboutMe", "t0"."Views", "t0"."UpVotes", "t0"."DownVotes", "t0"."ProfileImageUrl", "t0"."AccountId", "Posts"."Id" AS "Id0", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate" AS "CreationDate0", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "t"."PostId" AS "POSTID", "t"."VOTE_COUNT"
+FROM (SELECT "PostId", COUNT(*) AS "VOTE_COUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t"
+RIGHT JOIN ("STACK"."Posts" INNER JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "Reputation" > 1000) AS "t0" ON "Posts"."OwnerUserId" = "t0"."Id") ON "t"."PostId" = "Posts"."Id") AS "t1" ON "PostHistory"."PostId" = "t1"."Id0"
+GROUP BY "t1"."Id", "t1"."DisplayName"

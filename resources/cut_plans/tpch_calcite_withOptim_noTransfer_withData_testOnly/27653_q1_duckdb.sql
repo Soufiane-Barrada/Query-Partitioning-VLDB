@@ -1,0 +1,11 @@
+SELECT COALESCE("t2"."p_name", "t2"."p_name") AS "P_NAME", "t2"."s_name" AS "S_NAME", "region"."r_name", "nation"."n_name", "t2"."ps_availqty", "t2"."o_orderkey", "t2"."o_totalprice", CONCAT("region"."r_name", ' - ', "nation"."n_name") AS "FD_COL_7"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN (SELECT "t0"."p_partkey", "t0"."p_name", "t0"."p_mfgr", "t0"."p_brand", "t0"."p_type", "t0"."p_size", "t0"."p_container", "t0"."p_retailprice", "t0"."p_comment", "t0"."ps_partkey", "t0"."ps_suppkey", "t0"."ps_availqty", "t0"."ps_supplycost", "t0"."ps_comment", "t0"."s_suppkey", "t0"."s_name", "t0"."s_address", "t0"."s_nationkey", "t0"."s_phone", "t0"."s_acctbal", "t0"."s_comment", "t1"."o_orderkey", "t1"."o_custkey", "t1"."o_orderstatus", "t1"."o_totalprice", "t1"."o_orderdate", "t1"."o_orderpriority", "t1"."o_clerk", "t1"."o_shippriority", "t1"."o_comment"
+FROM (SELECT "part"."p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment", CAST("supplier"."s_nationkey" AS BIGINT) AS "s_nationkey0"
+FROM "TPCH"."supplier"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+WHERE "part"."p_comment" LIKE 'Special%' AND "supplier"."s_acctbal" > 500.00) AS "t0"
+INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1996-01-01' AND "o_orderdate" <= DATE '1996-12-31') AS "t1" ON "t0"."s_nationkey0" = "t1"."o_custkey") AS "t2" ON "nation"."n_nationkey" = "t2"."s_nationkey"

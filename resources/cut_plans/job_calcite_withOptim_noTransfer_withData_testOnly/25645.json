@@ -1,0 +1,2571 @@
+{
+  "queryId" : "25645",
+  "originalSql" : "WITH RankedMovies AS (\n    SELECT \n        t.id AS movie_id,\n        t.title,\n        t.production_year,\n        k.keyword,\n        ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY k.keyword) AS keyword_rank\n    FROM \n        aka_title t\n    JOIN \n        movie_keyword mk ON t.id = mk.movie_id\n    JOIN \n        keyword k ON mk.keyword_id = k.id\n    WHERE \n        t.production_year BETWEEN 2000 AND 2023\n),\nCastDetails AS (\n    SELECT \n        ci.movie_id,\n        a.name AS actor_name,\n        r.role AS role_name\n    FROM \n        cast_info ci\n    JOIN \n        aka_name a ON ci.person_id = a.person_id\n    JOIN \n        role_type r ON ci.role_id = r.id\n),\nMovieCompanies AS (\n    SELECT \n        mc.movie_id,\n        c.name AS company_name,\n        ct.kind AS company_type\n    FROM \n        movie_companies mc\n    JOIN \n        company_name c ON mc.company_id = c.id\n    JOIN \n        company_type ct ON mc.company_type_id = ct.id\n),\nCombinedData AS (\n    SELECT \n        rm.movie_id,\n        rm.title,\n        rm.production_year,\n        cd.actor_name,\n        cd.role_name,\n        comp.company_name,\n        comp.company_type,\n        rm.keyword\n    FROM \n        RankedMovies rm\n    LEFT JOIN \n        CastDetails cd ON rm.movie_id = cd.movie_id\n    LEFT JOIN \n        MovieCompanies comp ON rm.movie_id = comp.movie_id\n)\nSELECT \n    movie_id,\n    title,\n    production_year,\n    STRING_AGG(DISTINCT actor_name || ' (' || role_name || ')', ', ') AS actors,\n    STRING_AGG(DISTINCT company_name || ' (' || company_type || ')', ', ') AS production_companies,\n    STRING_AGG(DISTINCT keyword, ', ') AS keywords\nFROM \n    CombinedData\nGROUP BY \n    movie_id, title, production_year\nORDER BY \n    production_year DESC, title",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 41590,
+    "q1Engine" : "duckdb",
+    "q2Engine" : "datafusion",
+    "costAllDuckdb" : 4116.952184351993,
+    "costAllDatafusion" : 31946.602503964637,
+    "chosenCost" : 3843.310723461683
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "job_optim_withTransfer",
+      "doOptimize" : true,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+      "cutPolicy" : "DP",
+      "randomSeed" : 1770073025128,
+      "schemaName" : "IMDB"
+    },
+    "planStats" : {
+      "totalNodes" : 25,
+      "maxDepth" : 9,
+      "operatorKindCounts" : {
+        "OTHER" : 14,
+        "JOIN" : 8,
+        "AGGREGATE" : 1,
+        "SORT" : 1,
+        "FILTER" : 1
+      },
+      "rootOutputRows" : 128.0,
+      "rootRowSizeOutBytes" : 48.0
+    },
+    "cut" : {
+      "cutDepth" : 2,
+      "cutNodeOperatorKind" : "JOIN",
+      "cutOutputRows" : 7570858.250478463,
+      "cutRowSizeOutBytes" : 772.512769990795,
+      "cutOutputBytes" : 5.848584678284782E9,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 23,
+        "maxDepth" : 8,
+        "operatorKindCounts" : {
+          "JOIN" : 8,
+          "OTHER" : 14,
+          "FILTER" : 1
+        }
+      },
+      "q2Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 2,
+        "maxDepth" : 3,
+        "operatorKindCounts" : {
+          "AGGREGATE" : 1,
+          "SORT" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"t3\".\"MOVIE_ID\", \"t3\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"ACTOR_NAME\" || ' (' || \"t3\".\"ROLE_NAME\" || ')' AS \"FD_COL_3\", ', ' AS \"FD_COL_4\", \"t\".\"COMPANY_NAME\" || ' (' || \"t\".\"COMPANY_TYPE\" || ')' AS \"FD_COL_5\", \"t3\".\"KEYWORD\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t\"\nRIGHT JOIN (SELECT \"t2\".\"MOVIE_ID\", \"t2\".\"TITLE\", \"t2\".\"PRODUCTION_YEAR\", \"t2\".\"KEYWORD\", \"t2\".\"KEYWORD_RANK\", \"t0\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t0\".\"ACTOR_NAME\", \"t0\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t1\".\"id\" AS \"MOVIE_ID\", \"t1\".\"title\" AS \"TITLE\", \"t1\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t1\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t1\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t1\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t2\" ON \"t0\".\"MOVIE_ID\" = \"t2\".\"MOVIE_ID\") AS \"t3\" ON \"t\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\"",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "MOVIE_ID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TITLE",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "PRODUCTION_YEAR",
+        "type" : "INTEGER"
+      }, {
+        "name" : "FD_COL_3",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "FD_COL_4",
+        "type" : "CHAR"
+      }, {
+        "name" : "FD_COL_5",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "KEYWORD",
+        "type" : "VARCHAR"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"MOVIE_ID\", \"MOVIE_ID\") AS \"MOVIE_ID\", \"TITLE\", \"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"FD_COL_3\", \"FD_COL_4\") AS \"ACTORS\", LISTAGG(DISTINCT \"FD_COL_5\", \"FD_COL_4\") AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"KEYWORD\", \"FD_COL_4\") AS \"KEYWORDS\"\nFROM \"s1\"\nGROUP BY \"MOVIE_ID\", \"TITLE\", \"PRODUCTION_YEAR\"\nORDER BY \"PRODUCTION_YEAR\" DESC NULLS FIRST, \"TITLE\"",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "MOVIE_ID",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TITLE",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "PRODUCTION_YEAR",
+        "type" : "INTEGER"
+      }, {
+        "name" : "ACTORS",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "PRODUCTION_COMPANIES",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "KEYWORDS",
+        "type" : "VARCHAR"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_41492",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41492,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 1,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 128.0,
+        "cutRowSizeOutBytes" : 48.0,
+        "cutOutputBytes" : 6144.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 24,
+          "maxDepth" : 9,
+          "operatorKindCounts" : {
+            "JOIN" : 8,
+            "OTHER" : 14,
+            "AGGREGATE" : 1,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 1,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t3\".\"MOVIE_ID\", \"t3\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t3\".\"ACTOR_NAME\" || ' (' || \"t3\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t\".\"COMPANY_NAME\" || ' (' || \"t\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t3\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t\"\nRIGHT JOIN (SELECT \"t2\".\"MOVIE_ID\", \"t2\".\"TITLE\", \"t2\".\"PRODUCTION_YEAR\", \"t2\".\"KEYWORD\", \"t2\".\"KEYWORD_RANK\", \"t0\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t0\".\"ACTOR_NAME\", \"t0\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t1\".\"id\" AS \"MOVIE_ID\", \"t1\".\"title\" AS \"TITLE\", \"t1\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t1\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t1\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t1\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t2\" ON \"t0\".\"MOVIE_ID\" = \"t2\".\"MOVIE_ID\") AS \"t3\" ON \"t\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\"\nGROUP BY \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"MOVIE_ID\", \"MOVIE_ID\") AS \"MOVIE_ID\", \"TITLE\", \"PRODUCTION_YEAR\", \"ACTORS\", \"PRODUCTION_COMPANIES\", \"KEYWORDS\"\nFROM \"s1\"\nORDER BY \"PRODUCTION_YEAR\" DESC NULLS FIRST, \"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41592",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41592,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 2609129.0,
+        "cutRowSizeOutBytes" : 258.15822623620915,
+        "cutOutputBytes" : 6.735681146614541E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "JOIN" : 2,
+            "OTHER" : 4
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 10,
+            "AGGREGATE" : 1,
+            "JOIN" : 6,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"movie_companies\".\"movie_id\", \"movie_companies\".\"movie_id\") AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "COMPANY_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "COMPANY_TYPE",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"s1\".\"COMPANY_NAME\" || ' (' || \"s1\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM \"s1\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"s1\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41454",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41454,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 4.0,
+        "cutRowSizeOutBytes" : 66.0,
+        "cutOutputBytes" : 264.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"kind\"\nFROM \"company_type\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "kind",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"s1\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"s1\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"s1\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41564",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41564,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 2609129.0,
+        "cutRowSizeOutBytes" : 192.15822623620915,
+        "cutOutputBytes" : 5.0136560066145414E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 12,
+            "AGGREGATE" : 1,
+            "JOIN" : 7,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"company_name\".\"id\", \"company_name\".\"id\") AS \"id\", \"company_name\".\"name\", \"company_name\".\"country_code\", \"company_name\".\"imdb_id\", \"company_name\".\"name_pcode_nf\", \"company_name\".\"name_pcode_sf\", \"company_name\".\"md5sum\", \"movie_companies\".\"id\" AS \"id0\", \"movie_companies\".\"movie_id\", \"movie_companies\".\"company_id\", \"movie_companies\".\"company_type_id\", \"movie_companies\".\"note\"\nFROM \"company_name\"\nINNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "country_code",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name_pcode_nf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_sf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "company_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "company_type_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"s1\".\"movie_id\" AS \"MOVIE_ID\", \"s1\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN \"s1\" ON \"company_type\".\"id\" = \"s1\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41452",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41452,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 234997.0,
+        "cutRowSizeOutBytes" : 141.60463378255892,
+        "cutOutputBytes" : 3.3276664125E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"name\", \"country_code\", \"imdb_id\", \"name_pcode_nf\", \"name_pcode_sf\", \"md5sum\"\nFROM \"company_name\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "country_code",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name_pcode_nf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_sf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"s1\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"s1\" INNER JOIN \"movie_companies\" ON \"s1\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41451",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41451,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 2609129.0,
+        "cutRowSizeOutBytes" : 50.55359245365024,
+        "cutOutputBytes" : 1.31900844125E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"movie_id\", \"company_id\", \"company_type_id\", \"note\"\nFROM \"movie_companies\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "company_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "company_type_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"s1\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"s1\" ON \"company_name\".\"id\" = \"s1\".\"company_id\") ON \"company_type\".\"id\" = \"s1\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41583",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41583,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1970430.2329648985,
+        "cutRowSizeOutBytes" : 514.3545437545858,
+        "cutOutputBytes" : 1.0134997434769026E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 15,
+          "maxDepth" : 6,
+          "operatorKindCounts" : {
+            "OTHER" : 9,
+            "JOIN" : 5,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 10,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "SORT" : 1,
+            "JOIN" : 3,
+            "OTHER" : 5
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t1\".\"MOVIE_ID\", \"t1\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t1\".\"TITLE\", \"t1\".\"PRODUCTION_YEAR\", \"t1\".\"KEYWORD\", \"t1\".\"KEYWORD_RANK\", \"t\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t\".\"ACTOR_NAME\", \"t\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t\"\nRIGHT JOIN (SELECT \"t0\".\"id\" AS \"MOVIE_ID\", \"t0\".\"title\" AS \"TITLE\", \"t0\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t0\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t0\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t0\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t1\" ON \"t\".\"MOVIE_ID\" = \"t1\".\"MOVIE_ID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "KEYWORD",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORD_RANK",
+          "type" : "BIGINT"
+        }, {
+          "name" : "MOVIE_ID0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTOR_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROLE_NAME",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s1\".\"MOVIE_ID\", \"s1\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"s1\".\"TITLE\", \"s1\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"s1\".\"ACTOR_NAME\" || ' (' || \"s1\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t4\".\"COMPANY_NAME\" || ' (' || \"t4\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"s1\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t4\"\nRIGHT JOIN \"s1\" ON \"t4\".\"MOVIE_ID\" = \"s1\".\"MOVIE_ID\"\nGROUP BY \"s1\".\"MOVIE_ID\", \"s1\".\"TITLE\", \"s1\".\"PRODUCTION_YEAR\"\nORDER BY \"s1\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"s1\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41594",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41594,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8062714.133681491,
+        "cutRowSizeOutBytes" : 252.81548894435923,
+        "cutOutputBytes" : 2.038379015925282E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "SORT" : 1,
+            "JOIN" : 6,
+            "OTHER" : 10,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"cast_info\".\"movie_id\", \"cast_info\".\"movie_id\") AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTOR_NAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ROLE_NAME",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t1\".\"COMPANY_NAME\" || ' (' || \"t1\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"s1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"s1\".\"ACTOR_NAME\", \"s1\".\"ROLE_NAME\"\nFROM \"s1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"s1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t1\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41447",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41447,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 12.0,
+        "cutRowSizeOutBytes" : 39.75,
+        "cutOutputBytes" : 477.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"role\"\nFROM \"role_type\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "role",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"s1\".\"role\" AS \"ROLE_NAME\"\nFROM \"s1\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"s1\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41556",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41556,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 8062714.133681491,
+        "cutRowSizeOutBytes" : 213.06548894435923,
+        "cutOutputBytes" : 1.7178861291114426E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "AGGREGATE" : 1,
+            "SORT" : 1,
+            "JOIN" : 7,
+            "OTHER" : 12,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"aka_name\".\"id\", \"aka_name\".\"id\") AS \"id\", \"aka_name\".\"person_id\", \"aka_name\".\"name\", \"aka_name\".\"imdb_index\", \"aka_name\".\"name_pcode_cf\", \"aka_name\".\"name_pcode_nf\", \"aka_name\".\"surname_pcode\", \"aka_name\".\"md5sum\", \"cast_info\".\"id\" AS \"id0\", \"cast_info\".\"person_id\" AS \"person_id0\", \"cast_info\".\"movie_id\", \"cast_info\".\"person_role_id\", \"cast_info\".\"note\", \"cast_info\".\"nr_order\", \"cast_info\".\"role_id\"\nFROM \"aka_name\"\nINNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_index",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_cf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_nf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "surname_pcode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_role_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "nr_order",
+          "type" : "INTEGER"
+        }, {
+          "name" : "role_id",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"s1\".\"movie_id\" AS \"MOVIE_ID\", \"s1\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN \"s1\" ON \"role_type\".\"id\" = \"s1\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_26639",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 26639,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 901343.0,
+        "cutRowSizeOutBytes" : 149.68219021504578,
+        "cutOutputBytes" : 1.34914994375E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"person_id\", \"name\", \"imdb_index\", \"name_pcode_cf\", \"name_pcode_nf\", \"surname_pcode\", \"md5sum\"\nFROM \"aka_name\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "name",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_index",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_cf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "name_pcode_nf",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "surname_pcode",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"s1\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"s1\" INNER JOIN \"cast_info\" ON \"s1\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_27971",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 27971,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3.6244344E7,
+        "cutRowSizeOutBytes" : 63.383298729313466,
+        "cutOutputBytes" : 2.297286083E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"person_id\", \"movie_id\", \"person_role_id\", \"note\", \"nr_order\", \"role_id\"\nFROM \"cast_info\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "person_role_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "nr_order",
+          "type" : "INTEGER"
+        }, {
+          "name" : "role_id",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"s1\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"s1\" ON \"aka_name\".\"person_id\" = \"s1\".\"person_id\") ON \"role_type\".\"id\" = \"s1\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41596",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41596,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 421586.093422233,
+        "cutRowSizeOutBytes" : 261.5390548102266,
+        "cutOutputBytes" : 1.1026122839478672E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 7,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "JOIN" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 18,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 10,
+            "AGGREGATE" : 1,
+            "JOIN" : 6,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t\".\"id\", \"t\".\"id\") AS \"MOVIE_ID\", \"t\".\"title\" AS \"TITLE\", \"t\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t\".\"id\" = \"movie_keyword\".\"movie_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "KEYWORD",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORD_RANK",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t2\".\"COMPANY_NAME\" || ' (' || \"t2\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t2\"\nRIGHT JOIN (SELECT \"s1\".\"MOVIE_ID\", \"s1\".\"TITLE\", \"s1\".\"PRODUCTION_YEAR\", \"s1\".\"KEYWORD\", \"s1\".\"KEYWORD_RANK\", \"t3\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t3\".\"ACTOR_NAME\", \"t3\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t3\"\nRIGHT JOIN \"s1\" ON \"t3\".\"MOVIE_ID\" = \"s1\".\"MOVIE_ID\") AS \"t4\" ON \"t2\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41527",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41527,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 44429.17902354816,
+        "cutRowSizeOutBytes" : 182.37862960339945,
+        "cutOutputBytes" : 8102932.784718814,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "FILTER" : 1,
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 23,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"movie_id\", \"title\", \"imdb_index\", \"kind_id\", \"production_year\", \"phonetic_code\", \"episode_of_id\", \"season_nr\", \"episode_nr\", \"note\", \"md5sum\"\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_index",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "kind_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "production_year",
+          "type" : "INTEGER"
+        }, {
+          "name" : "phonetic_code",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "episode_of_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "season_nr",
+          "type" : "INTEGER"
+        }, {
+          "name" : "episode_nr",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t1\".\"COMPANY_NAME\" || ' (' || \"t1\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t2\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t2\".\"ACTOR_NAME\", \"t2\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t2\"\nRIGHT JOIN (SELECT \"s1\".\"id\" AS \"MOVIE_ID\", \"s1\".\"title\" AS \"TITLE\", \"s1\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"s1\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM \"s1\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"s1\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t2\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t1\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41437",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41437,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 361472.0,
+        "cutRowSizeOutBytes" : 182.37862960339945,
+        "cutOutputBytes" : 6.592476800000001E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"movie_id\", \"title\", \"imdb_index\", \"kind_id\", \"production_year\", \"phonetic_code\", \"episode_of_id\", \"season_nr\", \"episode_nr\", \"note\", \"md5sum\"\nFROM \"aka_title\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "imdb_index",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "kind_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "production_year",
+          "type" : "INTEGER"
+        }, {
+          "name" : "phonetic_code",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "episode_of_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "season_nr",
+          "type" : "INTEGER"
+        }, {
+          "name" : "episode_nr",
+          "type" : "INTEGER"
+        }, {
+          "name" : "note",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "md5sum",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"s1\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41572",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41572,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 4523930.0,
+        "cutRowSizeOutBytes" : 79.16042520682717,
+        "cutOutputBytes" : 3.5811622240592164E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 12,
+            "AGGREGATE" : 1,
+            "JOIN" : 7,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"keyword\".\"id\", \"keyword\".\"id\") AS \"id\", \"keyword\".\"keyword\", \"keyword\".\"phonetic_code\", \"movie_keyword\".\"id\" AS \"id0\", \"movie_keyword\".\"movie_id\", \"movie_keyword\".\"keyword_id\"\nFROM \"keyword\"\nINNER JOIN \"movie_keyword\" ON \"keyword\".\"id\" = \"movie_keyword\".\"keyword_id\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "keyword",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "phonetic_code",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "id0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "keyword_id",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"s1\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"s1\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN \"s1\" ON \"t2\".\"id\" = \"s1\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_40931",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 40931,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 134170.0,
+        "cutRowSizeOutBytes" : 55.16042520682716,
+        "cutOutputBytes" : 7400874.250000001,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"keyword\", \"phonetic_code\"\nFROM \"keyword\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "keyword",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "phonetic_code",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"s1\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"s1\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"s1\" INNER JOIN \"movie_keyword\" ON \"s1\".\"id\" = \"movie_keyword\".\"keyword_id\") ON \"t2\".\"id\" = \"movie_keyword\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_40929",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 40929,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 4116.952184351993,
+      "costAllDatafusion" : 31946.602503964637,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "job_optim_withTransfer",
+        "doOptimize" : true,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "1cb8072c6086f50749f0b771ab479e5a0f19c862a6136a365abf10fef566ceb6",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770073025128,
+        "schemaName" : "IMDB"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 9,
+        "operatorKindCounts" : {
+          "OTHER" : 14,
+          "JOIN" : 8,
+          "AGGREGATE" : 1,
+          "SORT" : 1,
+          "FILTER" : 1
+        },
+        "rootOutputRows" : 128.0,
+        "rootRowSizeOutBytes" : 48.0
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 4523930.0,
+        "cutRowSizeOutBytes" : 24.0,
+        "cutOutputBytes" : 1.0857432E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "OTHER" : 13,
+            "AGGREGATE" : 1,
+            "JOIN" : 8,
+            "SORT" : 1,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"id\", \"id\") AS \"id\", \"movie_id\", \"keyword_id\"\nFROM \"movie_keyword\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "movie_id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "keyword_id",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t4\".\"MOVIE_ID\", \"t4\".\"MOVIE_ID\") AS \"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\", LISTAGG(DISTINCT \"t4\".\"ACTOR_NAME\" || ' (' || \"t4\".\"ROLE_NAME\" || ')', ', ') AS \"ACTORS\", LISTAGG(DISTINCT \"t0\".\"COMPANY_NAME\" || ' (' || \"t0\".\"COMPANY_TYPE\" || ')', ', ') AS \"PRODUCTION_COMPANIES\", LISTAGG(DISTINCT \"t4\".\"KEYWORD\", ', ') AS \"KEYWORDS\"\nFROM (SELECT \"movie_companies\".\"movie_id\" AS \"MOVIE_ID\", \"company_name\".\"name\" AS \"COMPANY_NAME\", \"company_type\".\"kind\" AS \"COMPANY_TYPE\"\nFROM \"company_type\"\nINNER JOIN (\"company_name\" INNER JOIN \"movie_companies\" ON \"company_name\".\"id\" = \"movie_companies\".\"company_id\") ON \"company_type\".\"id\" = \"movie_companies\".\"company_type_id\") AS \"t0\"\nRIGHT JOIN (SELECT \"t3\".\"MOVIE_ID\", \"t3\".\"TITLE\", \"t3\".\"PRODUCTION_YEAR\", \"t3\".\"KEYWORD\", \"t3\".\"KEYWORD_RANK\", \"t1\".\"MOVIE_ID\" AS \"MOVIE_ID0\", \"t1\".\"ACTOR_NAME\", \"t1\".\"ROLE_NAME\"\nFROM (SELECT \"cast_info\".\"movie_id\" AS \"MOVIE_ID\", \"aka_name\".\"name\" AS \"ACTOR_NAME\", \"role_type\".\"role\" AS \"ROLE_NAME\"\nFROM \"role_type\"\nINNER JOIN (\"aka_name\" INNER JOIN \"cast_info\" ON \"aka_name\".\"person_id\" = \"cast_info\".\"person_id\") ON \"role_type\".\"id\" = \"cast_info\".\"role_id\") AS \"t1\"\nRIGHT JOIN (SELECT \"t2\".\"id\" AS \"MOVIE_ID\", \"t2\".\"title\" AS \"TITLE\", \"t2\".\"production_year\" AS \"PRODUCTION_YEAR\", \"keyword\".\"keyword\" AS \"KEYWORD\", ROW_NUMBER() OVER (PARTITION BY \"t2\".\"id\" ORDER BY \"keyword\".\"keyword\") AS \"KEYWORD_RANK\"\nFROM (SELECT *\nFROM \"aka_title\"\nWHERE \"production_year\" >= 2000 AND \"production_year\" <= 2023) AS \"t2\"\nINNER JOIN (\"keyword\" INNER JOIN \"s1\" ON \"keyword\".\"id\" = \"s1\".\"keyword_id\") ON \"t2\".\"id\" = \"s1\".\"movie_id\") AS \"t3\" ON \"t1\".\"MOVIE_ID\" = \"t3\".\"MOVIE_ID\") AS \"t4\" ON \"t0\".\"MOVIE_ID\" = \"t4\".\"MOVIE_ID\"\nGROUP BY \"t4\".\"MOVIE_ID\", \"t4\".\"TITLE\", \"t4\".\"PRODUCTION_YEAR\"\nORDER BY \"t4\".\"PRODUCTION_YEAR\" DESC NULLS FIRST, \"t4\".\"TITLE\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "MOVIE_ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TITLE",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_YEAR",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ACTORS",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "PRODUCTION_COMPANIES",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "KEYWORDS",
+          "type" : "VARCHAR"
+        } ]
+      } ]
+    }
+  } ]
+}

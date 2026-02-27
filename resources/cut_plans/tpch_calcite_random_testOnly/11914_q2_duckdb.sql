@@ -1,0 +1,8 @@
+SELECT COALESCE("t2"."p_mfgr", "t2"."p_mfgr") AS "p_mfgr", "t2"."SUPPLIER_COUNT", "t2"."TOTAL_SUPPLY_COST"
+FROM (SELECT "part"."p_mfgr", COUNT(DISTINCT "partsupp"."ps_suppkey") AS "SUPPLIER_COUNT", SUM("partsupp"."ps_supplycost") AS "TOTAL_SUPPLY_COST"
+FROM "s1"
+INNER JOIN "TPCH"."nation" ON "s1"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "part"."p_mfgr"
+ORDER BY 2 DESC NULLS FIRST) AS "t2"

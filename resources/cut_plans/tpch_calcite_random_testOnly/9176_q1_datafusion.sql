@@ -1,0 +1,6 @@
+SELECT COALESCE("t0"."S_SUPPKEY", "t0"."S_SUPPKEY") AS "S_SUPPKEY", "t0"."S_NAME", "t0"."S_NATIONKEY", "t0"."TOTAL_AVAILABLE_QUANTITY", "t0"."TOTAL_SUPPLY_COST", "supplier0"."s_suppkey" AS "s_suppkey_", "supplier0"."s_name" AS "s_name_", "supplier0"."s_address", "supplier0"."s_nationkey" AS "s_nationkey_", "supplier0"."s_phone", "supplier0"."s_acctbal", "supplier0"."s_comment"
+FROM (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", "supplier"."s_nationkey" AS "S_NATIONKEY", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_nationkey") AS "t0"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "t0"."S_SUPPKEY" = "supplier0"."s_suppkey"

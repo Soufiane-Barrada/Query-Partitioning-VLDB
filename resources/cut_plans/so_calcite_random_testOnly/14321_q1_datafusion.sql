@@ -1,0 +1,4 @@
+SELECT COALESCE(ANY_VALUE("Users"."Id"), ANY_VALUE("Users"."Id")) AS "USERID", COUNT("Votes"."Id") AS "TOTALVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) IN (2, 4) THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN "STACK"."Users" ON "Votes"."UserId" = "Users"."Id"
+GROUP BY "Users"."Id"

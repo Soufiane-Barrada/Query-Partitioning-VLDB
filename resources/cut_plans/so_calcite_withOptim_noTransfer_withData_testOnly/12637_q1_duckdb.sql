@@ -1,0 +1,16 @@
+SELECT COALESCE("t1"."POSTTYPEID", "t1"."POSTTYPEID") AS "POSTTYPEID", "t1"."POSTTYPENAME", "t1"."POSTCOUNT", "t1"."TOTALVIEWS", "t1"."TOTALSCORE", "t8"."USERID", "t8"."DISPLAYNAME", "t8"."POSTCOUNT" AS "POSTCOUNT0", "t8"."TOTALVIEWS" AS "TOTALVIEWS0", "t8"."TOTALSCORE" AS "TOTALSCORE0", "t8"."TOTALCOMMENTS", "t8"."$f6" AS "FD_COL_11"
+FROM (SELECT ANY_VALUE("PostTypes"."Id") AS "POSTTYPEID", ANY_VALUE("PostTypes"."Name") AS "POSTTYPENAME", COUNT("Posts"."Id") AS "POSTCOUNT", SUM(CASE WHEN "Posts"."ViewCount" IS NOT NULL THEN CAST("Posts"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", SUM(CASE WHEN "Posts"."Score" IS NOT NULL THEN CAST("Posts"."Score" AS INTEGER) ELSE 0 END) AS "TOTALSCORE"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+GROUP BY "PostTypes"."Id", "PostTypes"."Name") AS "t1",
+(SELECT ANY_VALUE("t4"."Id") AS "USERID", "t4"."DisplayName" AS "DISPLAYNAME", COUNT("t4"."Id0") AS "POSTCOUNT", SUM(CASE WHEN "t4"."ViewCount" IS NOT NULL THEN CAST("t4"."ViewCount" AS INTEGER) ELSE 0 END) AS "TOTALVIEWS", SUM(CASE WHEN "t4"."Score" IS NOT NULL THEN CAST("t4"."Score" AS INTEGER) ELSE 0 END) AS "TOTALSCORE", SUM(CASE WHEN "t2"."COMMENTCOUNT" IS NOT NULL THEN CAST("t2"."COMMENTCOUNT" AS BIGINT) ELSE 0 END) AS "TOTALCOMMENTS", COUNT("t4"."Id0") > 0 AS "$f6"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t2"
+RIGHT JOIN (SELECT "t3"."Id", "t3"."Reputation", "t3"."CreationDate", "t3"."DisplayName", "t3"."LastAccessDate", "t3"."WebsiteUrl", "t3"."Location", "t3"."AboutMe", "t3"."Views", "t3"."UpVotes", "t3"."DownVotes", "t3"."ProfileImageUrl", "t3"."AccountId", "Posts0"."Id" AS "Id0", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate" AS "CreationDate0", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Users"
+WHERE "CreationDate" >= TIMESTAMP '2020-01-01 00:00:00') AS "t3" ON "Posts0"."OwnerUserId" = "t3"."Id") AS "t4" ON "t2"."PostId" = "t4"."Id0"
+GROUP BY "t4"."Id", "t4"."DisplayName"
+HAVING COUNT("t4"."Id0") > 0) AS "t8"

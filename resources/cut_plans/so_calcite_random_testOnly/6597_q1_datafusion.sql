@@ -1,0 +1,3 @@
+SELECT COALESCE("UserId", "UserId") AS "UserId", COUNT(*) AS "BADGECOUNT"
+FROM "STACK"."Badges"
+GROUP BY "UserId"

@@ -1,0 +1,13 @@
+SELECT COALESCE("t1"."ACTOR_ID", "t1"."ACTOR_ID") AS "ACTOR_ID", "t1"."ACTOR_NAME", "t1"."TOTAL_ROLES", "t4"."ACTOR_ID" AS "ACTOR_ID0", "t4"."ACTOR_NAME" AS "ACTOR_NAME0", "t4"."MOVIE_TITLE", "t4"."YEAR", "t4"."ROLE_COUNT"
+FROM (SELECT "t"."ACTOR_ID", "t"."ACTOR_NAME", SUM("t"."ROLE_COUNT") AS "TOTAL_ROLES"
+FROM (SELECT "aka_title"."title", "aka_title"."production_year", "aka_name"."id" AS "id0", "aka_name"."name", ANY_VALUE("aka_name"."id") AS "ACTOR_ID", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("aka_title"."title") AS "MOVIE_TITLE", ANY_VALUE("aka_title"."production_year") AS "YEAR", COUNT(*) AS "ROLE_COUNT"
+FROM "IMDB"."aka_title"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id") ON "aka_title"."movie_id" = "cast_info"."movie_id"
+GROUP BY "aka_title"."title", "aka_title"."production_year", "aka_name"."id", "aka_name"."name") AS "t"
+GROUP BY "t"."ACTOR_ID", "t"."ACTOR_NAME"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t1"
+INNER JOIN (SELECT ANY_VALUE("aka_name0"."id") AS "ACTOR_ID", ANY_VALUE("aka_name0"."name") AS "ACTOR_NAME", ANY_VALUE("aka_title0"."title") AS "MOVIE_TITLE", ANY_VALUE("aka_title0"."production_year") AS "YEAR", COUNT(*) AS "ROLE_COUNT"
+FROM "IMDB"."aka_title" AS "aka_title0"
+INNER JOIN ("IMDB"."aka_name" AS "aka_name0" INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "aka_name0"."person_id" = "cast_info0"."person_id") ON "aka_title0"."movie_id" = "cast_info0"."movie_id"
+GROUP BY "aka_title0"."title", "aka_title0"."production_year", "aka_name0"."id", "aka_name0"."name") AS "t4" ON "t1"."ACTOR_ID" = "t4"."ACTOR_ID"

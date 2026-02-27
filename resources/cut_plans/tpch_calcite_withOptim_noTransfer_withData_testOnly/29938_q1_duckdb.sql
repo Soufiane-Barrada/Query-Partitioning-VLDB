@@ -1,0 +1,10 @@
+SELECT COALESCE("t1"."s_name", "t1"."s_name") AS "s_name", "t1"."n_name", "t1"."p_name", "t1"."ps_comment", ANY_VALUE(CONCAT('Supplier Name: ', "t1"."s_name", ' | Nation: ', "t1"."n_name", ' | Product: ', "t1"."p_name", ' | Comment: ', "t1"."ps_comment")) AS "DETAILED_INFO", SUM("t1"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", AVG("t1"."ps_supplycost") AS "AVERAGE_SUPPLY_COST", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS"
+FROM (SELECT "t"."s_suppkey", "t"."s_name", "t"."s_address", "t"."s_nationkey", "t"."s_phone", "t"."s_acctbal", "t"."s_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "t0"."p_partkey", "t0"."p_name", "t0"."p_mfgr", "t0"."p_brand", "t0"."p_type", "t0"."p_size", "t0"."p_container", "t0"."p_retailprice", "t0"."p_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN ("TPCH"."partsupp" INNER JOIN ((SELECT *
+FROM "TPCH"."supplier"
+WHERE "s_comment" LIKE '%reliable%') AS "t" INNER JOIN "TPCH"."nation" ON "t"."s_nationkey" = "nation"."n_nationkey") ON "partsupp"."ps_suppkey" = "t"."s_suppkey" INNER JOIN (SELECT *
+FROM "TPCH"."part"
+WHERE "p_size" >= 10 AND "p_size" <= 50) AS "t0" ON "partsupp"."ps_partkey" = "t0"."p_partkey") ON "lineitem"."l_partkey" = "t0"."p_partkey") AS "t1"
+LEFT JOIN "TPCH"."orders" ON "t1"."l_orderkey" = "orders"."o_orderkey"
+GROUP BY "t1"."s_name", "t1"."n_name", "t1"."p_name", "t1"."ps_comment"

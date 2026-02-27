@@ -1,0 +1,6 @@
+SELECT COALESCE("P_NAME", "P_NAME") AS "P_NAME", "TOTAL_QUANTITY", "TOTAL_REVENUE", "TOTAL_ORDERS"
+FROM (SELECT "p_name" AS "P_NAME", SUM("l_quantity") AS "TOTAL_QUANTITY", SUM("l_extendedprice") AS "TOTAL_REVENUE", COUNT(DISTINCT "o_orderkey") AS "TOTAL_ORDERS"
+FROM "s1"
+WHERE "r_name" = 'ASIA' AND "o_orderdate" >= '1997-01-01' AND "o_orderdate" <= '1997-12-31'
+GROUP BY "p_name"
+ORDER BY 3 DESC NULLS FIRST) AS "t3"

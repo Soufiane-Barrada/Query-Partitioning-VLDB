@@ -1,0 +1,13 @@
+SELECT COALESCE("t3"."r_name", "t3"."r_name") AS "REGION_NAME", "t3"."n_name" AS "NATION_NAME", CASE WHEN "t3"."ORDER_COUNT" IS NOT NULL THEN CAST("t3"."ORDER_COUNT" AS BIGINT) ELSE 0 END AS "TOTAL_ORDERS", CASE WHEN "t3"."TOTAL_REVENUE" IS NOT NULL THEN CAST("t3"."TOTAL_REVENUE" AS DECIMAL(19, 2)) ELSE 0.00 END AS "TOTAL_REVENUE", CASE WHEN "t0"."TOTAL_COST" IS NOT NULL THEN CAST("t0"."TOTAL_COST" AS DECIMAL(19, 2)) ELSE 0.00 END AS "TOTAL_SUPPLIER_COST"
+FROM (SELECT "supplier"."s_nationkey" AS "S_NATIONKEY", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_nationkey") AS "t0"
+RIGHT JOIN (SELECT "t2"."r_regionkey", "t2"."r_name", "t2"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment", "t1"."c_nationkey" AS "C_NATIONKEY", "t1"."ORDER_COUNT", "t1"."TOTAL_REVENUE"
+FROM (SELECT "customer"."c_nationkey", COUNT(*) AS "ORDER_COUNT", SUM("orders"."o_totalprice") AS "TOTAL_REVENUE"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer"."c_nationkey") AS "t1"
+RIGHT JOIN ("TPCH"."nation" INNER JOIN (SELECT *
+FROM "TPCH"."region"
+WHERE "r_name" = 'ASIA') AS "t2" ON "nation"."n_regionkey" = "t2"."r_regionkey") ON "t1"."c_nationkey" = "nation"."n_nationkey") AS "t3" ON "t0"."S_NATIONKEY" = "t3"."n_nationkey"

@@ -1,0 +1,6 @@
+SELECT COALESCE("Users"."Id", "Users"."Id") AS "Id", "Users"."DisplayName" AS "DISPLAYNAME", "Posts"."Id" AS "Id0", "Users"."Reputation", "t0"."TOTALVOTES"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Posts" ON "Users"."Id" = "Posts"."OwnerUserId"
+LEFT JOIN (SELECT "PostId" AS "POSTID", COUNT(*) AS "TOTALVOTES"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t0" ON "Posts"."Id" = "t0"."POSTID"

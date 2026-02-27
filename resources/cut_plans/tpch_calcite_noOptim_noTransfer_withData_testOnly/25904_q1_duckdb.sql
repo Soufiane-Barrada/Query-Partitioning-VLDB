@@ -1,0 +1,11 @@
+SELECT COALESCE(ANY_VALUE("part"."p_name"), ANY_VALUE("part"."p_name")) AS "PART_NAME", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("customer"."c_name") AS "CUSTOMER_NAME", ANY_VALUE("orders"."o_orderdate") AS "ORDER_DATE", COUNT(DISTINCT "lineitem"."l_orderkey") AS "ORDER_COUNT", ROUND(SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")), 2) AS "TOTAL_REVENUE", LISTAGG(DISTINCT "region"."r_name", ', ') AS "REGIONS_INVOLVED", MAX(CASE WHEN "lineitem"."l_returnflag" = 'R' THEN 'Returned    ' ELSE 'Not Returned' END) AS "RETURN_STATUS"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+INNER JOIN "TPCH"."supplier" ON "partsupp"."ps_suppkey" = "supplier"."s_suppkey"
+INNER JOIN "TPCH"."lineitem" ON "partsupp"."ps_partkey" = "lineitem"."l_partkey" AND "supplier"."s_suppkey" = "lineitem"."l_suppkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN "TPCH"."customer" ON "orders"."o_custkey" = "customer"."c_custkey"
+INNER JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+WHERE "part"."p_name" LIKE '%steel%' AND "orders"."o_orderdate" >= DATE '1996-01-01' AND "orders"."o_orderdate" < DATE '1997-01-01'
+GROUP BY "part"."p_name", "supplier"."s_name", "customer"."c_name", "orders"."o_orderdate"

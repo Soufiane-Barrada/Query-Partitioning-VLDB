@@ -1,0 +1,12 @@
+SELECT COALESCE("t1"."id", "t1"."id") AS "TITLE_ID", "t1"."title" AS "TITLE", "t1"."production_year" AS "PRODUCTION_YEAR", CASE WHEN "t1"."INFO_COUNT" IS NOT NULL THEN CAST("t1"."INFO_COUNT" AS BIGINT) ELSE 0 END AS "INFO_COUNT", CASE WHEN "t1"."LATEST_INFO" IS NOT NULL THEN CAST("t1"."LATEST_INFO" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'N/A' END AS "LATEST_INFO", CASE WHEN "t1"."EARLIEST_INFO" IS NOT NULL THEN CAST("t1"."EARLIEST_INFO" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'N/A' END AS "EARLIEST_INFO", CASE WHEN "t3"."ACTOR_COUNT" IS NOT NULL THEN CAST("t3"."ACTOR_COUNT" AS BIGINT) ELSE 0 END AS "ACTOR_COUNT", CASE WHEN "t3"."ROLES" IS NOT NULL THEN CAST("t3"."ROLES" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'No roles' END AS "ROLES"
+FROM (SELECT "t0"."id", "t0"."title", "t0"."imdb_index", "t0"."kind_id", "t0"."production_year", "t0"."imdb_id", "t0"."phonetic_code", "t0"."episode_of_id", "t0"."season_nr", "t0"."episode_nr", "t0"."series_years", "t0"."md5sum", "t"."movie_id" AS "MOVIE_ID", "t"."INFO_COUNT", "t"."LATEST_INFO", "t"."EARLIEST_INFO"
+FROM (SELECT "movie_id", COUNT(*) AS "INFO_COUNT", MAX("info") AS "LATEST_INFO", MIN("info") AS "EARLIEST_INFO"
+FROM "IMDB"."movie_info"
+GROUP BY "movie_id") AS "t"
+RIGHT JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000 OR "title" ILIKE '%award%') AS "t0" ON "t"."movie_id" = "t0"."id") AS "t1"
+LEFT JOIN (SELECT "cast_info"."movie_id" AS "MOVIE_ID", COUNT(DISTINCT "cast_info"."person_id") AS "ACTOR_COUNT", LISTAGG(DISTINCT "role_type"."role", ', ') AS "ROLES"
+FROM "IMDB"."role_type"
+INNER JOIN "IMDB"."cast_info" ON "role_type"."id" = "cast_info"."person_role_id"
+GROUP BY "cast_info"."movie_id") AS "t3" ON "t1"."id" = "t3"."MOVIE_ID"

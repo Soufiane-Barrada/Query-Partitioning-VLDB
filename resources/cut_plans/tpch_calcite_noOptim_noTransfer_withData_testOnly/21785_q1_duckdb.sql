@@ -1,0 +1,8 @@
+SELECT COALESCE("region"."r_name", "region"."r_name") AS "r_name", "orders"."o_totalprice", "orders"."o_orderkey"
+FROM "TPCH"."region"
+LEFT JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+LEFT JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+LEFT JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+LEFT JOIN "TPCH"."part" ON "partsupp"."ps_partkey" = "part"."p_partkey"
+LEFT JOIN "TPCH"."lineitem" ON "part"."p_partkey" = "lineitem"."l_partkey"
+LEFT JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"

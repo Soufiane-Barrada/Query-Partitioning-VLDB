@@ -1,0 +1,10 @@
+SELECT COALESCE("t5"."MOVIE_TITLE", "t5"."MOVIE_TITLE") AS "MOVIE_TITLE", "t5"."ACTOR_NAME", "t5"."CAST_TYPE", "t5"."MOVIE_INFO", "t5"."MOVIE_KEYWORD", "t5"."COMPANY_NAME", "t5"."PERSON_INFO", "t5"."production_year"
+FROM (SELECT "s1"."title" AS "MOVIE_TITLE", "aka_name"."name" AS "ACTOR_NAME", "t3"."kind" AS "CAST_TYPE", "movie_info"."info" AS "MOVIE_INFO", "keyword"."keyword" AS "MOVIE_KEYWORD", "company_name"."name" AS "COMPANY_NAME", "person_info"."info" AS "PERSON_INFO", "s1"."production_year"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" = 'Box Office') AS "t2"
+INNER JOIN "IMDB"."movie_info" ON "t2"."ID" = "movie_info"."info_type_id"
+INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ("IMDB"."company_name" INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."person_info" ON "aka_name"."id" = "person_info"."person_id" INNER JOIN ((SELECT *
+FROM "IMDB"."comp_cast_type"
+WHERE "kind" = 'Cast') AS "t3" INNER JOIN ("IMDB"."role_type" INNER JOIN "IMDB"."cast_info" ON "role_type"."id" = "cast_info"."role_id") ON "t3"."id" = "cast_info"."person_role_id" INNER JOIN "s1" ON "cast_info"."id" = "s1"."subject_id") ON "aka_name"."person_id" = "cast_info"."person_id") ON "movie_companies"."movie_id" = "s1"."id0") ON "movie_keyword"."movie_id" = "s1"."id0") ON "movie_info"."movie_id" = "s1"."id0"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, "aka_name"."name") AS "t5"

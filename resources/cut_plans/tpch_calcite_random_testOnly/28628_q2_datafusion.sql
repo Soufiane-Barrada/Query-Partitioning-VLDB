@@ -1,0 +1,5 @@
+SELECT COALESCE("P_NAME", "P_NAME") AS "P_NAME", "S_NAME", "SUPPLY_INFO", "TOTAL_ORDERS", "TOTAL_QUANTITY", "AVG_PRICE", "MARKET_SEGMENTS"
+FROM (SELECT "P_NAME", "S_NAME", "p_container", "p_partkey", "s_suppkey", ANY_VALUE("FD_COL_5") AS "SUPPLY_INFO", COUNT(*) AS "TOTAL_ORDERS", SUM("l_quantity") AS "TOTAL_QUANTITY", AVG("l_extendedprice") AS "AVG_PRICE", LISTAGG(DISTINCT "c_mktsegment", "FD_COL_9") AS "MARKET_SEGMENTS"
+FROM "s1"
+GROUP BY "P_NAME", "S_NAME", "p_container", "p_partkey", "s_suppkey"
+ORDER BY 8 DESC NULLS FIRST, 9) AS "t4"

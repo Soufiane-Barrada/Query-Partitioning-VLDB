@@ -1,0 +1,13 @@
+SELECT COALESCE("t9"."MOVIE_ID", "t9"."MOVIE_ID") AS "MOVIE_ID", "t9"."MOVIE_TITLE", "t9"."ACTOR_NAME", "t9"."ACTOR_ROLE", "t9"."TOTAL_APPEARANCES", "t9"."COMPANY_NAME", "t9"."COMPANY_TYPE", "t9"."TOTAL_MOVIES"
+FROM (SELECT "t7"."MOVIE_ID", "t7"."MOVIE_TITLE", "t7"."ACTOR_NAME", "t7"."ACTOR_ROLE", "t7"."TOTAL_APPEARANCES", CAST("t3"."COMPANY_NAME" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "COMPANY_NAME", CAST("t3"."COMPANY_TYPE" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "COMPANY_TYPE", CAST("t3"."TOTAL_MOVIES" AS BIGINT) AS "TOTAL_MOVIES"
+FROM (SELECT "movie_id" AS "MOVIE_ID", "COMPANY_NAME", "COMPANY_TYPE", "TOTAL_MOVIES"
+FROM "s1"
+WHERE "TOTAL_MOVIES" > 5) AS "t3"
+INNER JOIN ((SELECT "MOVIE_ID", "MOVIE_TITLE", "ACTOR_NAME", "ACTOR_ROLE", "TOTAL_APPEARANCES"
+FROM (SELECT "title"."id" AS "id00", "title"."title", "aka_name"."name", "role_type"."role", ANY_VALUE("title"."id") AS "MOVIE_ID", ANY_VALUE("title"."title") AS "MOVIE_TITLE", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("role_type"."role") AS "ACTOR_ROLE", COUNT(*) AS "TOTAL_APPEARANCES"
+FROM "IMDB"."role_type"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN ("IMDB"."title" INNER JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id") ON "aka_name"."person_id" = "cast_info"."person_id") ON "role_type"."id" = "cast_info"."role_id"
+GROUP BY "role_type"."role", "aka_name"."name", "title"."id", "title"."title") AS "t5"
+WHERE "t5"."TOTAL_APPEARANCES" > 1) AS "t7" LEFT JOIN "IMDB"."complete_cast" ON "t7"."MOVIE_ID" = "complete_cast"."movie_id") ON "t3"."MOVIE_ID" = "t7"."MOVIE_ID"
+ORDER BY "t7"."TOTAL_APPEARANCES" DESC NULLS FIRST, "t3"."TOTAL_MOVIES" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t9"

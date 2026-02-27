@@ -1,0 +1,6 @@
+SELECT COALESCE("t"."Name", "t"."Name") AS "Name", ANY_VALUE("t"."Name") AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", COUNT(DISTINCT "t"."UserId") AS "TOTALVOTES", COUNT(DISTINCT "Users"."Id") AS "TOTALUSERS"
+FROM (SELECT "Posts"."Id", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense", "PostTypes"."Id" AS "Id0", "PostTypes"."Name", "Votes"."Id" AS "Id1", "Votes"."PostId", "Votes"."VoteTypeId", "Votes"."UserId", "Votes"."CreationDate" AS "CreationDate0", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN ("STACK"."Posts" INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id") ON "Votes"."PostId" = "Posts"."Id") AS "t"
+LEFT JOIN "STACK"."Users" ON "t"."OwnerUserId" = "Users"."Id"
+GROUP BY "t"."Name"

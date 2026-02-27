@@ -1,0 +1,11 @@
+SELECT COALESCE("t"."PostId", "t"."PostId") AS "POSTID", "t"."VOTECOUNT", "t2"."Id", "t2"."PostTypeId", "t2"."AcceptedAnswerId", "t2"."ParentId", "t2"."CreationDate", "t2"."Score", "t2"."ViewCount", "t2"."Body", "t2"."OwnerUserId", "t2"."OwnerDisplayName", "t2"."LastEditorUserId", "t2"."LastEditorDisplayName", "t2"."LastEditDate", "t2"."LastActivityDate", "t2"."Title", "t2"."Tags", "t2"."AnswerCount", "t2"."CommentCount", "t2"."FavoriteCount", "t2"."ClosedDate", "t2"."CommunityOwnedDate", "t2"."ContentLicense", "t2"."Id0", "t2"."Reputation", "t2"."CreationDate0", "t2"."DisplayName", "t2"."LastAccessDate", "t2"."WebsiteUrl", "t2"."Location", "t2"."AboutMe", "t2"."Views", "t2"."UpVotes", "t2"."DownVotes", "t2"."ProfileImageUrl", "t2"."AccountId", "t2"."POSTID" AS "POSTID0", "t2"."COMMENTCOUNT" AS "COMMENTCOUNT_"
+FROM (SELECT "PostId", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId") AS "t"
+RIGHT JOIN (SELECT "t1"."Id", "t1"."PostTypeId", "t1"."AcceptedAnswerId", "t1"."ParentId", "t1"."CreationDate", "t1"."Score", "t1"."ViewCount", "t1"."Body", "t1"."OwnerUserId", "t1"."OwnerDisplayName", "t1"."LastEditorUserId", "t1"."LastEditorDisplayName", "t1"."LastEditDate", "t1"."LastActivityDate", "t1"."Title", "t1"."Tags", "t1"."AnswerCount", "t1"."CommentCount", "t1"."FavoriteCount", "t1"."ClosedDate", "t1"."CommunityOwnedDate", "t1"."ContentLicense", "Users"."Id" AS "Id0", "Users"."Reputation", "Users"."CreationDate" AS "CreationDate0", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "t0"."PostId" AS "POSTID", "t0"."COMMENTCOUNT"
+FROM (SELECT "PostId", COUNT(*) AS "COMMENTCOUNT"
+FROM "STACK"."Comments"
+GROUP BY "PostId") AS "t0"
+RIGHT JOIN ("STACK"."Users" INNER JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE CAST("PostTypeId" AS INTEGER) = 1) AS "t1" ON "Users"."Id" = "t1"."OwnerUserId") ON "t0"."PostId" = "t1"."Id") AS "t2" ON "t"."PostId" = "t2"."Id"

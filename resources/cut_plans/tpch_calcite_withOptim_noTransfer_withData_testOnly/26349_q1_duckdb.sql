@@ -1,0 +1,22 @@
+SELECT COALESCE("t4"."SC_NAME", "t4"."SC_NAME") AS "SC_NAME", "t4"."PRODUCT_COUNT", "t4"."$f2" AS "FD_COL_2", "t9"."C_NAME", "t9"."TOTAL_SPENT"
+FROM (SELECT "t1"."S_NAME" AS "SC_NAME", "t2"."PRODUCT_COUNT", "t2"."PRODUCT_COUNT" > 10 AS "$f2"
+FROM (SELECT "S_SUPPKEY", "S_NAME"
+FROM (SELECT "s_suppkey" AS "S_SUPPKEY", "s_name" AS "S_NAME", "s_acctbal"
+FROM "TPCH"."supplier"
+ORDER BY "s_acctbal" DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t0") AS "t1"
+INNER JOIN (SELECT "supplier0"."s_suppkey", "supplier0"."s_name", COUNT(*) AS "PRODUCT_COUNT"
+FROM "TPCH"."supplier" AS "supplier0"
+INNER JOIN "TPCH"."partsupp" ON "supplier0"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier0"."s_suppkey", "supplier0"."s_name") AS "t2" ON "t1"."S_SUPPKEY" = "t2"."s_suppkey"
+WHERE "t2"."PRODUCT_COUNT" > 10) AS "t4",
+(SELECT "t8"."c_name" AS "C_NAME", "t8"."TOTAL_SPENT"
+FROM (SELECT "C_CUSTKEY"
+FROM (SELECT "c_custkey" AS "C_CUSTKEY", "c_acctbal"
+FROM "TPCH"."customer"
+ORDER BY "c_acctbal" DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t6") AS "t7"
+INNER JOIN (SELECT "customer0"."c_custkey", "customer0"."c_name", SUM("orders"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."customer" AS "customer0"
+INNER JOIN "TPCH"."orders" ON "customer0"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer0"."c_custkey", "customer0"."c_name") AS "t8" ON "t7"."C_CUSTKEY" = "t8"."c_custkey") AS "t9"

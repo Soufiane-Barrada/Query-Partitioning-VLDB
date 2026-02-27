@@ -1,0 +1,7 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", "Posts"."Title" AS "TITLE", "Posts"."ViewCount" AS "VIEWCOUNT", "Posts"."CreationDate" AS "CREATIONDATE", ANY_VALUE("Users"."DisplayName") AS "OWNERDISPLAYNAME", COUNT(DISTINCT "Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", COUNT(DISTINCT "Badges"."Id") AS "BADGECOUNT"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts"."Id" = "Votes"."PostId"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+GROUP BY "Posts"."Id", "Posts"."Title", "Posts"."ViewCount", "Posts"."CreationDate", "Users"."DisplayName"

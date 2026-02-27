@@ -1,0 +1,4 @@
+SELECT COALESCE("TITLE", "TITLE") AS "TITLE", "ACTOR_NAME", "ROLE"
+FROM (SELECT "title" AS "TITLE", "name" AS "ACTOR_NAME", "role" AS "ROLE"
+FROM "s1"
+ORDER BY "title") AS "t2"

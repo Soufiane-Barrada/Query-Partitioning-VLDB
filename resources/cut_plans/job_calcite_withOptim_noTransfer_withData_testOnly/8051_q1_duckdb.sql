@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."AKA_ID", "t"."AKA_ID") AS "AKA_ID", "t"."AKA_NAME", "t"."TITLE_ID", "t"."TITLE_NAME", "t"."PRODUCTION_YEAR", "t"."RAN", "cast_info"."id", "cast_info"."person_id", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id"
+FROM (SELECT "aka_name"."id" AS "AKA_ID", "aka_name"."name" AS "AKA_NAME", "title"."id" AS "TITLE_ID", "title"."title" AS "TITLE_NAME", "title"."production_year" AS "PRODUCTION_YEAR", ROW_NUMBER() OVER (PARTITION BY "title"."production_year" ORDER BY "aka_name"."name") AS "RAN"
+FROM "IMDB"."title"
+INNER JOIN ("IMDB"."aka_title" INNER JOIN "IMDB"."aka_name" ON "aka_title"."id" = "aka_name"."id") ON "title"."id" = "aka_title"."movie_id") AS "t"
+INNER JOIN "IMDB"."cast_info" ON "t"."TITLE_ID" = "cast_info"."movie_id"

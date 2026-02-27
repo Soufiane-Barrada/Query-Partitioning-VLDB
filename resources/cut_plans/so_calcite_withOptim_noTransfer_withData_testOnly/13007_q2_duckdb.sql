@@ -1,0 +1,6 @@
+SELECT COALESCE("t2"."POSTTYPE", "t2"."POSTTYPE") AS "POSTTYPE", "t2"."TOTALPOSTS", "t2"."AVERAGESCORE", "t2"."TOTALVIEWS", "t2"."UNIQUEUSERS"
+FROM (SELECT "PostTypes"."Name", ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "TOTALPOSTS", AVG("s1"."Score") AS "AVERAGESCORE", SUM("s1"."ViewCount") AS "TOTALVIEWS", COUNT(DISTINCT "s1"."OwnerUserId") AS "UNIQUEUSERS"
+FROM "STACK"."Users"
+RIGHT JOIN ("s1" INNER JOIN "STACK"."PostTypes" ON "s1"."PostTypeId" = "PostTypes"."Id") ON "Users"."Id" = "s1"."OwnerUserId"
+GROUP BY "PostTypes"."Name"
+ORDER BY 3 DESC NULLS FIRST) AS "t2"

@@ -1,0 +1,6 @@
+SELECT COALESCE("title"."id", "title"."id") AS "id", "title"."title", "title"."imdb_index", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum", "movie_companies"."id" AS "id0", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note", "cast_info"."id" AS "id1", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id", "aka_name"."id" AS "id2", "aka_name"."person_id" AS "person_id0", "aka_name"."name", "aka_name"."imdb_index" AS "imdb_index0", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum" AS "md5sum0", "comp_cast_type"."id" AS "id3", "comp_cast_type"."kind"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "movie_companies"."movie_id" = "cast_info"."movie_id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN "IMDB"."comp_cast_type" ON "cast_info"."person_role_id" = "comp_cast_type"."id"

@@ -1,0 +1,5 @@
+SELECT COALESCE(ANY_VALUE("Posts"."Id"), ANY_VALUE("Posts"."Id")) AS "POSTID", "Posts"."OwnerUserId" AS "OWNERUSERID", "Posts"."Title" AS "TITLE", "Posts"."CreationDate" AS "CREATIONDATE", "Posts"."Score" AS "SCORE", "Posts"."ViewCount" AS "VIEWCOUNT", SUM(CASE WHEN "Comments"."Id" IS NOT NULL THEN 1 ELSE 0 END) AS "COMMENTCOUNT", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 10 THEN 1 ELSE 0 END) AS "CLOSEDCOUNT", SUM(CASE WHEN CAST("PostHistory"."PostHistoryTypeId" AS INTEGER) = 11 THEN 1 ELSE 0 END) AS "REOPENEDCOUNT"
+FROM "STACK"."Posts"
+LEFT JOIN "STACK"."Comments" ON "Posts"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."PostHistory" ON "Posts"."Id" = "PostHistory"."PostId"
+GROUP BY "Posts"."Id", "Posts"."OwnerUserId", "Posts"."Title", "Posts"."CreationDate", "Posts"."Score", "Posts"."ViewCount"

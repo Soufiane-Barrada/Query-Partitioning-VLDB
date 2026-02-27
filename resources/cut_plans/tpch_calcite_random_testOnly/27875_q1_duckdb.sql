@@ -1,0 +1,5 @@
+SELECT COALESCE("customer"."c_custkey", "customer"."c_custkey") AS "c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment", "t"."l_orderkey", "t"."l_partkey", "t"."l_suppkey", "t"."l_linenumber", "t"."l_quantity", "t"."l_extendedprice", "t"."l_discount", "t"."l_tax", "t"."l_returnflag", "t"."l_linestatus", "t"."l_shipdate", "t"."l_commitdate", "t"."l_receiptdate", "t"."l_shipinstruct", "t"."l_shipmode", "t"."l_comment", "orders"."o_orderkey", "orders"."o_custkey", "orders"."o_orderstatus", "orders"."o_totalprice", "orders"."o_orderdate", "orders"."o_orderpriority", "orders"."o_clerk", "orders"."o_shippriority", "orders"."o_comment"
+FROM "TPCH"."customer"
+INNER JOIN ((SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1997-01-01' AND "l_shipdate" <= DATE '1997-12-31') AS "t" INNER JOIN "TPCH"."orders" ON "t"."l_orderkey" = "orders"."o_orderkey") ON "customer"."c_custkey" = "orders"."o_custkey"

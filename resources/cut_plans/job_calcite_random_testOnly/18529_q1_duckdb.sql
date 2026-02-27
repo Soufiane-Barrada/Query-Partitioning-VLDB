@@ -1,0 +1,3 @@
+SELECT COALESCE("company_name"."id", "company_name"."id") AS "id", "company_name"."name", "company_name"."country_code", "company_name"."imdb_id", "company_name"."name_pcode_nf", "company_name"."name_pcode_sf", "company_name"."md5sum", "movie_companies"."id" AS "id0", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM "IMDB"."company_name"
+INNER JOIN "IMDB"."movie_companies" ON "company_name"."id" = "movie_companies"."company_id"

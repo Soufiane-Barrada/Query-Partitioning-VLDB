@@ -1,0 +1,2326 @@
+{
+  "queryId" : "228",
+  "originalSql" : "WITH UserReputation AS (\n    SELECT \n        Id,\n        DisplayName,\n        Reputation,\n        CASE \n            WHEN Reputation >= 1000 THEN 'High'\n            WHEN Reputation >= 100 THEN 'Medium'\n            ELSE 'Low' \n        END AS ReputationLevel\n    FROM Users\n),\nPostStats AS (\n    SELECT \n        p.OwnerUserId,\n        COUNT(p.Id) AS TotalPosts,\n        SUM(CASE WHEN p.PostTypeId = 1 THEN 1 ELSE 0 END) AS TotalQuestions,\n        SUM(CASE WHEN p.PostTypeId = 2 THEN 1 ELSE 0 END) AS TotalAnswers\n    FROM Posts p\n    GROUP BY p.OwnerUserId\n),\nRecentActivity AS (\n    SELECT \n        p.OwnerUserId,\n        MAX(p.LastActivityDate) AS LastActivityDate\n    FROM Posts p\n    GROUP BY p.OwnerUserId\n),\nTopUsers AS (\n    SELECT \n        ur.DisplayName,\n        ur.ReputationLevel,\n        ps.TotalPosts,\n        ps.TotalQuestions,\n        ps.TotalAnswers,\n        ra.LastActivityDate,\n        ur.Id AS OwnerUserId\n    FROM UserReputation ur\n    JOIN PostStats ps ON ur.Id = ps.OwnerUserId\n    JOIN RecentActivity ra ON ur.Id = ra.OwnerUserId\n    WHERE ur.ReputationLevel = 'High'\n      AND ps.TotalPosts > 5\n      AND ra.LastActivityDate >= TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAYS\n)\nSELECT \n    t.DisplayName,\n    t.ReputationLevel,\n    t.TotalPosts,\n    t.TotalQuestions,\n    t.TotalAnswers,\n    COALESCE(pv.UpVotes, 0) AS RecentUpVotes,\n    COALESCE(cv.CloseVotes, 0) AS RecentCloseVotes\nFROM TopUsers t\nLEFT JOIN (\n    SELECT \n        p.OwnerUserId,\n        COUNT(v.Id) AS UpVotes\n    FROM Posts p\n    JOIN Votes v ON p.Id = v.PostId AND v.VoteTypeId = 2\n    GROUP BY p.OwnerUserId\n) pv ON t.OwnerUserId = pv.OwnerUserId\nLEFT JOIN (\n    SELECT \n        ph.UserId,\n        COUNT(ph.Id) AS CloseVotes\n    FROM PostHistory ph\n    WHERE ph.PostHistoryTypeId = 10\n    GROUP BY ph.UserId\n) cv ON t.OwnerUserId = cv.UserId\nORDER BY t.TotalPosts DESC, t.ReputationLevel",
+  "dpSummary" : {
+    "hasCut" : true,
+    "cutNodeId" : 41153,
+    "q1Engine" : "duckdb",
+    "q2Engine" : "datafusion",
+    "costAllDuckdb" : 1214.1756085451177,
+    "costAllDatafusion" : 26985.122389516127,
+    "chosenCost" : 1214.1335447674876
+  },
+  "analysis" : {
+    "pipeline" : {
+      "runId" : "noOptim_noTransfer",
+      "doOptimize" : false,
+      "metadataProvider" : "custom",
+      "dpMode" : "MAX",
+      "transferExtraConstantMs" : 0.0,
+      "transferCoeffs" : {
+        "duckdb" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        },
+        "datafusion" : {
+          "aMs" : 0.0,
+          "bMsPerRow" : 0.0,
+          "cMsPerRowSizeByte" : 0.0,
+          "dMsPerOutputByte" : 0.0
+        }
+      },
+      "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+      "cutPolicy" : "DP",
+      "randomSeed" : 1770072822850,
+      "schemaName" : "STACK"
+    },
+    "planStats" : {
+      "totalNodes" : 25,
+      "maxDepth" : 10,
+      "operatorKindCounts" : {
+        "JOIN" : 5,
+        "OTHER" : 13,
+        "SORT" : 1,
+        "AGGREGATE" : 4,
+        "FILTER" : 2
+      },
+      "rootOutputRows" : 3.9999892723893398,
+      "rootRowSizeOutBytes" : 228.1378556527671
+    },
+    "cut" : {
+      "cutDepth" : 1,
+      "cutNodeOperatorKind" : "JOIN",
+      "cutOutputRows" : 3.9999892723893398,
+      "cutRowSizeOutBytes" : 228.1378556527671,
+      "cutOutputBytes" : 912.548975236976,
+      "transferEstimatedMs" : 0.0,
+      "q1Stats" : {
+        "engine" : "duckdb",
+        "nodeCount" : 24,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        }
+      },
+      "q2Stats" : {
+        "engine" : "datafusion",
+        "nodeCount" : 1,
+        "maxDepth" : 2,
+        "operatorKindCounts" : {
+          "SORT" : 1
+        }
+      }
+    }
+  },
+  "dag" : {
+    "finalNodeId" : "q2",
+    "nodes" : [ {
+      "id" : "q1",
+      "engine" : "duckdb",
+      "sql" : "SELECT COALESCE(\"t5\".\"DISPLAYNAME\", \"t5\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t5\".\"REPUTATIONLEVEL\", \"t5\".\"TOTALPOSTS\", \"t5\".\"TOTALQUESTIONS\", \"t5\".\"TOTALANSWERS\", CASE WHEN \"t7\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t7\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t10\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t10\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t\".\"DISPLAYNAME\", \"t\".\"REPUTATIONLEVEL\", \"t1\".\"TOTALPOSTS\", \"t1\".\"TOTALQUESTIONS\", \"t1\".\"TOTALANSWERS\", \"t3\".\"LASTACTIVITYDATE\", \"t\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t1\" ON \"t\".\"ID\" = \"t1\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t\".\"ID\" = \"t3\".\"OWNERUSERID\"\nWHERE \"t\".\"REPUTATIONLEVEL\" = 'High' AND \"t1\".\"TOTALPOSTS\" > 5 AND \"t3\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t5\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t7\" ON \"t5\".\"OWNERUSERID\" = \"t7\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t10\" ON \"t5\".\"OWNERUSERID\" = \"t10\".\"USERID\"",
+      "inputs" : { },
+      "schema" : [ {
+        "name" : "DISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "REPUTATIONLEVEL",
+        "type" : "CHAR"
+      }, {
+        "name" : "TOTALPOSTS",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTALQUESTIONS",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TOTALANSWERS",
+        "type" : "INTEGER"
+      }, {
+        "name" : "RECENTUPVOTES",
+        "type" : "BIGINT"
+      }, {
+        "name" : "RECENTCLOSEVOTES",
+        "type" : "BIGINT"
+      } ]
+    }, {
+      "id" : "q2",
+      "engine" : "datafusion",
+      "sql" : "SELECT COALESCE(\"DISPLAYNAME\", \"DISPLAYNAME\") AS \"DISPLAYNAME\", \"REPUTATIONLEVEL\", \"TOTALPOSTS\", \"TOTALQUESTIONS\", \"TOTALANSWERS\", \"RECENTUPVOTES\", \"RECENTCLOSEVOTES\"\nFROM \"s1\"\nORDER BY \"TOTALPOSTS\" DESC NULLS FIRST, \"REPUTATIONLEVEL\"",
+      "inputs" : {
+        "s1" : "q1"
+      },
+      "schema" : [ {
+        "name" : "DISPLAYNAME",
+        "type" : "VARCHAR"
+      }, {
+        "name" : "REPUTATIONLEVEL",
+        "type" : "CHAR"
+      }, {
+        "name" : "TOTALPOSTS",
+        "type" : "BIGINT"
+      }, {
+        "name" : "TOTALQUESTIONS",
+        "type" : "INTEGER"
+      }, {
+        "name" : "TOTALANSWERS",
+        "type" : "INTEGER"
+      }, {
+        "name" : "RECENTUPVOTES",
+        "type" : "BIGINT"
+      }, {
+        "name" : "RECENTCLOSEVOTES",
+        "type" : "BIGINT"
+      } ]
+    } ]
+  },
+  "cutPlans" : [ {
+    "planId" : "cut_41147",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41147,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1.9999973091588161,
+        "cutRowSizeOutBytes" : 212.1378556527671,
+        "cutOutputBytes" : 424.2751404762555,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 18,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "OTHER" : 10,
+            "AGGREGATE" : 3,
+            "JOIN" : 4,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 7,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "JOIN" : 1,
+            "OTHER" : 3,
+            "SORT" : 1,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t5\".\"DISPLAYNAME\", \"t5\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t5\".\"REPUTATIONLEVEL\", \"t5\".\"TOTALPOSTS\", \"t5\".\"TOTALQUESTIONS\", \"t5\".\"TOTALANSWERS\", \"t5\".\"LASTACTIVITYDATE\", \"t5\".\"OWNERUSERID\", \"t7\".\"OWNERUSERID\" AS \"OWNERUSERID0\", \"t7\".\"UPVOTES\"\nFROM (SELECT \"t\".\"DISPLAYNAME\", \"t\".\"REPUTATIONLEVEL\", \"t1\".\"TOTALPOSTS\", \"t1\".\"TOTALQUESTIONS\", \"t1\".\"TOTALANSWERS\", \"t3\".\"LASTACTIVITYDATE\", \"t\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t1\" ON \"t\".\"ID\" = \"t1\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t\".\"ID\" = \"t3\".\"OWNERUSERID\"\nWHERE \"t\".\"REPUTATIONLEVEL\" = 'High' AND \"t1\".\"TOTALPOSTS\" > 5 AND \"t3\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t5\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t7\" ON \"t5\".\"OWNERUSERID\" = \"t7\".\"OWNERUSERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LASTACTIVITYDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERUSERID0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s1\".\"DISPLAYNAME\", \"s1\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"s1\".\"REPUTATIONLEVEL\", \"s1\".\"TOTALPOSTS\", \"s1\".\"TOTALQUESTIONS\", \"s1\".\"TOTALANSWERS\", CASE WHEN \"s1\".\"UPVOTES\" IS NOT NULL THEN CAST(\"s1\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"s1\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"s1\".\"TOTALPOSTS\" DESC NULLS FIRST, \"s1\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41141",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41141,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 1.0,
+        "cutRowSizeOutBytes" : 196.1378556527671,
+        "cutOutputBytes" : 196.1378556527671,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 12,
+          "maxDepth" : 7,
+          "operatorKindCounts" : {
+            "OTHER" : 7,
+            "AGGREGATE" : 2,
+            "JOIN" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 13,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "JOIN" : 3,
+            "OTHER" : 6,
+            "SORT" : 1,
+            "AGGREGATE" : 2,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t\".\"DISPLAYNAME\", \"t\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t\".\"REPUTATIONLEVEL\", \"t1\".\"TOTALPOSTS\", \"t1\".\"TOTALQUESTIONS\", \"t1\".\"TOTALANSWERS\", \"t3\".\"LASTACTIVITYDATE\", \"t\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t1\" ON \"t\".\"ID\" = \"t1\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t\".\"ID\" = \"t3\".\"OWNERUSERID\"\nWHERE \"t\".\"REPUTATIONLEVEL\" = 'High' AND \"t1\".\"TOTALPOSTS\" > 5 AND \"t3\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LASTACTIVITYDATE",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"s1\".\"DISPLAYNAME\", \"s1\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"s1\".\"REPUTATIONLEVEL\", \"s1\".\"TOTALPOSTS\", \"s1\".\"TOTALQUESTIONS\", \"s1\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM \"s1\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"s1\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"s1\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"s1\".\"TOTALPOSTS\" DESC NULLS FIRST, \"s1\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41139",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41139,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 371631.0,
+        "cutRowSizeOutBytes" : 196.1378556527671,
+        "cutOutputBytes" : 7.289090743409349E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 10,
+          "maxDepth" : 5,
+          "operatorKindCounts" : {
+            "OTHER" : 6,
+            "AGGREGATE" : 2,
+            "JOIN" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 15,
+          "maxDepth" : 8,
+          "operatorKindCounts" : {
+            "JOIN" : 3,
+            "OTHER" : 7,
+            "SORT" : 1,
+            "FILTER" : 2,
+            "AGGREGATE" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t\".\"ID\", \"t\".\"ID\") AS \"ID\", \"t\".\"DISPLAYNAME\", \"t\".\"REPUTATION\", \"t\".\"REPUTATIONLEVEL\", \"t1\".\"OWNERUSERID\", \"t1\".\"TOTALPOSTS\", \"t1\".\"TOTALQUESTIONS\", \"t1\".\"TOTALANSWERS\", \"t3\".\"OWNERUSERID\" AS \"OWNERUSERID0\", \"t3\".\"LASTACTIVITYDATE\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t1\" ON \"t\".\"ID\" = \"t1\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t\".\"ID\" = \"t3\".\"OWNERUSERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATION",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OWNERUSERID0",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LASTACTIVITYDATE",
+          "type" : "TIMESTAMP"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"DISPLAYNAME\", \"REPUTATIONLEVEL\", \"TOTALPOSTS\", \"TOTALQUESTIONS\", \"TOTALANSWERS\", \"LASTACTIVITYDATE\", \"ID\" AS \"OWNERUSERID\"\nFROM \"s1\"\nWHERE \"REPUTATIONLEVEL\" = 'High' AND \"TOTALPOSTS\" > 5 AND \"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41135",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41135,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 371631.0,
+        "cutRowSizeOutBytes" : 180.1378556527671,
+        "cutOutputBytes" : 6.694481143409348E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 6,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 4,
+            "AGGREGATE" : 1,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 19,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 9,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"t\".\"ID\", \"t\".\"ID\") AS \"ID\", \"t\".\"DISPLAYNAME\", \"t\".\"REPUTATION\", \"t\".\"REPUTATIONLEVEL\", \"t1\".\"OWNERUSERID\", \"t1\".\"TOTALPOSTS\", \"t1\".\"TOTALQUESTIONS\", \"t1\".\"TOTALANSWERS\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t1\" ON \"t\".\"ID\" = \"t1\".\"OWNERUSERID\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATION",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"s1\".\"DISPLAYNAME\", \"s1\".\"REPUTATIONLEVEL\", \"s1\".\"TOTALPOSTS\", \"s1\".\"TOTALQUESTIONS\", \"s1\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"s1\".\"ID\" AS \"OWNERUSERID\"\nFROM \"s1\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"s1\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"s1\".\"REPUTATIONLEVEL\" = 'High' AND \"s1\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41131",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41131,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1260710.0,
+        "cutRowSizeOutBytes" : 148.1378556527671,
+        "cutOutputBytes" : 1.86758876E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 23,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "ID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATION",
+          "type" : "INTEGER"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"s1\".\"DISPLAYNAME\", \"s1\".\"REPUTATIONLEVEL\", \"t2\".\"TOTALPOSTS\", \"t2\".\"TOTALQUESTIONS\", \"t2\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"s1\".\"ID\" AS \"OWNERUSERID\"\nFROM \"s1\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t2\" ON \"s1\".\"ID\" = \"t2\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"s1\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"s1\".\"REPUTATIONLEVEL\" = 'High' AND \"t2\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41134",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41134,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 371631.0,
+        "cutRowSizeOutBytes" : 32.0,
+        "cutOutputBytes" : 1.1892192E7,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t2\".\"DISPLAYNAME\", \"t2\".\"REPUTATIONLEVEL\", \"s1\".\"TOTALPOSTS\", \"s1\".\"TOTALQUESTIONS\", \"s1\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t2\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t2\"\nINNER JOIN \"s1\" ON \"t2\".\"ID\" = \"s1\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t2\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t2\".\"REPUTATIONLEVEL\" = 'High' AND \"s1\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41133",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41133,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 9,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 23,
+          "maxDepth" : 10,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END AS \"FD_COL_1\", CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END AS \"FD_COL_2\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_1",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FD_COL_2",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t1\".\"DISPLAYNAME\", \"t1\".\"REPUTATIONLEVEL\", \"t2\".\"TOTALPOSTS\", \"t2\".\"TOTALQUESTIONS\", \"t2\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t1\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t1\"\nINNER JOIN (SELECT \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(\"FD_COL_1\") AS \"TOTALQUESTIONS\", SUM(\"FD_COL_2\") AS \"TOTALANSWERS\"\nFROM \"s1\"\nGROUP BY \"OWNERUSERID\") AS \"t2\" ON \"t1\".\"ID\" = \"t2\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t1\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t1\".\"REPUTATIONLEVEL\" = 'High' AND \"t2\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41138",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41138,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 371631.0,
+        "cutRowSizeOutBytes" : 16.0,
+        "cutOutputBytes" : 5946096.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LASTACTIVITYDATE",
+          "type" : "TIMESTAMP"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t2\".\"DISPLAYNAME\", \"t2\".\"REPUTATIONLEVEL\", \"t4\".\"TOTALPOSTS\", \"t4\".\"TOTALQUESTIONS\", \"t4\".\"TOTALANSWERS\", \"s1\".\"LASTACTIVITYDATE\", \"t2\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t2\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t2\".\"ID\" = \"t4\".\"OWNERUSERID\"\nINNER JOIN \"s1\" ON \"t2\".\"ID\" = \"s1\".\"OWNERUSERID\"\nWHERE \"t2\".\"REPUTATIONLEVEL\" = 'High' AND \"t4\".\"TOTALPOSTS\" > 5 AND \"s1\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41137",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41137,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 8,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 2,
+          "maxDepth" : 2,
+          "operatorKindCounts" : {
+            "OTHER" : 2
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 23,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"OwnerUserId\", \"OwnerUserId\") AS \"OWNERUSERID\", \"LastActivityDate\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t1\".\"DISPLAYNAME\", \"t1\".\"REPUTATIONLEVEL\", \"t3\".\"TOTALPOSTS\", \"t3\".\"TOTALQUESTIONS\", \"t3\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t1\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t1\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t1\".\"ID\" = \"t3\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"s1\"\nGROUP BY \"OWNERUSERID\") AS \"t4\" ON \"t1\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t1\".\"REPUTATIONLEVEL\" = 'High' AND \"t3\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41146",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41146,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 371630.9999999987,
+        "cutRowSizeOutBytes" : 16.0,
+        "cutOutputBytes" : 5946095.9999999795,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 5,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 20,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 10,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerUserId\") AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\"\nINNER JOIN \"Votes\" ON \"Posts\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts\".\"OwnerUserId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UPVOTES",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t8\".\"DISPLAYNAME\", \"t8\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t8\".\"REPUTATIONLEVEL\", \"t8\".\"TOTALPOSTS\", \"t8\".\"TOTALQUESTIONS\", \"t8\".\"TOTALANSWERS\", CASE WHEN \"s1\".\"UPVOTES\" IS NOT NULL THEN CAST(\"s1\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t2\".\"DISPLAYNAME\", \"t2\".\"REPUTATIONLEVEL\", \"t4\".\"TOTALPOSTS\", \"t4\".\"TOTALQUESTIONS\", \"t4\".\"TOTALANSWERS\", \"t6\".\"LASTACTIVITYDATE\", \"t2\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t2\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t2\".\"ID\" = \"t4\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t6\" ON \"t2\".\"ID\" = \"t6\".\"OWNERUSERID\"\nWHERE \"t2\".\"REPUTATIONLEVEL\" = 'High' AND \"t4\".\"TOTALPOSTS\" > 5 AND \"t6\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t8\"\nLEFT JOIN \"s1\" ON \"t8\".\"OWNERUSERID\" = \"s1\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t8\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t8\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t8\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41145",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41145,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 5,
+        "cutNodeOperatorKind" : "JOIN",
+        "cutOutputRows" : 1.237413050117635E7,
+        "cutRowSizeOutBytes" : 1236.9317919252305,
+        "cutOutputBytes" : 1.5305955414336714E10,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 3,
+            "JOIN" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 4,
+            "OTHER" : 10,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Posts\".\"OwnerUserId\", \"Posts\".\"OwnerUserId\") AS \"OWNERUSERID\"\nFROM \"Posts\"\nINNER JOIN \"Votes\" ON \"Posts\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "OWNERUSERID",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t7\".\"DISPLAYNAME\", \"t7\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t7\".\"REPUTATIONLEVEL\", \"t7\".\"TOTALPOSTS\", \"t7\".\"TOTALQUESTIONS\", \"t7\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t1\".\"DISPLAYNAME\", \"t1\".\"REPUTATIONLEVEL\", \"t3\".\"TOTALPOSTS\", \"t3\".\"TOTALQUESTIONS\", \"t3\".\"TOTALANSWERS\", \"t5\".\"LASTACTIVITYDATE\", \"t1\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t1\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t3\" ON \"t1\".\"ID\" = \"t3\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t5\" ON \"t1\".\"ID\" = \"t5\".\"OWNERUSERID\"\nWHERE \"t1\".\"REPUTATIONLEVEL\" = 'High' AND \"t3\".\"TOTALPOSTS\" > 5 AND \"t5\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t7\"\nLEFT JOIN (SELECT \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"s1\"\nGROUP BY \"OWNERUSERID\") AS \"t8\" ON \"t7\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t7\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t7\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t7\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41142",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41142,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 3850116.0,
+        "cutRowSizeOutBytes" : 1210.6817919252305,
+        "cutOutputBytes" : 4.661265338000001E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 12,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostTypeId\", \"AcceptedAnswerId\", \"ParentId\", \"CreationDate\", \"Score\", \"ViewCount\", \"Body\", \"OwnerUserId\", \"OwnerDisplayName\", \"LastEditorUserId\", \"LastEditorDisplayName\", \"LastEditDate\", \"LastActivityDate\", \"Title\", \"Tags\", \"AnswerCount\", \"CommentCount\", \"FavoriteCount\", \"ClosedDate\", \"CommunityOwnedDate\", \"ContentLicense\"\nFROM \"Posts\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "AcceptedAnswerId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ParentId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Score",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ViewCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "Body",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "OwnerUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "OwnerDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditorUserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "LastEditorDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "LastEditDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "LastActivityDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "Title",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Tags",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "AnswerCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CommentCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "FavoriteCount",
+          "type" : "INTEGER"
+        }, {
+          "name" : "ClosedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "CommunityOwnedDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t0\".\"DISPLAYNAME\", \"t0\".\"REPUTATIONLEVEL\", \"t2\".\"TOTALPOSTS\", \"t2\".\"TOTALQUESTIONS\", \"t2\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t0\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t0\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t2\" ON \"t0\".\"ID\" = \"t2\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t0\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t0\".\"REPUTATIONLEVEL\" = 'High' AND \"t2\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"s1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"s1\"\nINNER JOIN \"Votes\" ON \"s1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"s1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41143",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41143,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 7,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.2744093E7,
+        "cutRowSizeOutBytes" : 26.25,
+        "cutOutputBytes" : 3.3453244125E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 12,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostId\", \"VoteTypeId\", \"UserId\", \"CreationDate\", \"BountyAmount\"\nFROM \"Votes\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "VoteTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "UserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "BountyAmount",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t0\".\"DISPLAYNAME\", \"t0\".\"REPUTATIONLEVEL\", \"t2\".\"TOTALPOSTS\", \"t2\".\"TOTALQUESTIONS\", \"t2\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t0\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t0\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t2\" ON \"t0\".\"ID\" = \"t2\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t0\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t0\".\"REPUTATIONLEVEL\" = 'High' AND \"t2\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"s1\" ON \"Posts1\".\"Id\" = \"s1\".\"PostId\" AND CAST(\"s1\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41151",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41151,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 3,
+        "cutNodeOperatorKind" : "AGGREGATE",
+        "cutOutputRows" : 374116.0,
+        "cutRowSizeOutBytes" : 16.0,
+        "cutOutputBytes" : 5985856.0,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 4,
+          "maxDepth" : 4,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "FILTER" : 1,
+            "AGGREGATE" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 21,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 3,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"UserId\", \"UserId\") AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        }, {
+          "name" : "CLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t9\".\"DISPLAYNAME\", \"t9\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t9\".\"REPUTATIONLEVEL\", \"t9\".\"TOTALPOSTS\", \"t9\".\"TOTALQUESTIONS\", \"t9\".\"TOTALANSWERS\", CASE WHEN \"t11\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t11\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"s1\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"s1\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t3\".\"DISPLAYNAME\", \"t3\".\"REPUTATIONLEVEL\", \"t5\".\"TOTALPOSTS\", \"t5\".\"TOTALQUESTIONS\", \"t5\".\"TOTALANSWERS\", \"t7\".\"LASTACTIVITYDATE\", \"t3\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t3\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t5\" ON \"t3\".\"ID\" = \"t5\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t7\" ON \"t3\".\"ID\" = \"t7\".\"OWNERUSERID\"\nWHERE \"t3\".\"REPUTATIONLEVEL\" = 'High' AND \"t5\".\"TOTALPOSTS\" > 5 AND \"t7\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t9\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t11\" ON \"t9\".\"OWNERUSERID\" = \"t11\".\"OWNERUSERID\"\nLEFT JOIN \"s1\" ON \"t9\".\"OWNERUSERID\" = \"s1\".\"USERID\"\nORDER BY \"t9\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t9\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41150",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41150,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 4,
+        "cutNodeOperatorKind" : "FILTER",
+        "cutOutputRows" : 380491.7419354839,
+        "cutRowSizeOutBytes" : 671.6410975050622,
+        "cutOutputBytes" : 2.555538911451613E8,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 3,
+          "maxDepth" : 3,
+          "operatorKindCounts" : {
+            "OTHER" : 2,
+            "FILTER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 22,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 11,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 1
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"UserId\", \"UserId\") AS \"USERID\"\nFROM \"PostHistory\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "USERID",
+          "type" : "INTEGER"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t8\".\"DISPLAYNAME\", \"t8\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t8\".\"REPUTATIONLEVEL\", \"t8\".\"TOTALPOSTS\", \"t8\".\"TOTALQUESTIONS\", \"t8\".\"TOTALANSWERS\", CASE WHEN \"t10\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t10\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t2\".\"DISPLAYNAME\", \"t2\".\"REPUTATIONLEVEL\", \"t4\".\"TOTALPOSTS\", \"t4\".\"TOTALQUESTIONS\", \"t4\".\"TOTALANSWERS\", \"t6\".\"LASTACTIVITYDATE\", \"t2\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t2\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t2\".\"ID\" = \"t4\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t6\" ON \"t2\".\"ID\" = \"t6\".\"OWNERUSERID\"\nWHERE \"t2\".\"REPUTATIONLEVEL\" = 'High' AND \"t4\".\"TOTALPOSTS\" > 5 AND \"t6\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t8\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t10\" ON \"t8\".\"OWNERUSERID\" = \"t10\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"s1\"\nGROUP BY \"USERID\") AS \"t11\" ON \"t8\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t8\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t8\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  }, {
+    "planId" : "cut_41148",
+    "dpSummary" : {
+      "hasCut" : true,
+      "cutNodeId" : 41148,
+      "q1Engine" : "duckdb",
+      "q2Engine" : "datafusion",
+      "costAllDuckdb" : 1214.1756085451177,
+      "costAllDatafusion" : 26985.122389516127,
+      "chosenCost" : -1.0
+    },
+    "analysis" : {
+      "pipeline" : {
+        "runId" : "noOptim_noTransfer",
+        "doOptimize" : false,
+        "metadataProvider" : "custom",
+        "dpMode" : "MAX",
+        "transferExtraConstantMs" : 0.0,
+        "transferCoeffs" : {
+          "duckdb" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          },
+          "datafusion" : {
+            "aMs" : 0.0,
+            "bMsPerRow" : 0.0,
+            "cMsPerRowSizeByte" : 0.0,
+            "dMsPerOutputByte" : 0.0
+          }
+        },
+        "decorrelatedPlanSha256" : "d28e52b2265f34493765c6cf6f2c7ddf088ef3212c3b51670faeb43ad7fd5f66",
+        "cutPolicy" : "DP",
+        "randomSeed" : 1770072822850,
+        "schemaName" : "STACK"
+      },
+      "planStats" : {
+        "totalNodes" : 25,
+        "maxDepth" : 10,
+        "operatorKindCounts" : {
+          "JOIN" : 5,
+          "OTHER" : 13,
+          "SORT" : 1,
+          "AGGREGATE" : 4,
+          "FILTER" : 2
+        },
+        "rootOutputRows" : 3.9999892723893398,
+        "rootRowSizeOutBytes" : 228.1378556527671
+      },
+      "cut" : {
+        "cutDepth" : 6,
+        "cutNodeOperatorKind" : "OTHER",
+        "cutOutputRows" : 1.1795244E7,
+        "cutRowSizeOutBytes" : 671.6410975050622,
+        "cutOutputBytes" : 7.9221706255E9,
+        "transferEstimatedMs" : 0.0,
+        "q1Stats" : {
+          "engine" : "duckdb",
+          "nodeCount" : 1,
+          "maxDepth" : 1,
+          "operatorKindCounts" : {
+            "OTHER" : 1
+          }
+        },
+        "q2Stats" : {
+          "engine" : "datafusion",
+          "nodeCount" : 24,
+          "maxDepth" : 11,
+          "operatorKindCounts" : {
+            "JOIN" : 5,
+            "OTHER" : 12,
+            "SORT" : 1,
+            "AGGREGATE" : 4,
+            "FILTER" : 2
+          }
+        }
+      }
+    },
+    "dag" : {
+      "finalNodeId" : "q2",
+      "nodes" : [ {
+        "id" : "q1",
+        "engine" : "duckdb",
+        "sql" : "SELECT COALESCE(\"Id\", \"Id\") AS \"Id\", \"PostHistoryTypeId\", \"PostId\", \"RevisionGUID\", \"CreationDate\", \"UserId\", \"UserDisplayName\", \"Comment\", \"Text\", \"ContentLicense\"\nFROM \"PostHistory\"",
+        "inputs" : { },
+        "schema" : [ {
+          "name" : "Id",
+          "type" : "INTEGER"
+        }, {
+          "name" : "PostHistoryTypeId",
+          "type" : "SMALLINT"
+        }, {
+          "name" : "PostId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RevisionGUID",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "CreationDate",
+          "type" : "TIMESTAMP"
+        }, {
+          "name" : "UserId",
+          "type" : "INTEGER"
+        }, {
+          "name" : "UserDisplayName",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Comment",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "Text",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "ContentLicense",
+          "type" : "VARCHAR"
+        } ]
+      }, {
+        "id" : "q2",
+        "engine" : "datafusion",
+        "sql" : "SELECT COALESCE(\"t6\".\"DISPLAYNAME\", \"t6\".\"DISPLAYNAME\") AS \"DISPLAYNAME\", \"t6\".\"REPUTATIONLEVEL\", \"t6\".\"TOTALPOSTS\", \"t6\".\"TOTALQUESTIONS\", \"t6\".\"TOTALANSWERS\", CASE WHEN \"t8\".\"UPVOTES\" IS NOT NULL THEN CAST(\"t8\".\"UPVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTUPVOTES\", CASE WHEN \"t11\".\"CLOSEVOTES\" IS NOT NULL THEN CAST(\"t11\".\"CLOSEVOTES\" AS BIGINT) ELSE 0 END AS \"RECENTCLOSEVOTES\"\nFROM (SELECT \"t0\".\"DISPLAYNAME\", \"t0\".\"REPUTATIONLEVEL\", \"t2\".\"TOTALPOSTS\", \"t2\".\"TOTALQUESTIONS\", \"t2\".\"TOTALANSWERS\", \"t4\".\"LASTACTIVITYDATE\", \"t0\".\"ID\" AS \"OWNERUSERID\"\nFROM (SELECT \"Id\" AS \"ID\", \"DisplayName\" AS \"DISPLAYNAME\", \"Reputation\" AS \"REPUTATION\", CASE WHEN \"Reputation\" >= 1000 THEN 'High  ' WHEN \"Reputation\" >= 100 THEN 'Medium' ELSE 'Low   ' END AS \"REPUTATIONLEVEL\"\nFROM \"Users\") AS \"t0\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"TOTALPOSTS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS \"TOTALQUESTIONS\", SUM(CASE WHEN CAST(\"PostTypeId\" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS \"TOTALANSWERS\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t2\" ON \"t0\".\"ID\" = \"t2\".\"OWNERUSERID\"\nINNER JOIN (SELECT \"OwnerUserId\" AS \"OWNERUSERID\", MAX(\"LastActivityDate\") AS \"LASTACTIVITYDATE\"\nFROM \"Posts\"\nGROUP BY \"OwnerUserId\") AS \"t4\" ON \"t0\".\"ID\" = \"t4\".\"OWNERUSERID\"\nWHERE \"t0\".\"REPUTATIONLEVEL\" = 'High' AND \"t2\".\"TOTALPOSTS\" > 5 AND \"t4\".\"LASTACTIVITYDATE\" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)) AS \"t6\"\nLEFT JOIN (SELECT \"Posts1\".\"OwnerUserId\" AS \"OWNERUSERID\", COUNT(*) AS \"UPVOTES\"\nFROM \"Posts\" AS \"Posts1\"\nINNER JOIN \"Votes\" ON \"Posts1\".\"Id\" = \"Votes\".\"PostId\" AND CAST(\"Votes\".\"VoteTypeId\" AS INTEGER) = 2\nGROUP BY \"Posts1\".\"OwnerUserId\") AS \"t8\" ON \"t6\".\"OWNERUSERID\" = \"t8\".\"OWNERUSERID\"\nLEFT JOIN (SELECT \"UserId\" AS \"USERID\", COUNT(*) AS \"CLOSEVOTES\"\nFROM \"s1\"\nWHERE CAST(\"PostHistoryTypeId\" AS INTEGER) = 10\nGROUP BY \"UserId\") AS \"t11\" ON \"t6\".\"OWNERUSERID\" = \"t11\".\"USERID\"\nORDER BY \"t6\".\"TOTALPOSTS\" DESC NULLS FIRST, \"t6\".\"REPUTATIONLEVEL\"",
+        "inputs" : {
+          "s1" : "q1"
+        },
+        "schema" : [ {
+          "name" : "DISPLAYNAME",
+          "type" : "VARCHAR"
+        }, {
+          "name" : "REPUTATIONLEVEL",
+          "type" : "CHAR"
+        }, {
+          "name" : "TOTALPOSTS",
+          "type" : "BIGINT"
+        }, {
+          "name" : "TOTALQUESTIONS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "TOTALANSWERS",
+          "type" : "INTEGER"
+        }, {
+          "name" : "RECENTUPVOTES",
+          "type" : "BIGINT"
+        }, {
+          "name" : "RECENTCLOSEVOTES",
+          "type" : "BIGINT"
+        } ]
+      } ]
+    }
+  } ]
+}

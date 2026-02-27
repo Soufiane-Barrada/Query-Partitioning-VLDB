@@ -1,0 +1,10 @@
+SELECT COALESCE("t2"."c_name", "t2"."c_name") AS "C_NAME", "t2"."TOTAL_SPENT"
+FROM (SELECT "C_CUSTKEY"
+FROM (SELECT "c_custkey" AS "C_CUSTKEY", "c_acctbal"
+FROM "TPCH"."customer"
+ORDER BY "c_acctbal" DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t0") AS "t1"
+INNER JOIN (SELECT "customer0"."c_custkey", "customer0"."c_name", SUM("orders"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."customer" AS "customer0"
+INNER JOIN "TPCH"."orders" ON "customer0"."c_custkey" = "orders"."o_custkey"
+GROUP BY "customer0"."c_custkey", "customer0"."c_name") AS "t2" ON "t1"."C_CUSTKEY" = "t2"."c_custkey"

@@ -1,0 +1,6 @@
+SELECT COALESCE(ANY_VALUE("t"."Id"), ANY_VALUE("t"."Id")) AS "USERID", "t"."DisplayName" AS "DISPLAYNAME", COUNT("t"."Id0") AS "BADGECOUNT", AVG("t"."Reputation") AS "AVERAGEREPUTATION", SUM("Posts"."ViewCount") AS "TOTALVIEWS", SUM("Posts"."Score") AS "TOTALSCORE"
+FROM "STACK"."Posts"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id") AS "t" ON "Posts"."OwnerUserId" = "t"."Id"
+GROUP BY "t"."Id", "t"."DisplayName"

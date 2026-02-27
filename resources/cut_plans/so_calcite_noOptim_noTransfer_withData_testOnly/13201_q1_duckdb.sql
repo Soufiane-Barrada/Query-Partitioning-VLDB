@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."POSTTYPE", "t1"."POSTTYPE") AS "POSTTYPE", "t1"."POSTCOUNT", "t1"."AVGSCORE", "t1"."TOTALVIEWS", "t1"."AVGANSWERCOUNT", "t1"."AVGCOMMENTCOUNT", "t5"."DISPLAYNAME" AS "USERWITHMOSTBADGES", "t5"."BADGECOUNT", "t5"."MAXREPUTATION", "t5"."AVGREPUTATION"
+FROM (SELECT ANY_VALUE("PostTypes"."Name") AS "POSTTYPE", COUNT(*) AS "POSTCOUNT", AVG("Posts"."Score") AS "AVGSCORE", SUM("Posts"."ViewCount") AS "TOTALVIEWS", AVG("Posts"."AnswerCount") AS "AVGANSWERCOUNT", AVG("Posts"."CommentCount") AS "AVGCOMMENTCOUNT"
+FROM "STACK"."Posts"
+INNER JOIN "STACK"."PostTypes" ON "Posts"."PostTypeId" = "PostTypes"."Id"
+GROUP BY "PostTypes"."Name") AS "t1",
+(SELECT "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "BADGECOUNT", MAX("Users"."Reputation") AS "MAXREPUTATION", AVG("Users"."Reputation") AS "AVGREPUTATION"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+GROUP BY "Users"."DisplayName"
+ORDER BY 2 DESC NULLS FIRST
+FETCH NEXT 1 ROWS ONLY) AS "t5"

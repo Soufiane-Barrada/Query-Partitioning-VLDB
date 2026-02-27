@@ -1,0 +1,5 @@
+SELECT COALESCE("title"."id", "title"."id") AS "id", "title"."title", "title"."imdb_index", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "aka_name"."id" AS "id1", "aka_name"."person_id" AS "person_id0", "aka_name"."name", "aka_name"."imdb_index" AS "imdb_index0", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum" AS "md5sum0", "person_info"."id" AS "id2", "person_info"."person_id" AS "person_id1", "person_info"."info_type_id", "person_info"."info", "person_info"."note" AS "note0"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id"

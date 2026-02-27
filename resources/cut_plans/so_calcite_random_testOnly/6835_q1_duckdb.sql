@@ -1,0 +1,16 @@
+SELECT COALESCE("t7"."POSTID", "t7"."POSTID") AS "POSTID", "t7"."TITLE", "t7"."COMMENTCOUNT", "t7"."EDITCOUNT", "Users"."DisplayName" AS "DISPLAYNAME", "Users"."Reputation" AS "REPUTATION"
+FROM "STACK"."Users"
+INNER JOIN (SELECT "t4"."POSTID", "t4"."TITLE", "t4"."COMMENTCOUNT", "t4"."EDITCOUNT", "t4"."LASTEDITDATE", "t6"."$f1" AS "$f0"
+FROM (SELECT *
+FROM (SELECT ANY_VALUE("t0"."Id") AS "POSTID", "t0"."Title" AS "TITLE", COUNT(CASE WHEN "t0"."Id0" IS NOT NULL THEN 1 ELSE NULL END) AS "COMMENTCOUNT", COUNT(DISTINCT "PostHistory"."UserId") AS "EDITCOUNT", MAX("PostHistory"."CreationDate") AS "LASTEDITDATE"
+FROM "STACK"."PostHistory"
+RIGHT JOIN (SELECT "t"."Id", "t"."PostTypeId", "t"."AcceptedAnswerId", "t"."ParentId", "t"."CreationDate", "t"."Score", "t"."ViewCount", "t"."Body", "t"."OwnerUserId", "t"."OwnerDisplayName", "t"."LastEditorUserId", "t"."LastEditorDisplayName", "t"."LastEditDate", "t"."LastActivityDate", "t"."Title", "t"."Tags", "t"."AnswerCount", "t"."CommentCount", "t"."FavoriteCount", "t"."ClosedDate", "t"."CommunityOwnedDate", "t"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN (SELECT *
+FROM "STACK"."Posts"
+WHERE "CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '1' YEAR)) AS "t" ON "Comments"."PostId" = "t"."Id") AS "t0" ON "PostHistory"."PostId" = "t0"."Id"
+GROUP BY "t0"."Id", "t0"."Title") AS "t3"
+WHERE "t3"."COMMENTCOUNT" > 5 AND "t3"."EDITCOUNT" > 2) AS "t4"
+LEFT JOIN (SELECT "Id", SINGLE_VALUE("OwnerUserId") AS "$f1"
+FROM "STACK"."Posts"
+GROUP BY "Id") AS "t6" ON "t4"."POSTID" = "t6"."Id") AS "t7" ON "Users"."Id" = "t7"."$f0"

@@ -1,0 +1,13 @@
+SELECT COALESCE("t8"."POSTID", "t8"."POSTID") AS "POSTID", "t8"."POSTTYPEID", "t8"."COMMENTCOUNT", "t8"."VOTECOUNT", "t8"."LASTACTIVITYDATE", "t8"."UPVOTES", "t8"."DOWNVOTES", "t8"."USERID", "t8"."BADGECOUNT", "t8"."TOTALREPUTATION", "t8"."POSTCOUNT"
+FROM (SELECT "t6"."POSTID", "t6"."POSTTYPEID", "t6"."COMMENTCOUNT", "t6"."VOTECOUNT", "t6"."LASTACTIVITYDATE", "t6"."UPVOTES", "t6"."DOWNVOTES", "t4"."USERID", "t4"."BADGECOUNT", "t4"."TOTALREPUTATION", "t4"."POSTCOUNT"
+FROM (SELECT ANY_VALUE("t2"."Id") AS "USERID", COUNT("t2"."Id0") AS "BADGECOUNT", SUM("t2"."Reputation") AS "TOTALREPUTATION", COUNT(DISTINCT "Posts0"."Id") AS "POSTCOUNT"
+FROM "STACK"."Posts" AS "Posts0"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id") AS "t2" ON "Posts0"."OwnerUserId" = "t2"."Id"
+GROUP BY "t2"."Id") AS "t4"
+INNER JOIN (SELECT ANY_VALUE("Id") AS "POSTID", "POSTTYPEID", COUNT("Id0") AS "COMMENTCOUNT", COUNT("Id1") AS "VOTECOUNT", MAX("CreationDate") AS "LASTACTIVITYDATE", SUM("FD_COL_5") AS "UPVOTES", SUM("FD_COL_6") AS "DOWNVOTES", CAST("POSTTYPEID" AS INTEGER) AS "POSTTYPEID0"
+FROM "s1"
+GROUP BY "Id", "POSTTYPEID") AS "t6" ON "t4"."USERID" = "t6"."POSTTYPEID0"
+ORDER BY "t6"."VOTECOUNT" DESC NULLS FIRST, "t6"."COMMENTCOUNT" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t8"

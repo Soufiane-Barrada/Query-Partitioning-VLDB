@@ -1,0 +1,13 @@
+SELECT COALESCE("t2"."MOVIE_ID", "t2"."MOVIE_ID") AS "MOVIE_ID", "t2"."TITLE", "t2"."PRODUCTION_YEAR", "t3"."KEYWORD", ', ' AS "FD_COL_4", "company_name"."name"
+FROM (SELECT ANY_VALUE("title"."id") AS "MOVIE_ID", "title"."title" AS "TITLE", "title"."production_year" AS "PRODUCTION_YEAR", COUNT(DISTINCT "cast_info"."person_id") AS "CAST_COUNT"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."complete_cast" ON "title"."id" = "complete_cast"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "complete_cast"."subject_id" = "cast_info"."id"
+GROUP BY "title"."id", "title"."title", "title"."production_year"
+ORDER BY 4 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"
+LEFT JOIN "IMDB"."movie_companies" ON "t2"."MOVIE_ID" = "movie_companies"."movie_id"
+LEFT JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+LEFT JOIN (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", "keyword"."keyword" AS "KEYWORD"
+FROM "IMDB"."movie_keyword"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id") AS "t3" ON "t2"."MOVIE_ID" = "t3"."MOVIE_ID"

@@ -1,0 +1,11 @@
+SELECT COALESCE("t5"."SUPPLIER_INFO", "t5"."SUPPLIER_INFO") AS "SUPPLIER_INFO", "t5"."PART_NAME", "t5"."AVAILABLE_QUANTITY", "t5"."MODIFIED_COMMENT", "t5"."ORDER_COUNT", "t5"."TOTAL_REVENUE", CASE WHEN "t5"."TOTAL_REVENUE" > 1000.0000 THEN 'High  ' WHEN "t5"."TOTAL_REVENUE" >= 500.0000 AND "t5"."TOTAL_REVENUE" <= 1000.0000 THEN 'Medium' ELSE 'Low   ' END AS "REVENUE_CATEGORY"
+FROM (SELECT "t2"."s_name", "t2"."s_address", "t2"."p_name", "t2"."ps_availqty", "t2"."p_comment", ANY_VALUE(CONCAT("t2"."s_name", ' (', SUBSTRING("t2"."s_address", 1, 20), '...)')) AS "SUPPLIER_INFO", ANY_VALUE("t2"."p_name") AS "PART_NAME", ANY_VALUE("t2"."ps_availqty") AS "AVAILABLE_QUANTITY", ANY_VALUE(REPLACE("t2"."p_comment", 'old', 'new')) AS "MODIFIED_COMMENT", COUNT(DISTINCT "orders"."o_orderkey") AS "ORDER_COUNT", SUM("t2"."l_extendedprice" * (1 - "t2"."l_discount")) AS "TOTAL_REVENUE"
+FROM (SELECT "s1"."s_suppkey", "s1"."s_name", "s1"."s_address", "s1"."s_nationkey", "s1"."s_phone", "s1"."s_acctbal", "s1"."s_comment", "s1"."ps_partkey", "s1"."ps_suppkey", "s1"."ps_availqty", "s1"."ps_supplycost", "s1"."ps_comment", "t1"."p_partkey", "t1"."p_name", "t1"."p_mfgr", "t1"."p_brand", "t1"."p_type", "t1"."p_size", "t1"."p_container", "t1"."p_retailprice", "t1"."p_comment", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment"
+FROM "TPCH"."lineitem"
+RIGHT JOIN ("s1" INNER JOIN (SELECT *
+FROM "TPCH"."part"
+WHERE "p_size" >= 10 AND "p_size" <= 20) AS "t1" ON "s1"."ps_partkey" = "t1"."p_partkey") ON "lineitem"."l_partkey" = "t1"."p_partkey") AS "t2"
+LEFT JOIN "TPCH"."orders" ON "t2"."l_orderkey" = "orders"."o_orderkey"
+GROUP BY "t2"."s_name", "t2"."s_address", "t2"."p_name", "t2"."ps_availqty", "t2"."p_comment"
+ORDER BY 11 DESC NULLS FIRST, 6
+FETCH NEXT 100 ROWS ONLY) AS "t5"

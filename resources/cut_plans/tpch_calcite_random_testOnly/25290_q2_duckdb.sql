@@ -1,0 +1,12 @@
+SELECT COALESCE("t6"."PART_SUPPLIER_INFO", "t6"."PART_SUPPLIER_INFO") AS "PART_SUPPLIER_INFO", "t6"."PS_SUPPLYCOST"
+FROM (SELECT CONCAT("t1"."p_name", ' (', "t1"."p_brand", ') supplied by ', "t3"."EXPR$0", ' available:', CAST("t1"."ps_availqty" AS VARCHAR CHARACTER SET "ISO-8859-1"), ' cost:', CAST("t1"."ps_supplycost" AS VARCHAR CHARACTER SET "ISO-8859-1"), ' comment:', "t1"."p_comment") AS "PART_SUPPLIER_INFO", "t1"."ps_supplycost" AS "PS_SUPPLYCOST"
+FROM (SELECT *
+FROM (SELECT "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment", "part"."p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") AS "t0"
+WHERE "t0"."ps_availqty" > 100) AS "t1"
+LEFT JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", LISTAGG("supplier"."s_name", ', ') AS "EXPR$0"
+FROM "s1"
+INNER JOIN "TPCH"."supplier" ON "s1"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "supplier"."s_suppkey") AS "t3" ON "t1"."ps_suppkey" = "t3"."S_SUPPKEY"
+ORDER BY "t1"."ps_supplycost" DESC NULLS FIRST) AS "t6"

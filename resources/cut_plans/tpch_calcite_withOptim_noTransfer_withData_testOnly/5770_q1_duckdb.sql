@@ -1,0 +1,21 @@
+SELECT COALESCE("t1"."O_ORDERKEY", "t1"."O_ORDERKEY") AS "O_ORDERKEY", "t1"."TOTAL_LINES", "t1"."$f2" AS "FD_COL_2", "t9"."N_NAME", "t9"."TOTAL_ACCTBAL", "t9"."P_PARTKEY", "t9"."TOTAL_SUPPLYCOST", "t9"."C_CUSTKEY", "t9"."TOTAL_ORDERVALUE"
+FROM (SELECT "orders"."o_orderkey" AS "O_ORDERKEY", COUNT(*) AS "TOTAL_LINES", COUNT(*) > 5 AS "$f2"
+FROM "TPCH"."orders"
+INNER JOIN "TPCH"."lineitem" ON "orders"."o_orderkey" = "lineitem"."l_orderkey"
+GROUP BY "orders"."o_orderkey"
+HAVING COUNT(*) > 5) AS "t1",
+(SELECT "t3"."n_name" AS "N_NAME", "t3"."TOTAL_ACCTBAL", "t8"."P_PARTKEY", "t8"."TOTAL_SUPPLYCOST", "t6"."C_CUSTKEY", "t6"."TOTAL_ORDERVALUE"
+FROM (SELECT "t2"."n_name", SUM("supplier"."s_acctbal") AS "TOTAL_ACCTBAL"
+FROM (SELECT *
+FROM "TPCH"."nation"
+WHERE "n_name" = 'USA') AS "t2"
+INNER JOIN "TPCH"."supplier" ON "t2"."n_nationkey" = "supplier"."s_nationkey"
+GROUP BY "t2"."n_name") AS "t3",
+((SELECT "customer"."c_custkey" AS "C_CUSTKEY", SUM("orders0"."o_totalprice") AS "TOTAL_ORDERVALUE", SUM("orders0"."o_totalprice") > 100000.00 AS "$f2"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" AS "orders0" ON "customer"."c_custkey" = "orders0"."o_custkey"
+GROUP BY "customer"."c_custkey"
+HAVING SUM("orders0"."o_totalprice") > 100000.00) AS "t6", (SELECT "part"."p_partkey" AS "P_PARTKEY", SUM("partsupp"."ps_supplycost" * "partsupp"."ps_availqty") AS "TOTAL_SUPPLYCOST"
+FROM "TPCH"."part"
+INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey"
+GROUP BY "part"."p_partkey") AS "t8")) AS "t9"

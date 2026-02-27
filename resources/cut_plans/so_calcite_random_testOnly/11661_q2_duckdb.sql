@@ -1,0 +1,16 @@
+SELECT COALESCE("t11"."POSTID", "t11"."POSTID") AS "POSTID", "t11"."TITLE", "t11"."POSTTYPEID", "t11"."COMMENTCOUNT", "t11"."UPVOTECOUNT", "t11"."DOWNVOTECOUNT", "t11"."USERID", "t11"."DISPLAYNAME", "t11"."POSTEDCOUNT", "t11"."TOTALVIEWS", "t11"."TOTALSCORE"
+FROM (SELECT "t9"."POSTID", "t9"."TITLE", "t9"."POSTTYPEID", "t9"."COMMENTCOUNT", "t9"."UPVOTECOUNT", "t9"."DOWNVOTECOUNT", "t2"."USERID", "t2"."DISPLAYNAME", "t2"."POSTEDCOUNT", "t2"."TOTALVIEWS", "t2"."TOTALSCORE"
+FROM (SELECT ANY_VALUE("Id") AS "USERID", "DISPLAYNAME", COUNT(DISTINCT "Id0") AS "POSTEDCOUNT", SUM("FD_COL_3") AS "TOTALVIEWS", SUM("FD_COL_4") AS "TOTALSCORE"
+FROM "s1"
+GROUP BY "Id", "DISPLAYNAME") AS "t2"
+INNER JOIN (SELECT ANY_VALUE("t4"."Id") AS "POSTID", "t4"."Title" AS "TITLE", 1 AS "POSTTYPEID", COUNT("t4"."Id0") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("t4"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("t4"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT", COUNT("Badges"."Id") AS "BADGECOUNT"
+FROM (SELECT "t3"."Id", "t3"."PostTypeId", "t3"."AcceptedAnswerId", "t3"."ParentId", "t3"."CreationDate", "t3"."Score", "t3"."ViewCount", "t3"."Body", "t3"."OwnerUserId", "t3"."OwnerDisplayName", "t3"."LastEditorUserId", "t3"."LastEditorDisplayName", "t3"."LastEditDate", "t3"."LastActivityDate", "t3"."Title", "t3"."Tags", "t3"."AnswerCount", "t3"."CommentCount", "t3"."FavoriteCount", "t3"."ClosedDate", "t3"."CommunityOwnedDate", "t3"."ContentLicense", "t3"."Id0", "t3"."PostId", "t3"."Score0", "t3"."Text", "t3"."CreationDate0", "t3"."UserDisplayName", "t3"."UserId", "t3"."ContentLicense0", "Votes"."Id" AS "Id1", "Votes"."PostId" AS "PostId0", "Votes"."VoteTypeId", "Votes"."UserId" AS "UserId0", "Votes"."CreationDate" AS "CreationDate1", "Votes"."BountyAmount"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "Posts0"."Id", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN "STACK"."Posts" AS "Posts0" ON "Comments"."PostId" = "Posts0"."Id") AS "t3" ON "Votes"."PostId" = "t3"."Id") AS "t4"
+LEFT JOIN "STACK"."Badges" ON "t4"."OwnerUserId" = "Badges"."UserId"
+WHERE CAST("t4"."PostTypeId" AS INTEGER) = 1
+GROUP BY "t4"."Id", "t4"."Title") AS "t9" ON "t2"."USERID" = "t9"."POSTID"
+ORDER BY "t9"."UPVOTECOUNT" DESC NULLS FIRST, "t9"."COMMENTCOUNT" DESC NULLS FIRST, "t2"."TOTALSCORE" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t11"

@@ -1,0 +1,17 @@
+SELECT COALESCE("t1"."S_SUPPKEY", "t1"."S_SUPPKEY") AS "S_SUPPKEY", "t1"."S_NAME", "t1"."TOTAL_SUPPLYCOST", "lineitem"."l_orderkey", "lineitem"."l_partkey", "lineitem"."l_suppkey", "lineitem"."l_linenumber", "lineitem"."l_quantity", "lineitem"."l_extendedprice", "lineitem"."l_discount", "lineitem"."l_tax", "lineitem"."l_returnflag", "lineitem"."l_linestatus", "lineitem"."l_shipdate", "lineitem"."l_commitdate", "lineitem"."l_receiptdate", "lineitem"."l_shipinstruct", "lineitem"."l_shipmode", "lineitem"."l_comment", "orders"."o_orderkey", "orders"."o_custkey", "orders"."o_orderstatus", "orders"."o_totalprice", "orders"."o_orderdate", "orders"."o_orderpriority", "orders"."o_clerk", "orders"."o_shippriority", "orders"."o_comment", "t5"."C_CUSTKEY", "t5"."C_NAME", "t5"."ORDER_COUNT", "t5"."TOTAL_SPENT"
+FROM (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", SUM("partsupp"."ps_supplycost") AS "TOTAL_SUPPLYCOST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 5 ROWS ONLY) AS "t1"
+INNER JOIN "TPCH"."lineitem" ON "t1"."S_SUPPKEY" = "lineitem"."l_suppkey"
+INNER JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+INNER JOIN (SELECT "customer0"."c_custkey" AS "C_CUSTKEY", "customer0"."c_name" AS "C_NAME", "t3"."ORDER_COUNT", "t3"."TOTAL_SPENT"
+FROM (SELECT "customer"."c_custkey" AS "C_CUSTKEY", "customer"."c_name" AS "C_NAME", COUNT(*) AS "ORDER_COUNT", SUM("orders0"."o_totalprice") AS "TOTAL_SPENT"
+FROM "TPCH"."customer"
+INNER JOIN "TPCH"."orders" AS "orders0" ON "customer"."c_custkey" = "orders0"."o_custkey"
+GROUP BY "customer"."c_custkey", "customer"."c_name") AS "t3"
+INNER JOIN "TPCH"."customer" AS "customer0" ON "t3"."C_CUSTKEY" = "customer0"."c_custkey"
+ORDER BY "t3"."TOTAL_SPENT" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t5" ON "orders"."o_custkey" = "t5"."C_CUSTKEY"

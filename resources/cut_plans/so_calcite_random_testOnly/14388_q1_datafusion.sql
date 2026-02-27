@@ -1,0 +1,3 @@
+SELECT COALESCE("PostId", "PostId") AS "PostId", COUNT(*) AS "VOTECOUNT"
+FROM "STACK"."Votes"
+GROUP BY "PostId"

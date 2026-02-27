@@ -1,0 +1,11 @@
+SELECT COALESCE("aka_name"."person_id", "aka_name"."person_id") AS "PERSON_ID", "aka_name"."id" AS "AKA_ID", "keyword"."keyword" AS "MOVIE_KEYWORD", ', ' AS "FD_COL_3", "aka_title"."production_year" AS "PRODUCTION_YEAR"
+FROM "IMDB"."aka_name"
+INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id"
+INNER JOIN "IMDB"."aka_title" ON "cast_info"."movie_id" = "aka_title"."movie_id"
+INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id"
+LEFT JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id"
+LEFT JOIN "IMDB"."movie_keyword" ON "aka_title"."movie_id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+WHERE "aka_title"."production_year" >= 2000 AND "aka_title"."kind_id" IN (SELECT "id" AS "ID"
+FROM "IMDB"."kind_type"
+WHERE "kind" LIKE 'feature%')

@@ -1,0 +1,5 @@
+SELECT COALESCE(ANY_VALUE("aka_title"."id"), ANY_VALUE("aka_title"."id")) AS "MOVIE_ID", ANY_VALUE("aka_title"."title") AS "MOVIE_TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("keyword"."keyword") AS "KEYWORD", ARRAY_AGG(DISTINCT "aka_name"."name") AS "CAST_NAMES"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN ("IMDB"."complete_cast" INNER JOIN "IMDB"."aka_title" ON "complete_cast"."movie_id" = "aka_title"."id") ON "aka_name"."person_id" = "complete_cast"."subject_id") ON "movie_keyword"."movie_id" = "aka_title"."id"
+GROUP BY "keyword"."keyword", "aka_title"."id", "aka_title"."title", "aka_title"."production_year"

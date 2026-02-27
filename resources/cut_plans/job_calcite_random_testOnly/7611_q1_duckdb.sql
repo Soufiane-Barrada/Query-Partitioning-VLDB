@@ -1,0 +1,12 @@
+SELECT COALESCE("t3"."name", "t3"."name") AS "name", "t3"."title", "t3"."production_year", "t3"."kind", "t3"."info", ANY_VALUE("t3"."name") AS "ACTOR_NAME", ANY_VALUE("t3"."title") AS "MOVIE_TITLE", ANY_VALUE("t3"."production_year") AS "YEAR", LISTAGG(DISTINCT "t3"."keyword", ', ') AS "KEYWORDS", ANY_VALUE("t3"."kind") AS "COMPANY_TYPE", ANY_VALUE("t3"."info") AS "PERSONAL_INFO"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" LIKE '%biography%') AS "t0"
+INNER JOIN (SELECT "aka_name"."id", "aka_name"."person_id", "aka_name"."name", "aka_name"."imdb_index", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf", "aka_name"."surname_pcode", "aka_name"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "t2"."id" AS "id1", "t2"."title", "t2"."imdb_index" AS "imdb_index0", "t2"."kind_id", "t2"."production_year", "t2"."imdb_id", "t2"."phonetic_code", "t2"."episode_of_id", "t2"."season_nr", "t2"."episode_nr", "t2"."series_years", "t2"."md5sum" AS "md5sum0", "movie_keyword"."id" AS "id2", "movie_keyword"."movie_id" AS "movie_id0", "movie_keyword"."keyword_id", "keyword"."id" AS "id3", "keyword"."keyword", "keyword"."phonetic_code" AS "phonetic_code0", "movie_companies"."id" AS "id4", "movie_companies"."movie_id" AS "movie_id1", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note" AS "note0", "t1"."id" AS "id5", "t1"."kind", "person_info"."id" AS "id6", "person_info"."person_id" AS "person_id1", "person_info"."info_type_id", "person_info"."info", "person_info"."note" AS "note1"
+FROM "IMDB"."person_info"
+RIGHT JOIN ("IMDB"."cast_info" INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id" INNER JOIN ("IMDB"."movie_companies" INNER JOIN (SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" LIKE '%Production%') AS "t1" ON "movie_companies"."company_type_id" = "t1"."id" INNER JOIN ("IMDB"."movie_keyword" INNER JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000) AS "t2" ON "movie_keyword"."movie_id" = "t2"."id" INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id") ON "movie_companies"."movie_id" = "t2"."id") ON "cast_info"."movie_id" = "t2"."id") ON "person_info"."person_id" = "aka_name"."person_id") AS "t3" ON "t0"."ID" = "t3"."info_type_id"
+GROUP BY "t3"."name", "t3"."title", "t3"."production_year", "t3"."kind", "t3"."info"

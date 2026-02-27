@@ -1,0 +1,11 @@
+SELECT COALESCE("t8"."SUPPLIER_NAME", "t8"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t8"."CUSTOMER_NAME", "t8"."NATION_NAME", CAST("t8"."$f6" AS DECIMAL(19, 4)) AS "TOTAL_REVENUE", "t8"."TOTAL_ORDERS_COUNT"
+FROM (SELECT "t5"."S_NAME", "s1"."c_name", "s1"."N_NAME", ANY_VALUE("t5"."S_NAME") AS "SUPPLIER_NAME", ANY_VALUE("s1"."c_name") AS "CUSTOMER_NAME", ANY_VALUE("s1"."N_NAME") AS "NATION_NAME", SUM("s1"."l_extendedprice" * (1 - "s1"."l_discount")) AS "$f6", COUNT(DISTINCT "s1"."o_orderkey") AS "TOTAL_ORDERS_COUNT"
+FROM (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", SUM("partsupp0"."ps_supplycost" * "partsupp0"."ps_availqty") AS "TOTAL_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "supplier"."s_suppkey" = "partsupp0"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t5"
+INNER JOIN "s1" ON "t5"."S_SUPPKEY" = "s1"."ps_suppkey"
+GROUP BY "t5"."S_NAME", "s1"."c_name", "s1"."N_NAME"
+ORDER BY 7 DESC NULLS FIRST) AS "t8"

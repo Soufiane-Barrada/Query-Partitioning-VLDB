@@ -1,0 +1,6 @@
+SELECT COALESCE(ANY_VALUE("Id"), ANY_VALUE("Id")) AS "POSTID", "Title" AS "TITLE", "CreationDate" AS "CREATIONDATE", "ViewCount" AS "VIEWCOUNT", "Score" AS "SCORE", COUNT("Id0") AS "COMMENTCOUNT", COUNT("Id1") AS "VOTECOUNT", ARRAY_AGG(DISTINCT "TagName") AS "TAGS", ANY_VALUE("DisplayName") AS "OWNERDISPLAYNAME", ANY_VALUE("Reputation") AS "OWNERREPUTATION"
+FROM "s1"
+WHERE CAST("PostTypeId" AS INTEGER) = 1
+GROUP BY "Id", "Title", "CreationDate", "ViewCount", "Score", "Id2", "DisplayName", "Reputation"
+ORDER BY "CreationDate" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY

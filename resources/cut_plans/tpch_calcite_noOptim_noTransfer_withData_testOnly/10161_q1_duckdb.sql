@@ -1,0 +1,6 @@
+SELECT COALESCE("nation"."n_name", "nation"."n_name") AS "n_name", "region"."r_name", "customer"."c_custkey", "orders"."o_totalprice"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+INNER JOIN "TPCH"."customer" ON "nation"."n_nationkey" = "customer"."c_nationkey"
+INNER JOIN "TPCH"."orders" ON "customer"."c_custkey" = "orders"."o_custkey"
+INNER JOIN "TPCH"."lineitem" ON "orders"."o_orderkey" = "lineitem"."l_orderkey"

@@ -1,0 +1,7 @@
+SELECT COALESCE("t3"."SUPPLIER_NAME", "t3"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t3"."TOTAL_PRODUCTS", "t3"."TOTAL_AVAILABLE_QUANTITY", "t3"."AVERAGE_SUPPLY_COST", "t3"."BRANDS_OFFERED", "t3"."CONTAINER_TYPES", CONCAT('Supplier: ', "t3"."SUPPLIER_NAME", ' offers ', CAST("t3"."TOTAL_PRODUCTS" AS VARCHAR CHARACTER SET "ISO-8859-1"), ' products, with an average supply cost of $', CAST(ROUND("t3"."AVERAGE_SUPPLY_COST", 2) AS VARCHAR CHARACTER SET "ISO-8859-1"), '.') AS "SUPPLIER_SUMMARY"
+FROM (SELECT "supplier"."s_name" AS "SUPPLIER_NAME", COUNT(*) AS "TOTAL_PRODUCTS", SUM("s1"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", AVG("s1"."ps_supplycost") AS "AVERAGE_SUPPLY_COST", LISTAGG(DISTINCT "s1"."p_brand", ', ') AS "BRANDS_OFFERED", LISTAGG(DISTINCT "s1"."p_container", ', ') AS "CONTAINER_TYPES"
+FROM "TPCH"."supplier"
+INNER JOIN "s1" ON "supplier"."s_suppkey" = "s1"."ps_suppkey"
+GROUP BY "supplier"."s_name"
+HAVING SUM("s1"."ps_availqty") > 0
+ORDER BY 2 DESC NULLS FIRST) AS "t3"

@@ -1,0 +1,7 @@
+SELECT COALESCE("t1"."MOVIE_ID", "t1"."MOVIE_ID") AS "MOVIE_ID", "t1"."TITLE", "t1"."PRODUCTION_YEAR", "keyword"."keyword", ', ' AS "FD_COL_4"
+FROM (SELECT "t"."MOVIE_ID", "t"."TITLE", "t"."PRODUCTION_YEAR", "t"."YEAR_RANK", "movie_keyword"."id", "movie_keyword"."movie_id", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT "id" AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", ROW_NUMBER() OVER (PARTITION BY "production_year" ORDER BY "title") AS "YEAR_RANK"
+FROM "IMDB"."aka_title") AS "t" ON "movie_keyword"."movie_id" = "t"."MOVIE_ID"
+WHERE "t"."PRODUCTION_YEAR" >= 2000 AND "t"."PRODUCTION_YEAR" <= 2023) AS "t1"
+LEFT JOIN "IMDB"."keyword" ON "t1"."keyword_id" = "keyword"."id"

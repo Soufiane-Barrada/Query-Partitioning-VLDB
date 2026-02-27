@@ -1,0 +1,22 @@
+SELECT COALESCE("o_orderkey", "o_orderkey") AS "o_orderkey", "c_name", "TOTAL_EXTENDED_PRICE", "UNIQUE_LINE_ITEMS", "AVERAGE_MAX_PART_COST"
+FROM (SELECT "t13"."o_orderkey", "t13"."c_name", SUM("t13"."l_extendedprice") AS "TOTAL_EXTENDED_PRICE", COUNT(DISTINCT "t13"."l_linenumber") AS "UNIQUE_LINE_ITEMS", AVG("t13"."MAX_PART_COST") AS "AVERAGE_MAX_PART_COST"
+FROM (SELECT "customer"."c_name", "t10"."o_orderkey", "t3"."l_linenumber", "t3"."l_extendedprice", MAX("t9"."MAX_COST") AS "MAX_PART_COST"
+FROM (SELECT *
+FROM "TPCH"."lineitem"
+WHERE "l_quantity" > 50.00) AS "t3"
+INNER JOIN (SELECT "t6"."p_partkey" AS "P_PARTKEY", "t6"."p_name" AS "P_NAME", ANY_VALUE("region"."r_name") AS "REGION_NAME", MAX("t6"."TOTAL_COST") AS "MAX_COST"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN (SELECT "part"."p_partkey", "part"."p_name", "part"."p_mfgr", "part"."p_brand", "part"."p_type", "part"."p_size", "part"."p_container", "part"."p_retailprice", "part"."p_comment", "t5"."PS_PARTKEY", "t5"."TOTAL_COST", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment"
+FROM "TPCH"."supplier"
+INNER JOIN ("TPCH"."part" INNER JOIN (SELECT "ps_partkey" AS "PS_PARTKEY", SUM("ps_supplycost" * "ps_availqty") AS "TOTAL_COST"
+FROM "TPCH"."partsupp"
+GROUP BY "ps_partkey") AS "t5" ON "part"."p_partkey" = "t5"."PS_PARTKEY" LEFT JOIN "s1" ON "part"."p_partkey" = "s1"."ps_partkey0") ON "supplier"."s_suppkey" = "s1"."PS_SUPPKEY") AS "t6" ON "nation"."n_nationkey" = "t6"."s_nationkey"
+GROUP BY "region"."r_name", "t6"."p_partkey", "t6"."p_name") AS "t9" ON "t3"."l_partkey" = "t9"."P_PARTKEY"
+INNER JOIN ("TPCH"."customer" INNER JOIN (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderstatus" = 'F') AS "t10" ON "customer"."c_custkey" = "t10"."o_custkey") ON "t3"."l_orderkey" = "t10"."o_orderkey"
+GROUP BY "t3"."l_linenumber", "t3"."l_quantity", "t3"."l_extendedprice", "customer"."c_name", "t10"."o_orderkey") AS "t13"
+GROUP BY "t13"."c_name", "t13"."o_orderkey"
+ORDER BY 3 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t16"

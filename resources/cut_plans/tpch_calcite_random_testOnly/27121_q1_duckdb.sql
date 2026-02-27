@@ -1,0 +1,3 @@
+SELECT COALESCE("p_partkey", "p_partkey") AS "P_PARTKEY", "p_name" AS "P_NAME", "p_brand" AS "P_BRAND", "p_mfgr" AS "P_MFGR", "p_comment" AS "P_COMMENT", LENGTH("p_comment") AS "COMMENT_LENGTH", CASE WHEN "p_size" > 20 THEN 'Large ' WHEN "p_size" >= 10 AND "p_size" <= 20 THEN 'Medium' ELSE 'Small ' END AS "SIZE_CATEGORY"
+FROM "TPCH"."part"
+WHERE CASE WHEN "p_size" > 20 THEN 'Large ' WHEN "p_size" >= 10 AND "p_size" <= 20 THEN 'Medium' ELSE 'Small ' END = 'Large '

@@ -1,0 +1,11 @@
+SELECT COALESCE("t7"."DISPLAYNAME", "t7"."DISPLAYNAME") AS "DISPLAYNAME", "t7"."REPUTATION", "t7"."BADGECOUNT", "t7"."UPVOTESRECEIVED", "t7"."DOWNVOTESRECEIVED", "t7"."TOTALPOSTS", "t7"."TOTALQUESTIONS", "t7"."TOTALANSWERS", "t7"."AVGPOSTSCORE", "t7"."TOTALVIEWS"
+FROM (SELECT "t5"."DISPLAYNAME", "t5"."REPUTATION", "t5"."BADGECOUNT", "t5"."UPVOTESRECEIVED", "t5"."DOWNVOTESRECEIVED", "s1"."TOTALPOSTS", "s1"."QUESTIONS" AS "TOTALQUESTIONS", "s1"."ANSWERS" AS "TOTALANSWERS", "s1"."AVGPOSTSCORE", "s1"."TOTALVIEWS"
+FROM "s1"
+INNER JOIN (SELECT ANY_VALUE("t2"."Id") AS "USERID", "t2"."DisplayName" AS "DISPLAYNAME", "t2"."Reputation" AS "REPUTATION", COUNT("t2"."Id0") AS "BADGECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTESRECEIVED", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTESRECEIVED"
+FROM "STACK"."Votes"
+RIGHT JOIN (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Badges"."Id" AS "Id0", "Badges"."UserId", "Badges"."Name", "Badges"."Date", "Badges"."Class", "Badges"."TagBased"
+FROM "STACK"."Badges"
+RIGHT JOIN "STACK"."Users" ON "Badges"."UserId" = "Users"."Id") AS "t2" ON "Votes"."UserId" = "t2"."Id"
+GROUP BY "t2"."Id", "t2"."DisplayName", "t2"."Reputation") AS "t5" ON "s1"."OWNERUSERID" = "t5"."USERID"
+ORDER BY "t5"."REPUTATION" DESC NULLS FIRST, "t5"."BADGECOUNT" DESC NULLS FIRST, "t5"."UPVOTESRECEIVED" DESC NULLS FIRST
+FETCH NEXT 100 ROWS ONLY) AS "t7"

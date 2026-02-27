@@ -1,0 +1,7 @@
+SELECT COALESCE("t0"."id", "t0"."id") AS "id", "t0"."title", "t0"."imdb_index", "t0"."kind_id", "t0"."production_year", "t0"."imdb_id", "t0"."phonetic_code", "t0"."episode_of_id", "t0"."season_nr", "t0"."episode_nr", "t0"."series_years", "t0"."md5sum", "t0"."id0", "t0"."movie_id", "t0"."keyword_id", "keyword"."id" AS "id1", "keyword"."keyword", "keyword"."phonetic_code" AS "phonetic_code0", "movie_companies"."id" AS "id2", "movie_companies"."movie_id" AS "movie_id0", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN ((SELECT "t"."id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."imdb_id", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."series_years", "t"."md5sum", "movie_keyword"."id" AS "id0", "movie_keyword"."movie_id", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000 AND "production_year" <= 2023) AS "t" ON "movie_keyword"."movie_id" = "t"."id") AS "t0" LEFT JOIN "IMDB"."keyword" ON "t0"."keyword_id" = "keyword"."id") ON "movie_companies"."movie_id" = "t0"."id"

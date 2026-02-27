@@ -1,0 +1,11 @@
+SELECT COALESCE("t1"."title", "t1"."title") AS "MOVIE_TITLE", "t1"."production_year" AS "PRODUCTION_YEAR", COUNT(DISTINCT "t1"."name0") AS "TOTAL_ACTORS", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", LISTAGG(DISTINCT "t1"."info", ', ') AS "ADDITIONAL_INFORMATION"
+FROM (SELECT "t"."id", "t"."title", "t"."imdb_index", "t"."kind_id", "t"."production_year", "t"."imdb_id", "t"."phonetic_code", "t"."episode_of_id", "t"."season_nr", "t"."episode_nr", "t"."series_years", "t"."md5sum", "movie_companies"."id" AS "id0", "movie_companies"."movie_id", "movie_companies"."company_id", "movie_companies"."company_type_id", "movie_companies"."note", "company_name"."id" AS "id1", "company_name"."name", "company_name"."country_code", "company_name"."imdb_id" AS "imdb_id0", "company_name"."name_pcode_nf", "company_name"."name_pcode_sf", "company_name"."md5sum" AS "md5sum0", "t0"."id" AS "id2", "t0"."kind", "cast_info"."id" AS "id3", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id0", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id", "aka_name"."id" AS "id4", "aka_name"."person_id" AS "person_id0", "aka_name"."name" AS "name0", "aka_name"."imdb_index" AS "imdb_index0", "aka_name"."name_pcode_cf", "aka_name"."name_pcode_nf" AS "name_pcode_nf0", "aka_name"."surname_pcode", "aka_name"."md5sum" AS "md5sum1", "person_info"."id" AS "id5", "person_info"."person_id" AS "person_id1", "person_info"."info_type_id", "person_info"."info", "person_info"."note" AS "note1"
+FROM "IMDB"."person_info"
+RIGHT JOIN ("IMDB"."cast_info" INNER JOIN ("IMDB"."company_name" INNER JOIN ("IMDB"."movie_companies" INNER JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" > 2000) AS "t" ON "movie_companies"."movie_id" = "t"."id" INNER JOIN (SELECT *
+FROM "IMDB"."company_type"
+WHERE "kind" = 'Distributor') AS "t0" ON "movie_companies"."company_type_id" = "t0"."id") ON "company_name"."id" = "movie_companies"."company_id") ON "cast_info"."movie_id" = "t"."id" INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id") ON "person_info"."person_id" = "aka_name"."person_id") AS "t1"
+LEFT JOIN "IMDB"."movie_keyword" ON "t1"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+GROUP BY "t1"."title", "t1"."production_year"

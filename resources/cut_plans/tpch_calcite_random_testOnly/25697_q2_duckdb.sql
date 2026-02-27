@@ -1,0 +1,13 @@
+SELECT COALESCE("t6"."P_PARTKEY", "t6"."P_PARTKEY") AS "P_PARTKEY", "t6"."UPPERCASE_PART_NAME", "t6"."BRAND_TYPE", "t6"."MODIFIED_COMMENT", "t6"."TOTAL_SUPPLY_VALUE", "t6"."SUPPLIER_NAME", "t6"."REGION_NAME", "t6"."TOTAL_ORDERS"
+FROM (SELECT "t1"."p_partkey" AS "P_PARTKEY", ANY_VALUE(UPPER("t1"."p_name")) AS "UPPERCASE_PART_NAME", ANY_VALUE(CONCAT("t1"."p_brand", ' - ', "t1"."p_type")) AS "BRAND_TYPE", ANY_VALUE(REPLACE(SUBSTRING("t1"."p_comment", 1, 15), ' ', '-')) AS "MODIFIED_COMMENT", CASE WHEN SUM("t1"."ps_supplycost" * "t1"."ps_availqty") IS NOT NULL THEN CAST(SUM("t1"."ps_supplycost" * "t1"."ps_availqty") AS DECIMAL(19, 2)) ELSE 0.00 END AS "TOTAL_SUPPLY_VALUE", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("region"."r_name") AS "REGION_NAME", COUNT(DISTINCT "orders"."o_orderkey") AS "TOTAL_ORDERS"
+FROM (SELECT "s1"."p_partkey", "s1"."p_name", "s1"."p_mfgr", "s1"."p_brand", "s1"."p_type", "s1"."p_size", "s1"."p_container", "s1"."p_retailprice", "s1"."p_comment", "partsupp"."ps_partkey", "partsupp"."ps_suppkey", "partsupp"."ps_availqty", "partsupp"."ps_supplycost", "partsupp"."ps_comment"
+FROM "TPCH"."partsupp"
+RIGHT JOIN "s1" ON "partsupp"."ps_partkey" = "s1"."p_partkey") AS "t1"
+LEFT JOIN "TPCH"."supplier" ON "t1"."ps_suppkey" = "supplier"."s_suppkey"
+LEFT JOIN "TPCH"."nation" ON "supplier"."s_nationkey" = "nation"."n_nationkey"
+LEFT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey"
+LEFT JOIN "TPCH"."lineitem" ON "t1"."p_partkey" = "lineitem"."l_partkey"
+LEFT JOIN "TPCH"."orders" ON "lineitem"."l_orderkey" = "orders"."o_orderkey"
+GROUP BY "t1"."p_partkey", "t1"."p_name", "t1"."p_brand", "t1"."p_type", "t1"."p_comment", "supplier"."s_name", "region"."r_name"
+HAVING COUNT(DISTINCT "orders"."o_orderkey") > 10
+ORDER BY 5 DESC NULLS FIRST, 2) AS "t6"

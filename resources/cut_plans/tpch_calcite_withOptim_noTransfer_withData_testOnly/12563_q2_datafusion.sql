@@ -1,0 +1,5 @@
+SELECT COALESCE("p_name", "p_name") AS "p_name", "TOTAL_QUANTITY", "TOTAL_REVENUE", "TOTAL_ORDERS"
+FROM (SELECT "p_name", SUM("l_quantity") AS "TOTAL_QUANTITY", SUM("l_extendedprice") AS "TOTAL_REVENUE", COUNT(DISTINCT "o_orderkey") AS "TOTAL_ORDERS"
+FROM "s1"
+GROUP BY "p_name"
+ORDER BY 3 DESC NULLS FIRST) AS "t3"

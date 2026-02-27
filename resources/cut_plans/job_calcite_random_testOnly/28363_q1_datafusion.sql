@@ -1,0 +1,10 @@
+SELECT COALESCE(AVG("t3"."PRODUCTION_YEAR"), AVG("t3"."PRODUCTION_YEAR")) AS "AVG_YEAR"
+FROM (SELECT "t1"."id", "t1"."title" AS "TITLE", "t1"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("t1"."id") AS "MOVIE_ID", LISTAGG(DISTINCT "aka_name"."name", ', ') AS "ACTORS", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", LISTAGG(DISTINCT "company_type"."kind", ', ') AS "COMPANY_TYPES"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id"
+INNER JOIN ("IMDB"."company_type" INNER JOIN "IMDB"."movie_companies" ON "company_type"."id" = "movie_companies"."company_type_id" INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."cast_info" ON "aka_name"."person_id" = "cast_info"."person_id" INNER JOIN ((SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" = 'Synopsis') AS "t0" INNER JOIN "IMDB"."movie_info" ON "t0"."ID" = "movie_info"."info_type_id" INNER JOIN ("IMDB"."complete_cast" INNER JOIN (SELECT *
+FROM "IMDB"."title"
+WHERE "production_year" >= 2000) AS "t1" ON "complete_cast"."movie_id" = "t1"."id") ON "movie_info"."movie_id" = "t1"."id") ON "cast_info"."person_id" = "complete_cast"."subject_id") ON "movie_companies"."movie_id" = "t1"."id") ON "movie_keyword"."movie_id" = "t1"."id"
+GROUP BY "t1"."id", "t1"."title", "t1"."production_year") AS "t3"

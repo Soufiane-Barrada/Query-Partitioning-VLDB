@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."o_orderkey", "t"."o_orderkey") AS "o_orderkey", "t"."o_custkey", "t"."o_orderstatus", "t"."o_totalprice", "t"."o_orderdate", "t"."o_orderpriority", "t"."o_clerk", "t"."o_shippriority", "t"."o_comment", "supplier"."s_suppkey", "supplier"."s_name", "supplier"."s_address", "supplier"."s_nationkey", "supplier"."s_phone", "supplier"."s_acctbal", "supplier"."s_comment", "customer"."c_custkey", "customer"."c_name", "customer"."c_address", "customer"."c_nationkey", "customer"."c_phone", "customer"."c_acctbal", "customer"."c_mktsegment", "customer"."c_comment"
+FROM (SELECT *
+FROM "TPCH"."orders"
+WHERE "o_orderdate" >= DATE '1996-01-01' AND "o_orderdate" <= DATE '1996-12-31') AS "t"
+INNER JOIN ("TPCH"."supplier" INNER JOIN "TPCH"."customer" ON "supplier"."s_nationkey" = "customer"."c_nationkey") ON "t"."o_custkey" = "customer"."c_custkey"

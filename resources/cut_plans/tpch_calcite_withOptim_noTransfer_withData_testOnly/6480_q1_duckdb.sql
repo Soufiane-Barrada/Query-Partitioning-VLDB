@@ -1,0 +1,13 @@
+SELECT COALESCE("t0"."P_NAME", "t0"."P_NAME") AS "P_NAME", "t0"."PS_AVAILQTY", "t0"."PS_SUPPLYCOST", "t0"."PS_COMMENT", "t0"."REGION_NAME", "t3"."NATION_NAME", "t3"."REGION_NAME" AS "REGION_NAME0", "t3"."SUPPLIER_COUNT", "t3"."TOTAL_ACCTBAL"
+FROM (SELECT "part"."p_name" AS "P_NAME", "t"."ps_availqty" AS "PS_AVAILQTY", "t"."ps_supplycost" AS "PS_SUPPLYCOST", "t"."ps_comment" AS "PS_COMMENT", "region"."r_name" AS "REGION_NAME"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN (SELECT *
+FROM "TPCH"."partsupp"
+WHERE "ps_availqty" > 0) AS "t" ON "part"."p_partkey" = "t"."ps_partkey") ON "supplier"."s_suppkey" = "t"."ps_suppkey") AS "t0"
+RIGHT JOIN (SELECT ANY_VALUE("nation0"."n_name") AS "NATION_NAME", ANY_VALUE("region0"."r_name") AS "REGION_NAME", COUNT(DISTINCT "supplier0"."s_suppkey") AS "SUPPLIER_COUNT", SUM("supplier0"."s_acctbal") AS "TOTAL_ACCTBAL"
+FROM "TPCH"."region" AS "region0"
+INNER JOIN "TPCH"."nation" AS "nation0" ON "region0"."r_regionkey" = "nation0"."n_regionkey"
+INNER JOIN "TPCH"."supplier" AS "supplier0" ON "nation0"."n_nationkey" = "supplier0"."s_nationkey"
+GROUP BY "region0"."r_name", "nation0"."n_name") AS "t3" ON "t0"."REGION_NAME" = "t3"."REGION_NAME"

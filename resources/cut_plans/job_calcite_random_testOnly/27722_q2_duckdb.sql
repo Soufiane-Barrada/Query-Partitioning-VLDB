@@ -1,0 +1,15 @@
+SELECT COALESCE("t5"."MOVIE_ID", "t5"."MOVIE_ID") AS "MOVIE_ID", "t5"."TITLE", "t5"."PRODUCTION_YEAR", "t5"."CAST_COUNT", "t5"."KEYWORDS", COUNT(DISTINCT "cast_info0"."person_id") AS "UNIQUE_ACTORS"
+FROM (SELECT "t3"."MOVIE_ID", "t3"."TITLE", "t3"."PRODUCTION_YEAR", "t3"."CAST_COUNT", CASE WHEN "t1"."KEYWORDS" IS NOT NULL THEN CAST("t1"."KEYWORDS" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'No Keywords' END AS "KEYWORDS"
+FROM (SELECT "movie_keyword"."movie_id" AS "MOVIE_ID", LISTAGG("keyword"."keyword", ', ') AS "KEYWORDS"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id"
+GROUP BY "movie_keyword"."movie_id") AS "t1"
+RIGHT JOIN (SELECT ANY_VALUE("id00") AS "MOVIE_ID", "title" AS "TITLE", "production_year" AS "PRODUCTION_YEAR", COUNT(DISTINCT "person_id") AS "CAST_COUNT"
+FROM "s1"
+GROUP BY "id00", "title", "production_year") AS "t3" ON "t1"."MOVIE_ID" = "t3"."MOVIE_ID"
+ORDER BY "t3"."CAST_COUNT" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t5"
+INNER JOIN "IMDB"."complete_cast" AS "complete_cast0" ON "t5"."MOVIE_ID" = "complete_cast0"."movie_id"
+INNER JOIN "IMDB"."cast_info" AS "cast_info0" ON "complete_cast0"."subject_id" = "cast_info0"."id"
+GROUP BY "t5"."MOVIE_ID", "t5"."TITLE", "t5"."PRODUCTION_YEAR", "t5"."CAST_COUNT", "t5"."KEYWORDS"
+HAVING COUNT(DISTINCT "cast_info0"."person_id") > 5

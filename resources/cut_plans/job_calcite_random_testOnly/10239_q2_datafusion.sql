@@ -1,0 +1,6 @@
+SELECT COALESCE("t1"."TITLE", "t1"."TITLE") AS "TITLE", "t1"."ACTOR_NAME", "t1"."MOVIE_KEYWORD", "t1"."COMPANY_NAME", "t1"."COMPANY_TYPE", "t1"."PERSON_INFO", "t1"."production_year"
+FROM (SELECT "s1"."title" AS "TITLE", "s1"."name" AS "ACTOR_NAME", "s1"."keyword" AS "MOVIE_KEYWORD", "company_name"."name" AS "COMPANY_NAME", "s1"."kind" AS "COMPANY_TYPE", "s1"."info" AS "PERSON_INFO", "s1"."production_year"
+FROM "IMDB"."company_name"
+INNER JOIN "s1" ON "company_name"."id" = "s1"."company_id"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, "s1"."title"
+FETCH NEXT 100 ROWS ONLY) AS "t1"

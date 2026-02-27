@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."r_regionkey", "t"."r_regionkey") AS "r_regionkey", "t"."r_name", "t"."r_comment", "t"."n_nationkey", "t"."n_name", "t"."n_regionkey", "t"."n_comment", CAST("supplier"."s_suppkey" AS BIGINT) AS "s_suppkey", CAST("supplier"."s_name" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_name", CAST("supplier"."s_address" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_address", CAST("supplier"."s_nationkey" AS INTEGER) AS "s_nationkey", CAST("supplier"."s_phone" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_phone", CAST("supplier"."s_acctbal" AS DECIMAL(15, 2)) AS "s_acctbal", CAST("supplier"."s_comment" AS VARCHAR CHARACTER SET "ISO-8859-1") AS "s_comment"
+FROM (SELECT "region"."r_regionkey", "region"."r_name", "region"."r_comment", "nation"."n_nationkey", "nation"."n_name", "nation"."n_regionkey", "nation"."n_comment"
+FROM "TPCH"."nation"
+RIGHT JOIN "TPCH"."region" ON "nation"."n_regionkey" = "region"."r_regionkey") AS "t"
+INNER JOIN "TPCH"."supplier" ON "t"."n_nationkey" = "supplier"."s_nationkey"

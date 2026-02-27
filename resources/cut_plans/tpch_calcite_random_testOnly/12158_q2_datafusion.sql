@@ -1,0 +1,8 @@
+SELECT COALESCE("t3"."N_NAME", "t3"."N_NAME") AS "N_NAME", "t3"."REVENUE"
+FROM (SELECT "nation"."n_name" AS "N_NAME", SUM("s1"."l_extendedprice" * (1 - "s1"."l_discount")) AS "REVENUE"
+FROM "TPCH"."nation"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN "s1" ON "part"."p_partkey" = "s1"."l_partkey"
+GROUP BY "nation"."n_name"
+ORDER BY 2 DESC NULLS FIRST) AS "t3"

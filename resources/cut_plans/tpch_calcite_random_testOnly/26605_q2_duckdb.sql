@@ -1,0 +1,5 @@
+SELECT COALESCE("PART_NAME", "PART_NAME") AS "PART_NAME", "SUPPLIER_NAME", "NATION_NAME", "CUSTOMER_NAME", "TOTAL_QUANTITY", "AVERAGE_PRICE", "ORDER_COUNT", CONCAT('Supplier ', "s_name", ' from nation ', "n_name", ' supplied ', CAST("TOTAL_QUANTITY" AS VARCHAR CHARACTER SET "ISO-8859-1"), ' of ', "p_name", ' to customer ', "c_name") AS "PERFORMANCE_COMMENT"
+FROM (SELECT "p_name", "s_name", "n_name", "c_name", ANY_VALUE("p_name") AS "PART_NAME", ANY_VALUE("s_name") AS "SUPPLIER_NAME", ANY_VALUE("n_name") AS "NATION_NAME", ANY_VALUE("c_name") AS "CUSTOMER_NAME", SUM("l_quantity") AS "TOTAL_QUANTITY", AVG("FD_COL_5") AS "AVERAGE_PRICE", COUNT(DISTINCT "o_orderkey") AS "ORDER_COUNT"
+FROM "s1"
+GROUP BY "p_name", "s_name", "n_name", "c_name"
+ORDER BY 9 DESC NULLS FIRST, 10) AS "t4"

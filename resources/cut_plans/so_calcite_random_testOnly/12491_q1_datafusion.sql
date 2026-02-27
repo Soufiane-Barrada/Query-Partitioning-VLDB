@@ -1,0 +1,6 @@
+SELECT COALESCE("t"."Id", "t"."Id") AS "Id", "t"."Reputation" AS "REPUTATION", "t"."Id0", "Badges"."Id" AS "Id1", CASE WHEN "Votes"."BountyAmount" IS NOT NULL THEN CAST("Votes"."BountyAmount" AS INTEGER) ELSE 0 END AS "FD_COL_4", CASE WHEN "t"."ViewCount" IS NOT NULL THEN CAST("t"."ViewCount" AS INTEGER) ELSE 0 END AS "FD_COL_5"
+FROM (SELECT "Users"."Id", "Users"."Reputation", "Users"."CreationDate", "Users"."DisplayName", "Users"."LastAccessDate", "Users"."WebsiteUrl", "Users"."Location", "Users"."AboutMe", "Users"."Views", "Users"."UpVotes", "Users"."DownVotes", "Users"."ProfileImageUrl", "Users"."AccountId", "Posts"."Id" AS "Id0", "Posts"."PostTypeId", "Posts"."AcceptedAnswerId", "Posts"."ParentId", "Posts"."CreationDate" AS "CreationDate0", "Posts"."Score", "Posts"."ViewCount", "Posts"."Body", "Posts"."OwnerUserId", "Posts"."OwnerDisplayName", "Posts"."LastEditorUserId", "Posts"."LastEditorDisplayName", "Posts"."LastEditDate", "Posts"."LastActivityDate", "Posts"."Title", "Posts"."Tags", "Posts"."AnswerCount", "Posts"."CommentCount", "Posts"."FavoriteCount", "Posts"."ClosedDate", "Posts"."CommunityOwnedDate", "Posts"."ContentLicense"
+FROM "STACK"."Posts"
+RIGHT JOIN "STACK"."Users" ON "Posts"."OwnerUserId" = "Users"."Id") AS "t"
+LEFT JOIN "STACK"."Badges" ON "t"."Id" = "Badges"."UserId"
+LEFT JOIN "STACK"."Votes" ON "t"."Id" = "Votes"."UserId"

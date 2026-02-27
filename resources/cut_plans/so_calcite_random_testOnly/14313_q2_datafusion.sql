@@ -1,0 +1,12 @@
+SELECT COALESCE("t3"."USERID", "t3"."USERID") AS "USERID", "t3"."DISPLAYNAME", "t3"."REPUTATION", "t3"."POSTCOUNT", "t3"."QUESTIONS", "t3"."ANSWERS", "t3"."TOTALSCORE", "t3"."UPVOTES", "t3"."DOWNVOTES", "t7"."POSTID", "t7"."TITLE", "t7"."CREATIONDATE", "t7"."SCORE", "t7"."VIEWCOUNT", "t7"."COMMENTCOUNT", "t7"."EDITHISTORYCOUNT"
+FROM (SELECT ANY_VALUE("s1"."Id") AS "USERID", "s1"."DisplayName" AS "DISPLAYNAME", "s1"."Reputation" AS "REPUTATION", COUNT(DISTINCT "s1"."Id0") AS "POSTCOUNT", SUM(CASE WHEN CAST("s1"."PostTypeId" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "QUESTIONS", SUM(CASE WHEN CAST("s1"."PostTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "ANSWERS", SUM("s1"."Score") AS "TOTALSCORE", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTES", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTES"
+FROM "STACK"."Votes"
+RIGHT JOIN "s1" ON "Votes"."PostId" = "s1"."Id0"
+GROUP BY "s1"."Id", "s1"."DisplayName", "s1"."Reputation") AS "t3"
+INNER JOIN (SELECT ANY_VALUE("t4"."Id") AS "POSTID", "t4"."Title" AS "TITLE", "t4"."CreationDate" AS "CREATIONDATE", "t4"."Score" AS "SCORE", "t4"."ViewCount" AS "VIEWCOUNT", COUNT("t4"."Id0") AS "COMMENTCOUNT", COUNT(DISTINCT "PostHistory"."Id") AS "EDITHISTORYCOUNT"
+FROM "STACK"."PostHistory"
+RIGHT JOIN (SELECT "Posts0"."Id", "Posts0"."PostTypeId", "Posts0"."AcceptedAnswerId", "Posts0"."ParentId", "Posts0"."CreationDate", "Posts0"."Score", "Posts0"."ViewCount", "Posts0"."Body", "Posts0"."OwnerUserId", "Posts0"."OwnerDisplayName", "Posts0"."LastEditorUserId", "Posts0"."LastEditorDisplayName", "Posts0"."LastEditDate", "Posts0"."LastActivityDate", "Posts0"."Title", "Posts0"."Tags", "Posts0"."AnswerCount", "Posts0"."CommentCount", "Posts0"."FavoriteCount", "Posts0"."ClosedDate", "Posts0"."CommunityOwnedDate", "Posts0"."ContentLicense", "Comments"."Id" AS "Id0", "Comments"."PostId", "Comments"."Score" AS "Score0", "Comments"."Text", "Comments"."CreationDate" AS "CreationDate0", "Comments"."UserDisplayName", "Comments"."UserId", "Comments"."ContentLicense" AS "ContentLicense0"
+FROM "STACK"."Comments"
+RIGHT JOIN "STACK"."Posts" AS "Posts0" ON "Comments"."PostId" = "Posts0"."Id") AS "t4" ON "PostHistory"."PostId" = "t4"."Id"
+GROUP BY "t4"."Id", "t4"."CreationDate", "t4"."Score", "t4"."ViewCount", "t4"."Title") AS "t7" ON "t3"."USERID" = "t7"."POSTID"
+ORDER BY "t3"."REPUTATION" DESC NULLS FIRST, "t7"."SCORE" DESC NULLS FIRST

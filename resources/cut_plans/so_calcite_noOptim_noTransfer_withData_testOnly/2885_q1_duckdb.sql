@@ -1,0 +1,13 @@
+SELECT COALESCE("t1"."USERID", "t1"."USERID") AS "USERID", "t1"."DISPLAYNAME", "t1"."TOTALBADGES", "t1"."GOLDBADGES", "t1"."SILVERBADGES", "t1"."BRONZEBADGES", "t6"."POSTID", "t6"."TITLE", "t6"."COMMENTCOUNT", "t6"."UPVOTECOUNT", "t6"."DOWNVOTECOUNT"
+FROM (SELECT ANY_VALUE("Users"."Id") AS "USERID", "Users"."DisplayName" AS "DISPLAYNAME", COUNT("Badges"."Id") AS "TOTALBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 1 THEN 1 ELSE 0 END) AS "GOLDBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "SILVERBADGES", SUM(CASE WHEN CAST("Badges"."Class" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "BRONZEBADGES"
+FROM "STACK"."Users"
+LEFT JOIN "STACK"."Badges" ON "Users"."Id" = "Badges"."UserId"
+GROUP BY "Users"."Id", "Users"."DisplayName") AS "t1"
+INNER JOIN "STACK"."Posts" ON "t1"."USERID" = "Posts"."OwnerUserId"
+INNER JOIN (SELECT ANY_VALUE("Posts0"."Id") AS "POSTID", "Posts0"."Title" AS "TITLE", COUNT("Comments"."Id") AS "COMMENTCOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) AS "UPVOTECOUNT", SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END) AS "DOWNVOTECOUNT"
+FROM "STACK"."Posts" AS "Posts0"
+LEFT JOIN "STACK"."Comments" ON "Posts0"."Id" = "Comments"."PostId"
+LEFT JOIN "STACK"."Votes" ON "Posts0"."Id" = "Votes"."PostId"
+WHERE "Posts0"."CreationDate" >= (TIMESTAMP '2024-10-01 12:34:56' - INTERVAL '30' DAY)
+GROUP BY "Posts0"."Id", "Posts0"."Title"
+HAVING COUNT("Comments"."Id") > 5 AND SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 2 THEN 1 ELSE 0 END) > SUM(CASE WHEN CAST("Votes"."VoteTypeId" AS INTEGER) = 3 THEN 1 ELSE 0 END)) AS "t6" ON "Posts"."Id" = "t6"."POSTID"

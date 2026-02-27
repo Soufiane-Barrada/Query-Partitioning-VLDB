@@ -1,0 +1,8 @@
+SELECT COALESCE("t4"."SUPPLIER_NAME", "t4"."SUPPLIER_NAME") AS "SUPPLIER_NAME", "t4"."PART_NAME", "t4"."TOTAL_AVAILABLE_QUANTITY", "t4"."AVERAGE_PRICE", "t4"."DISTINCT_CUSTOMERS", "t4"."PART_DETAILS", "t4"."REGION_NAME"
+FROM (SELECT "supplier"."s_name", "s1"."p_name", "region"."r_name", "s1"."p_type", "s1"."p_container", ANY_VALUE("supplier"."s_name") AS "SUPPLIER_NAME", ANY_VALUE("s1"."p_name") AS "PART_NAME", SUM("s1"."ps_availqty") AS "TOTAL_AVAILABLE_QUANTITY", AVG("s1"."l_extendedprice") AS "AVERAGE_PRICE", COUNT(DISTINCT "s1"."c_custkey") AS "DISTINCT_CUSTOMERS", ANY_VALUE(CONCAT("s1"."p_type", ' - ', "s1"."p_container")) AS "PART_DETAILS", ANY_VALUE("region"."r_name") AS "REGION_NAME"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN "s1" ON "supplier"."s_suppkey" = "s1"."ps_suppkey"
+GROUP BY "supplier"."s_name", "s1"."p_name", "region"."r_name", "s1"."p_type", "s1"."p_container"
+ORDER BY 8 DESC NULLS FIRST, 9) AS "t4"

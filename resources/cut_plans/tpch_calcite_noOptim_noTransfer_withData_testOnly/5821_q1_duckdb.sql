@@ -1,0 +1,12 @@
+SELECT COALESCE("region"."r_name", "region"."r_name") AS "R_NAME", "customer"."c_custkey", CASE WHEN "t0"."TOTAL_AVAILABLE" IS NOT NULL THEN CAST("t0"."TOTAL_AVAILABLE" AS BIGINT) ELSE 0 END AS "FD_COL_2", CASE WHEN "t3"."REVENUE" IS NOT NULL THEN CAST("t3"."REVENUE" AS DECIMAL(19, 4)) ELSE 0.0000 END AS "FD_COL_3"
+FROM "TPCH"."region"
+LEFT JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+LEFT JOIN "TPCH"."customer" ON "nation"."n_nationkey" = "customer"."c_nationkey"
+LEFT JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", SUM("partsupp"."ps_availqty") AS "TOTAL_AVAILABLE", AVG("partsupp"."ps_supplycost") AS "AVG_SUPPLY_COST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name") AS "t0" ON "customer"."c_custkey" = "t0"."S_SUPPKEY"
+LEFT JOIN (SELECT "l_orderkey" AS "L_ORDERKEY", SUM("l_extendedprice" * (1 - "l_discount")) AS "REVENUE"
+FROM "TPCH"."lineitem"
+WHERE "l_shipdate" >= DATE '1995-01-01' AND "l_shipdate" < DATE '1996-01-01'
+GROUP BY "l_orderkey") AS "t3" ON "customer"."c_custkey" = "t3"."L_ORDERKEY"

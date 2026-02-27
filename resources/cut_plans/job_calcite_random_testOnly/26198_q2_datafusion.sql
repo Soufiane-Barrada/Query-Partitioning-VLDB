@@ -1,0 +1,11 @@
+SELECT COALESCE("t11"."MOVIE_TITLE", "t11"."MOVIE_TITLE") AS "MOVIE_TITLE", "t11"."ACTOR_NAME", "t11"."ACTOR_ROLE", "t11"."CASTING_NOTE", "t11"."PRODUCTION_YEAR", "t11"."KEYWORDS", "t11"."PRODUCTION_COMPANIES", "t11"."title"
+FROM (SELECT ANY_VALUE("t7"."title") AS "MOVIE_TITLE", ANY_VALUE("t7"."name") AS "ACTOR_NAME", ANY_VALUE("t7"."role") AS "ACTOR_ROLE", ANY_VALUE("t7"."note0") AS "CASTING_NOTE", "t7"."production_year" AS "PRODUCTION_YEAR", LISTAGG(DISTINCT "keyword"."keyword", ',') AS "KEYWORDS", COUNT(DISTINCT "movie_companies"."company_id") AS "PRODUCTION_COMPANIES", "t7"."title"
+FROM "IMDB"."movie_companies"
+RIGHT JOIN ((SELECT "s1"."id", "s1"."title", "s1"."imdb_index", "s1"."kind_id", "s1"."production_year", "s1"."imdb_id", "s1"."phonetic_code", "s1"."episode_of_id", "s1"."season_nr", "s1"."episode_nr", "s1"."series_years", "s1"."md5sum", "s1"."id0", "s1"."movie_id", "s1"."info_type_id", "s1"."info", "s1"."note", "complete_cast"."id" AS "id1", "complete_cast"."movie_id" AS "movie_id0", "complete_cast"."subject_id", "complete_cast"."status_id", "cast_info"."id" AS "id2", "cast_info"."person_id", "cast_info"."movie_id" AS "movie_id1", "cast_info"."person_role_id", "cast_info"."note" AS "note0", "cast_info"."nr_order", "cast_info"."role_id", "t6"."id" AS "id3", "t6"."person_id" AS "person_id0", "t6"."name", "t6"."imdb_index" AS "imdb_index0", "t6"."name_pcode_cf", "t6"."name_pcode_nf", "t6"."surname_pcode", "t6"."md5sum" AS "md5sum0", "role_type"."id" AS "id4", "role_type"."role", "movie_keyword"."id" AS "id5", "movie_keyword"."movie_id" AS "movie_id2", "movie_keyword"."keyword_id"
+FROM "IMDB"."movie_keyword"
+RIGHT JOIN ((SELECT *
+FROM "IMDB"."aka_name"
+WHERE "name" LIKE '%Smith%') AS "t6" INNER JOIN ("IMDB"."cast_info" INNER JOIN ("IMDB"."complete_cast" INNER JOIN "s1" ON "complete_cast"."movie_id" = "s1"."id") ON "cast_info"."id" = "complete_cast"."subject_id") ON "t6"."person_id" = "cast_info"."person_id" INNER JOIN "IMDB"."role_type" ON "cast_info"."role_id" = "role_type"."id") ON "movie_keyword"."movie_id" = "s1"."id") AS "t7" LEFT JOIN "IMDB"."keyword" ON "t7"."keyword_id" = "keyword"."id") ON "movie_companies"."movie_id" = "t7"."id"
+GROUP BY "t7"."title", "t7"."name", "t7"."role", "t7"."note0", "t7"."production_year"
+ORDER BY "t7"."production_year" DESC NULLS FIRST, "t7"."title"
+FETCH NEXT 100 ROWS ONLY) AS "t11"

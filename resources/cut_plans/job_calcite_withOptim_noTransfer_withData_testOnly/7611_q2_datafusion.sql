@@ -1,0 +1,8 @@
+SELECT COALESCE("t8"."ACTOR_NAME", "t8"."ACTOR_NAME") AS "ACTOR_NAME", "t8"."MOVIE_TITLE", "t8"."YEAR", "t8"."KEYWORDS", "t8"."COMPANY_TYPE", "t8"."PERSONAL_INFO", "t8"."production_year", "t8"."name"
+FROM (SELECT ANY_VALUE("s1"."name") AS "ACTOR_NAME", ANY_VALUE("s1"."title") AS "MOVIE_TITLE", ANY_VALUE("s1"."production_year") AS "YEAR", LISTAGG(DISTINCT "s1"."keyword", ', ') AS "KEYWORDS", ANY_VALUE("s1"."kind") AS "COMPANY_TYPE", ANY_VALUE("s1"."info") AS "PERSONAL_INFO", "s1"."production_year", "s1"."name"
+FROM (SELECT "id" AS "ID"
+FROM "IMDB"."info_type"
+WHERE "info" LIKE '%biography%') AS "t4"
+INNER JOIN "s1" ON "t4"."ID" = "s1"."info_type_id"
+GROUP BY "s1"."name", "s1"."title", "s1"."production_year", "s1"."kind", "s1"."info"
+ORDER BY "s1"."production_year" DESC NULLS FIRST, "s1"."name") AS "t8"

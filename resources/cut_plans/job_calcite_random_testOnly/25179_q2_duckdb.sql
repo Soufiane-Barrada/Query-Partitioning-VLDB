@@ -1,0 +1,13 @@
+SELECT COALESCE("t8"."MOVIE_ID", "t8"."MOVIE_ID") AS "MOVIE_ID", "t8"."MOVIE_TITLE", "t8"."PRODUCTION_YEAR", "t8"."KEYWORD", "t8"."CAST_NAMES", "t8"."COMPANY_NAME", "t8"."COMPANY_TYPE", "t8"."TOTAL_COMPANIES"
+FROM (SELECT "t5"."MOVIE_ID", "t5"."MOVIE_TITLE", "t5"."PRODUCTION_YEAR", "t5"."KEYWORD", "t5"."CAST_NAMES", CASE WHEN "t2"."COMPANY_NAME" IS NOT NULL THEN CAST("t2"."COMPANY_NAME" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'Unknown' END AS "COMPANY_NAME", CASE WHEN "t2"."COMPANY_TYPE" IS NOT NULL THEN CAST("t2"."COMPANY_TYPE" AS VARCHAR CHARACTER SET "ISO-8859-1") ELSE 'Unknown' END AS "COMPANY_TYPE", CASE WHEN "t2"."TOTAL_COMPANIES" IS NOT NULL THEN CAST("t2"."TOTAL_COMPANIES" AS BIGINT) ELSE 0 END AS "TOTAL_COMPANIES"
+FROM (SELECT "movie_id" AS "MOVIE_ID", ANY_VALUE("name") AS "COMPANY_NAME", ANY_VALUE("kind") AS "COMPANY_TYPE", COUNT(*) AS "TOTAL_COMPANIES"
+FROM "s1"
+GROUP BY "kind", "name", "movie_id") AS "t2"
+RIGHT JOIN (SELECT ANY_VALUE("aka_title"."id") AS "MOVIE_ID", ANY_VALUE("aka_title"."title") AS "MOVIE_TITLE", "aka_title"."production_year" AS "PRODUCTION_YEAR", ANY_VALUE("keyword"."keyword") AS "KEYWORD", ARRAY_AGG(DISTINCT "aka_name"."name") AS "CAST_NAMES"
+FROM "IMDB"."keyword"
+INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN ("IMDB"."complete_cast" INNER JOIN "IMDB"."aka_title" ON "complete_cast"."movie_id" = "aka_title"."id") ON "aka_name"."person_id" = "complete_cast"."subject_id") ON "movie_keyword"."movie_id" = "aka_title"."id"
+GROUP BY "keyword"."keyword", "aka_title"."id", "aka_title"."title", "aka_title"."production_year") AS "t5" ON "t2"."MOVIE_ID" = "t5"."MOVIE_ID"
+WHERE "t5"."PRODUCTION_YEAR" >= 2000 AND "t5"."PRODUCTION_YEAR" <= 2023
+ORDER BY "t5"."PRODUCTION_YEAR" DESC NULLS FIRST, "t5"."MOVIE_TITLE"
+FETCH NEXT 100 ROWS ONLY) AS "t8"

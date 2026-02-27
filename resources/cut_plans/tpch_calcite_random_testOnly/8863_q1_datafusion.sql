@@ -1,0 +1,5 @@
+SELECT COALESCE("t"."S_SUPPKEY", "t"."S_SUPPKEY") AS "S_SUPPKEY", "t"."S_NAME", "t"."PS_SUPPLYCOST" * "partsupp"."ps_availqty" AS "FD_COL_2"
+FROM "TPCH"."partsupp"
+INNER JOIN (SELECT "supplier"."s_suppkey" AS "S_SUPPKEY", "supplier"."s_name" AS "S_NAME", "partsupp0"."ps_partkey" AS "PS_PARTKEY", "partsupp0"."ps_supplycost" AS "PS_SUPPLYCOST"
+FROM "TPCH"."supplier"
+INNER JOIN "TPCH"."partsupp" AS "partsupp0" ON "supplier"."s_suppkey" = "partsupp0"."ps_suppkey") AS "t" ON "partsupp"."ps_partkey" = "t"."PS_PARTKEY"

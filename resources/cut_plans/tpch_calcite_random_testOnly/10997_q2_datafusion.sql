@@ -1,0 +1,10 @@
+SELECT COALESCE("t3"."L_ORDERKEY", "t3"."L_ORDERKEY") AS "L_ORDERKEY", "t3"."REVENUE", "t3"."O_ORDERDATE", "t3"."C_NAME", "t3"."S_NAME", "t3"."P_NAME", "t3"."N_NAME", "t3"."R_NAME"
+FROM (SELECT "lineitem"."l_orderkey" AS "L_ORDERKEY", "s1"."o_orderdate" AS "O_ORDERDATE", "s1"."c_name" AS "C_NAME", "supplier"."s_name" AS "S_NAME", "part"."p_name" AS "P_NAME", "nation"."n_name" AS "N_NAME", "region"."r_name" AS "R_NAME", SUM("lineitem"."l_extendedprice" * (1 - "lineitem"."l_discount")) AS "REVENUE"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+INNER JOIN "TPCH"."supplier" ON "nation"."n_nationkey" = "supplier"."s_nationkey"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+INNER JOIN ("TPCH"."lineitem" INNER JOIN "s1" ON "lineitem"."l_orderkey" = "s1"."o_orderkey") ON "partsupp"."ps_partkey" = "lineitem"."l_partkey"
+GROUP BY "lineitem"."l_orderkey", "s1"."o_orderdate", "s1"."c_name", "supplier"."s_name", "part"."p_name", "nation"."n_name", "region"."r_name"
+ORDER BY 8 DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t3"

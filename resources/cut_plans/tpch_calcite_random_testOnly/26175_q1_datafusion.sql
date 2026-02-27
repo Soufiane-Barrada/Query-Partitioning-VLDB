@@ -1,0 +1,11 @@
+SELECT COALESCE("t3"."s_suppkey", "t3"."s_suppkey") AS "S_SUPPKEY", "t3"."s_name" AS "S_NAME", "t3"."p_name" AS "P_NAME", "t3"."TOTAL_PARTS", "t3"."TOTAL_COST", "t1"."R_REGIONKEY", "t1"."R_NAME", "t1"."NATION_COUNT"
+FROM (SELECT "region"."r_regionkey" AS "R_REGIONKEY", "region"."r_name" AS "R_NAME", COUNT(*) AS "NATION_COUNT", COUNT(*) > 3 AS "$f3"
+FROM "TPCH"."region"
+INNER JOIN "TPCH"."nation" ON "region"."r_regionkey" = "nation"."n_regionkey"
+GROUP BY "region"."r_regionkey", "region"."r_name"
+HAVING COUNT(*) > 3) AS "t1",
+(SELECT "supplier"."s_suppkey", "supplier"."s_name", "part"."p_name", COUNT(*) AS "TOTAL_PARTS", SUM("partsupp"."ps_supplycost") AS "TOTAL_COST"
+FROM "TPCH"."supplier"
+INNER JOIN ("TPCH"."part" INNER JOIN "TPCH"."partsupp" ON "part"."p_partkey" = "partsupp"."ps_partkey") ON "supplier"."s_suppkey" = "partsupp"."ps_suppkey"
+GROUP BY "supplier"."s_suppkey", "supplier"."s_name", "part"."p_name"
+HAVING COUNT(*) > 10) AS "t3"

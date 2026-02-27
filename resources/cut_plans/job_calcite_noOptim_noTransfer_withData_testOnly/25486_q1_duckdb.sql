@@ -1,0 +1,13 @@
+SELECT COALESCE("t3"."PRODUCTION_YEAR", "t3"."PRODUCTION_YEAR") AS "PRODUCTION_YEAR", "kind_type"."kind" AS "MOVIE_KIND", "t3"."TOTAL_MOVIES", "t3"."UNIQUE_ACTORS", "t3"."TOTAL_ROLES", "t3"."TOTAL_PRODUCTION_COMPANIES", "t3"."ALL_KEYWORDS"
+FROM (SELECT "t2"."PRODUCTION_YEAR", "t2"."KIND_ID", COUNT(DISTINCT "t2"."TITLE") AS "TOTAL_MOVIES", COUNT(DISTINCT "t2"."ACTOR_NAME") AS "UNIQUE_ACTORS", SUM("t2"."NUM_ROLES") AS "TOTAL_ROLES", SUM("t2"."NUM_PRODUCTION_COMPANIES") AS "TOTAL_PRODUCTION_COMPANIES", LISTAGG(DISTINCT "t2"."KEYWORDS", "t2"."$f7") AS "ALL_KEYWORDS"
+FROM (SELECT "aka_title"."production_year" AS "PRODUCTION_YEAR", "aka_title"."kind_id" AS "KIND_ID", "aka_title"."title" AS "TITLE", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", SUM(1) AS "NUM_ROLES", COUNT(DISTINCT "movie_companies"."company_id") AS "NUM_PRODUCTION_COMPANIES", LISTAGG(DISTINCT "keyword"."keyword", ', ') AS "KEYWORDS", ', ' AS "$f7"
+FROM "IMDB"."aka_title"
+INNER JOIN "IMDB"."cast_info" ON "aka_title"."id" = "cast_info"."movie_id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+LEFT JOIN "IMDB"."movie_keyword" ON "aka_title"."id" = "movie_keyword"."movie_id"
+LEFT JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+LEFT JOIN "IMDB"."movie_companies" ON "aka_title"."id" = "movie_companies"."movie_id"
+WHERE "aka_title"."production_year" >= 2000
+GROUP BY "aka_title"."id", "aka_title"."title", "aka_title"."production_year", "aka_title"."kind_id", "aka_name"."name", "aka_name"."person_id") AS "t2"
+GROUP BY "t2"."PRODUCTION_YEAR", "t2"."KIND_ID") AS "t3"
+INNER JOIN "IMDB"."kind_type" ON "t3"."KIND_ID" = "kind_type"."id"

@@ -1,0 +1,12 @@
+SELECT COALESCE("title"."title", "title"."title") AS "MOVIE_TITLE", "title"."production_year" AS "PRODUCTION_YEAR", "aka_name"."name" AS "ACTOR_NAME", "keyword"."keyword" AS "MOVIE_KEYWORD", ', ' AS "FD_COL_4", "company_name"."name" AS "COMPANY_NAME"
+FROM "IMDB"."title"
+INNER JOIN "IMDB"."movie_companies" ON "title"."id" = "movie_companies"."movie_id"
+INNER JOIN "IMDB"."company_name" ON "movie_companies"."company_id" = "company_name"."id"
+INNER JOIN "IMDB"."company_type" ON "movie_companies"."company_type_id" = "company_type"."id"
+INNER JOIN "IMDB"."movie_keyword" ON "title"."id" = "movie_keyword"."movie_id"
+INNER JOIN "IMDB"."keyword" ON "movie_keyword"."keyword_id" = "keyword"."id"
+INNER JOIN "IMDB"."complete_cast" ON "title"."id" = "complete_cast"."movie_id"
+INNER JOIN "IMDB"."cast_info" ON "complete_cast"."subject_id" = "cast_info"."id"
+INNER JOIN "IMDB"."aka_name" ON "cast_info"."person_id" = "aka_name"."person_id"
+INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id"
+WHERE "title"."production_year" >= 2000 AND "company_name"."country_code" = 'USA'

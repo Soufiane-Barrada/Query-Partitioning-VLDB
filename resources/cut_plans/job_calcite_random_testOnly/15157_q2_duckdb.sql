@@ -1,0 +1,5 @@
+SELECT COALESCE("AKA_NAME", "AKA_NAME") AS "AKA_NAME", "MOVIE_TITLE", "PERSON_INFO", "PERSON_ROLE", "production_year"
+FROM (SELECT "name" AS "AKA_NAME", "title" AS "MOVIE_TITLE", "info" AS "PERSON_INFO", "role" AS "PERSON_ROLE", "production_year"
+FROM "s1"
+ORDER BY "production_year" DESC NULLS FIRST
+FETCH NEXT 10 ROWS ONLY) AS "t2"

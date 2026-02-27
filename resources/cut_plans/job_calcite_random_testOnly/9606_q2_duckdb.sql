@@ -1,0 +1,11 @@
+SELECT COALESCE("t8"."AKA_NAME", "t8"."AKA_NAME") AS "AKA_NAME", "t8"."MOVIE_TITLE", "t8"."CAST_ORDER", "t8"."PERSON_INFO", "t8"."COMPANY_NAME", "t8"."MOVIE_KEYWORD", "t8"."ROLE_TYPE", "t8"."production_year"
+FROM (SELECT "t6"."name" AS "AKA_NAME", "t6"."title" AS "MOVIE_TITLE", "t6"."nr_order" AS "CAST_ORDER", "t6"."info" AS "PERSON_INFO", "t4"."name" AS "COMPANY_NAME", "keyword"."keyword" AS "MOVIE_KEYWORD", "role_type"."role" AS "ROLE_TYPE", "t6"."production_year"
+FROM (SELECT *
+FROM "IMDB"."company_name"
+WHERE "country_code" = 'USA') AS "t4"
+INNER JOIN ("IMDB"."keyword" INNER JOIN "IMDB"."movie_keyword" ON "keyword"."id" = "movie_keyword"."keyword_id" INNER JOIN ("IMDB"."role_type" INNER JOIN (SELECT "s1"."id0" AS "id", "s1"."person_id0" AS "person_id", "s1"."name", "s1"."imdb_index", "s1"."name_pcode_cf", "s1"."name_pcode_nf", "s1"."surname_pcode", "s1"."md5sum", "cast_info"."id" AS "id0", "cast_info"."person_id" AS "person_id0", "cast_info"."movie_id", "cast_info"."person_role_id", "cast_info"."note", "cast_info"."nr_order", "cast_info"."role_id", "title"."id" AS "id1", "title"."title", "title"."imdb_index" AS "imdb_index0", "title"."kind_id", "title"."production_year", "title"."imdb_id", "title"."phonetic_code", "title"."episode_of_id", "title"."season_nr", "title"."episode_nr", "title"."series_years", "title"."md5sum" AS "md5sum0", "s1"."id" AS "id2", "s1"."person_id" AS "person_id1", "s1"."info_type_id", "s1"."info", "s1"."note" AS "note0"
+FROM "s1"
+INNER JOIN ("IMDB"."title" INNER JOIN "IMDB"."cast_info" ON "title"."id" = "cast_info"."movie_id") ON "s1"."person_id0" = "cast_info"."person_id"
+WHERE "title"."production_year" >= 2000 AND "title"."production_year" <= 2020) AS "t6" ON "role_type"."id" = "t6"."role_id" INNER JOIN "IMDB"."movie_companies" ON "t6"."id1" = "movie_companies"."movie_id") ON "movie_keyword"."movie_id" = "t6"."id1") ON "t4"."id" = "movie_companies"."company_id"
+ORDER BY "t6"."production_year" DESC NULLS FIRST, "t6"."nr_order"
+FETCH NEXT 50 ROWS ONLY) AS "t8"

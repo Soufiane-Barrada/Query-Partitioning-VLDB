@@ -1,0 +1,10 @@
+SELECT COALESCE("t4"."ACTOR_NAME", "t4"."ACTOR_NAME") AS "ACTOR_NAME", "t4"."MOVIE_TITLE", "t4"."COMPANY_TYPE", "t4"."MOVIE_KEYWORD", "t4"."PERSON_INFO", "t4"."TOTAL_CASTS", "t4"."title"
+FROM (SELECT "aka_name"."name", "t1"."title", "s1"."kind", "keyword"."keyword", "person_info"."info", ANY_VALUE("aka_name"."name") AS "ACTOR_NAME", ANY_VALUE("t1"."title") AS "MOVIE_TITLE", ANY_VALUE("s1"."kind") AS "COMPANY_TYPE", ANY_VALUE("keyword"."keyword") AS "MOVIE_KEYWORD", ANY_VALUE("person_info"."info") AS "PERSON_INFO", COUNT(DISTINCT "cast_info"."person_id") AS "TOTAL_CASTS"
+FROM "s1"
+INNER JOIN "IMDB"."movie_companies" ON "s1"."id" = "movie_companies"."company_type_id"
+INNER JOIN ("IMDB"."aka_name" INNER JOIN "IMDB"."person_info" ON "aka_name"."person_id" = "person_info"."person_id" INNER JOIN ("IMDB"."cast_info" INNER JOIN ((SELECT *
+FROM "IMDB"."aka_title"
+WHERE "production_year" > 2000) AS "t1" INNER JOIN "IMDB"."keyword" ON "t1"."id" = "keyword"."id") ON "cast_info"."movie_id" = "t1"."movie_id") ON "aka_name"."person_id" = "cast_info"."person_id") ON "movie_companies"."movie_id" = "t1"."id"
+GROUP BY "s1"."kind", "aka_name"."name", "person_info"."info", "t1"."title", "keyword"."keyword"
+ORDER BY 11 DESC NULLS FIRST, "t1"."title"
+FETCH NEXT 50 ROWS ONLY) AS "t4"
